@@ -1,5 +1,9 @@
 @import "tailwindcss";
-@plugin "daisyui";
+@plugin "daisyui" {
+  themes:
+    emerald --default,
+    forest --prefersdark;
+}
 
 html body {
   .form-control .label {

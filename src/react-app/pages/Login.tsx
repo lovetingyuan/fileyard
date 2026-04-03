@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import toast from "react-hot-toast";
@@ -15,12 +15,15 @@ export function Login({ onSwitchToRegister }: LoginProps) {
   const initialEmail = searchParams.get("email") ?? "";
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
+  const toastShownRef = useRef(false);
 
-  useEffect(() => {
-    if (registered) {
-      toast.success("Registration successful. Please verify your email, then log in.");
-    }
-  }, [registered]);
+  if (registered && !toastShownRef.current) {
+    toastShownRef.current = true;
+    // Schedule toast after render to avoid calling during render phase
+    Promise.resolve().then(() =>
+      toast.success("Registration successful. Please verify your email, then log in."),
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

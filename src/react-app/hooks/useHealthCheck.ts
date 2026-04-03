@@ -1,5 +1,5 @@
 import useSWR from "swr";
-import { ApiError, apiRequest } from "../lib/api";
+import { ApiError, apiRequest } from "../utils/apiRequest";
 
 type HealthResponse = {
   status: string;

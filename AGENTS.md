@@ -6,8 +6,6 @@ This file provides guidance to AI coding agent when working with code in this re
 
 Full-stack application built with React + Vite + Hono, deployed to Cloudflare Workers.
 
-Provides a file management system based on Cloudflare R2.
-
 ## Commands
 
 ```bash
@@ -25,12 +23,7 @@ npm run cf-typegen # Generate TypeScript types from wrangler config
 ```
 src/
 ├── react-app/          # Frontend React application
-│   ├── main.tsx        # Entry point
-│   ├── App.tsx         # Root component
-│   └── index.css       # Tailwind + DaisyUI imports
-│
 └── worker/             # Cloudflare Worker backend
-    └── index.ts        # Hono app entry point (exported as default)
 ```
 
 - **Frontend**: React 19 with Vite, Tailwind CSS v4, DaisyUI components
@@ -38,37 +31,11 @@ src/
 - **Build**: Vite builds the client to `dist/client/`, wrangler serves it as static assets with SPA fallback
 - **TypeScript**: Separate configs for app (`tsconfig.app.json`), worker (`tsconfig.worker.json`), and build tools (`tsconfig.node.json`)
 
-## Cloudflare Workers
+## Coding rules
 
-STOP. Your knowledge of Cloudflare Workers APIs and limits may be outdated. Always retrieve current documentation before any Workers, KV, R2, D1, Durable Objects, Queues, Vectorize, AI, or Agents SDK task.
-
-### Docs
-
-- https://developers.cloudflare.com/workers/
-- MCP: `https://docs.mcp.cloudflare.com/mcp`
-
-For all limits and quotas, retrieve from the product's `/platform/limits/` page. eg. `/workers/platform/limits`
-
-### Commands
-
-| Command               | Purpose                   |
-| --------------------- | ------------------------- |
-| `npx wrangler dev`    | Local development         |
-| `npx wrangler deploy` | Deploy to Cloudflare      |
-| `npx wrangler types`  | Generate TypeScript types |
-
-Run `wrangler types` after changing bindings in wrangler.jsonc.
-
-### Node.js Compatibility
-
-https://developers.cloudflare.com/workers/runtime-apis/nodejs/
-
-### Errors
-
-- **Error 1102** (CPU/Memory exceeded): Retrieve limits from `/workers/platform/limits/`
-- **All errors**: https://developers.cloudflare.com/workers/observability/errors/
-
-### Product Docs
-
-Retrieve API references and limits from:
-`/kv/` · `/r2/` · `/d1/` · `/durable-objects/` · `/queues/` · `/vectorize/` · `/workers-ai/` · `/agents/`
+- **API**: When using third-party APIs, you must first query the documentation for official usage.
+- **style**: Styles must be written using tailwindcss. Try to avoid using style and creating separate CSS files. If you must use them, you must ask the user and explain the reasons.
+- **React**: The number of rows per react component should be limited to 300 lines, and the excess should be optimized by abstraction constants, sub-components, and custom hooks.
+- **React Hooks**: Try to avoid using useEffect; please refer to the corresponding best practices.
+- **Honojs**: Hono routes must use full path definitions, and route processing methods are split into separate modules.
+- **typescript**: Place common and global types at src/types.ts.

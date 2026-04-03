@@ -1,9 +1,8 @@
 import useSWR from "swr";
 import { useSWRConfig } from "swr";
 import useSWRMutation from "swr/mutation";
-import type { FileMutationResponse } from "../../shared/file-manager";
-import type { ProfileResponse } from "../../shared/profile";
-import { ApiError, apiRequest } from "../lib/api";
+import type { FileMutationResponse, ProfileResponse } from "../../types";
+import { ApiError, apiRequest } from "../utils/apiRequest";
 
 const PROFILE_KEY = "/api/profile";
 const AVATAR_ENDPOINT = "/api/profile/avatar";

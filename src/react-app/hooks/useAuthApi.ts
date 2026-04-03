@@ -1,7 +1,7 @@
 import useSWR from "swr";
 import { useSWRConfig } from "swr";
 import useSWRMutation from "swr/mutation";
-import { ApiError, apiRequest } from "../lib/api";
+import { ApiError, apiRequest } from "../utils/apiRequest";
 
 export interface User {
   email: string;

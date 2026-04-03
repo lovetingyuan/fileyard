@@ -1,7 +1,8 @@
-import { Link, Outlet, useNavigate } from "react-router-dom";
-import { useAuth } from "../hooks/useAuth";
-import { useProfile } from "../hooks/useProfileApi";
-import { UserAvatar } from "./UserAvatar";
+import { Link, Outlet, useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
+import { useProfile } from '../hooks/useProfileApi';
+import { UserAvatar } from './UserAvatar';
+import { ThemeSwitcher } from './ThemeSwitcher';
 
 function AuthenticatedNavMenu() {
   const navigate = useNavigate();
@@ -9,12 +10,13 @@ function AuthenticatedNavMenu() {
   const { profile } = useProfile();
 
   return (
-    <div className="flex-none">
+    <div className="flex-none flex items-center gap-2">
+      <ThemeSwitcher />
       <button
         type="button"
         className="btn btn-ghost btn-circle avatar"
         aria-label="Go to profile"
-        onClick={() => navigate("/profile")}
+        onClick={() => navigate('/profile')}
       >
         <UserAvatar email={user?.email} avatarUrl={profile?.avatarUrl} />
       </button>
@@ -34,12 +36,22 @@ export function AppLayout() {
             <span>File Share</span>
           </Link>
         </div>
-        {user ? <AuthenticatedNavMenu /> : null}
+        {user ? (
+          <AuthenticatedNavMenu />
+        ) : (
+          <div className="flex-none">
+            <ThemeSwitcher />
+          </div>
+        )}
       </nav>
 
       <div className="flex flex-1 flex-col">
         <Outlet />
       </div>
+
+      <footer className="select-none py-1 text-center text-xs text-base-content/40 italic bg-base-200">
+        Built at {_builtTime}
+      </footer>
     </div>
   );
 }

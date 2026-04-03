@@ -1,29 +1,25 @@
 import { useState } from "react";
-import useSWRInfinite from "swr/infinite";
+import useSWR from "swr";
 import useSWRMutation from "swr/mutation";
 import type {
   CreateFolderRequest,
   FileListResponse,
   FileMutationResponse,
-} from "../../shared/file-manager";
-import { ApiError, apiRequest } from "../lib/api";
+  SortKey,
+  SortOrder,
+} from "../../types";
+import { ApiError, apiRequest } from "../utils/apiRequest";
 
 const FILES_ENDPOINT = "/api/files";
 const FILE_OBJECT_ENDPOINT = "/api/files/object";
 const FILE_FOLDERS_ENDPOINT = "/api/files/folders";
-type FileListKey = [string, string, string | undefined];
 
-function buildListUrl(path: string, cursor?: string): string {
-  const params = new URLSearchParams();
-  if (path) {
-    params.set("path", path);
-  }
-  if (cursor) {
-    params.set("cursor", cursor);
-  }
+type FileListKey = [string, string, SortKey, SortOrder];
 
-  const query = params.toString();
-  return query ? `${FILES_ENDPOINT}?${query}` : FILES_ENDPOINT;
+function buildListUrl(path: string, sort: SortKey, order: SortOrder): string {
+  const params = new URLSearchParams({ sort, order });
+  if (path) params.set("path", path);
+  return `${FILES_ENDPOINT}?${params.toString()}`;
 }
 
 export function buildDownloadUrl(path: string): string {
@@ -31,43 +27,19 @@ export function buildDownloadUrl(path: string): string {
   return `${FILE_OBJECT_ENDPOINT}?${params.toString()}`;
 }
 
-export function useFileList(path: string) {
-  const getKey = (
-    pageIndex: number,
-    previousPageData: FileListResponse | null,
-  ): [string, string, string | undefined] | null => {
-    if (pageIndex > 0 && (!previousPageData?.truncated || !previousPageData.cursor)) {
-      return null;
-    }
+export function buildPreviewUrl(path: string): string {
+  const params = new URLSearchParams({ path });
+  return `/api/files/preview?${params.toString()}`;
+}
 
-    return [FILES_ENDPOINT, path, pageIndex === 0 ? undefined : previousPageData?.cursor];
-  };
-
-  const { data, error, isLoading, isValidating, mutate, setSize } = useSWRInfinite<
-    FileListResponse,
-    ApiError
-  >(
-    getKey,
+export function useFileList(path: string, sort: SortKey, order: SortOrder) {
+  const { data, error, isLoading, isValidating, mutate } = useSWR<FileListResponse, ApiError>(
+    [FILES_ENDPOINT, path, sort, order] as FileListKey,
     (key) => {
-      const [, currentPath, cursor] = key as FileListKey;
-      return apiRequest<FileListResponse>(buildListUrl(currentPath, cursor));
-    },
-    {
-      persistSize: false,
-      revalidateFirstPage: false,
+      const [, currentPath, currentSort, currentOrder] = key as FileListKey;
+      return apiRequest<FileListResponse>(buildListUrl(currentPath, currentSort, currentOrder));
     },
   );
-
-  const pages = data ?? [];
-  const lastPage = pages[pages.length - 1];
-
-  const loadMore = async () => {
-    if (!lastPage?.truncated) {
-      return;
-    }
-
-    await setSize((currentSize) => currentSize + 1);
-  };
 
   const refresh = async () => {
     await mutate();
@@ -76,15 +48,12 @@ export function useFileList(path: string) {
   return {
     data: {
       path,
-      folders: pages.flatMap((page) => page.folders),
-      files: pages.flatMap((page) => page.files),
-      truncated: lastPage?.truncated ?? false,
+      folders: data?.folders ?? [],
+      files: data?.files ?? [],
     },
     error,
-    hasMore: lastPage?.truncated ?? false,
     isLoading,
     isRefreshing: isValidating,
-    loadMore,
     refresh,
   };
 }
@@ -121,9 +90,9 @@ type OptimisticFolder = {
   isOptimistic: true;
 };
 
-export function useFileListWithOptimistic(path: string) {
+export function useFileListWithOptimistic(path: string, sort: SortKey, order: SortOrder) {
   const [optimisticFolders, setOptimisticFolders] = useState<OptimisticFolder[]>([]);
-  const result = useFileList(path);
+  const result = useFileList(path, sort, order);
 
   const addOptimisticFolder = (name: string) => {
     const folderPath = path ? `${path}/${name}` : name;
@@ -139,7 +108,6 @@ export function useFileListWithOptimistic(path: string) {
     setOptimisticFolders([]);
   };
 
-  // Merge optimistic folders with real data
   const folders = [
     ...optimisticFolders,
     ...result.data.folders.filter((f) => !optimisticFolders.some((of) => of.path === f.path)),
@@ -241,6 +209,51 @@ export function useDeleteFolderMutation() {
 
   return {
     deleteFolder,
+    isMutating,
+  };
+}
+
+type UpdateFileArgs = {
+  file: File;
+  parentPath: string;
+};
+
+export function useUpdateFileMutation() {
+  const { trigger, isMutating } = useSWRMutation<
+    FileMutationResponse,
+    ApiError,
+    string,
+    UpdateFileArgs
+  >(
+    FILE_OBJECT_ENDPOINT,
+    (url, { arg }) => {
+      const params = new URLSearchParams({
+        name: arg.file.name,
+        overwrite: "true",
+      });
+      if (arg.parentPath) {
+        params.set("parentPath", arg.parentPath);
+      }
+
+      return apiRequest<FileMutationResponse>(`${url}?${params.toString()}`, {
+        method: "PUT",
+        headers: arg.file.type
+          ? {
+              "Content-Type": arg.file.type,
+            }
+          : undefined,
+        body: arg.file,
+      });
+    },
+    {
+      throwOnError: true,
+    },
+  );
+
+  const updateFile = (file: File, parentPath: string) => trigger({ file, parentPath });
+
+  return {
+    updateFile,
     isMutating,
   };
 }

@@ -3,6 +3,14 @@ import { useParams, useSearchParams } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import { useVerifyEmail } from "../hooks/useAuthApi";
 
+function useDelayedCallback(callback: () => void, delay: number, enabled: boolean) {
+  useEffect(() => {
+    if (!enabled) return;
+    const timeout = window.setTimeout(callback, delay);
+    return () => window.clearTimeout(timeout);
+  }, [callback, delay, enabled]);
+}
+
 interface VerifyProps {
   onSuccess: () => void;
 }
@@ -20,19 +28,7 @@ export function Verify({ onSuccess }: VerifyProps) {
       ? "Email is missing from the verification link"
       : (error?.message ?? "An error occurred during verification");
 
-  useEffect(() => {
-    if (!result) {
-      return;
-    }
-
-    const timeout = window.setTimeout(() => {
-      onSuccess();
-    }, 2000);
-
-    return () => {
-      window.clearTimeout(timeout);
-    };
-  }, [onSuccess, result]);
+  useDelayedCallback(onSuccess, 2000, !!result);
 
   return (
     <div className="flex flex-1 items-center justify-center p-4">

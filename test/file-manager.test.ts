@@ -3,8 +3,7 @@
 import { env } from "cloudflare:workers";
 import { runInDurableObject, SELF } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
-import type { FileListResponse } from "../src/shared/file-manager";
-import type { ProfileResponse } from "../src/shared/profile";
+import type { FileListResponse, ProfileResponse } from "../src/types";
 import type { User } from "../src/worker/types";
 import { generateSalt, hashPassword } from "../src/worker/utils/password";
 

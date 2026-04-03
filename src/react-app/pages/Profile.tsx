@@ -166,10 +166,12 @@ export function Profile() {
                 onChange={handleUploadSelection}
                 disabled={busy}
               />
-              <div
-                className="group tooltip tooltip-top tooltip-info shrink-0"
-                data-tip="头像要求：支持 PNG、JPG、JPEG、WebP，原图不超过 200KB"
-              >
+              <div className="group tooltip tooltip-top tooltip-info shrink-0">
+                <div className="tooltip-content">
+                  <span className="inline-block max-w-45 text-xs">
+                    头像要求：支持 PNG、JPG、JPEG、WebP，原图不超过 200KB
+                  </span>
+                </div>
                 <button
                   type="button"
                   className="relative h-15 w-15 shrink-0 overflow-hidden rounded-full ring ring-base-300 ring-offset-4 ring-offset-base-100 transition disabled:cursor-not-allowed"
