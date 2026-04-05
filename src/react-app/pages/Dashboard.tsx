@@ -13,6 +13,7 @@ import {
 } from '../hooks/useFilesApi'
 import { FileToolbar } from '../components/FileToolbar'
 import { DeleteConfirmModal } from '../components/DeleteConfirmModal'
+import { FileDetailsModal } from '../components/FileDetailsModal'
 import { FileRow, FolderRow, NewFolderRow } from '../components/FileTableRows'
 import { PreviewModal } from '../components/PreviewModal'
 import { NewTextFileModal } from '../components/NewTextFileModal'
@@ -35,6 +36,7 @@ export function Dashboard() {
   const [newFolderDefaultName, setNewFolderDefaultName] = useState('')
   const [downloadingPath, setDownloadingPath] = useState<string | null>(null)
   const [previewFile, setPreviewFile] = useState<FileEntry | null>(null)
+  const [detailsFile, setDetailsFile] = useState<FileEntry | null>(null)
   const [isNewTextFileModalOpen, setIsNewTextFileModalOpen] = useState(false)
   const [pendingDeleteTarget, setPendingDeleteTarget] = useState<DeleteTarget | null>(null)
   const [searchInputValue, setSearchInputValue] = useState('')
@@ -292,6 +294,7 @@ export function Dashboard() {
         onClose={handleCloseDeleteConfirm}
         onConfirm={handleConfirmDelete}
       />
+      <FileDetailsModal file={detailsFile} onClose={() => setDetailsFile(null)} />
       <PreviewModal
         file={previewFile}
         onClose={() => setPreviewFile(null)}
@@ -419,7 +422,7 @@ export function Dashboard() {
                             )}
                           </span>
                         </th>
-                        <th className="w-14 text-right sm:w-24">
+                        <th className="w-12 text-right sm:w-16">
                           <span className="hidden sm:inline">Actions</span>
                         </th>
                       </tr>
@@ -457,6 +460,7 @@ export function Dashboard() {
                             handleRequestDelete({ type: 'file', path, name })
                           }
                           onPreview={handlePreviewFile}
+                          onShowDetails={setDetailsFile}
                         />
                       ))}
                       {filteredFolders.length === 0 && filteredFiles.length === 0 && (

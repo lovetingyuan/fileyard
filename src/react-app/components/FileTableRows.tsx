@@ -148,6 +148,7 @@ interface FileRowProps {
   onDownload: (path: string, name: string) => void;
   onRequestDelete: (path: string, name: string) => void;
   onPreview: (file: FileEntry) => void;
+  onShowDetails: (file: FileEntry) => void;
 }
 
 export function FileRow({
@@ -158,6 +159,7 @@ export function FileRow({
   onDownload,
   onRequestDelete,
   onPreview,
+  onShowDetails,
 }: FileRowProps) {
   const fileIcon = getFileIcon(file.name);
   return (
@@ -197,6 +199,11 @@ export function FileRow({
               icon: "mdi:delete-outline",
               tone: "danger",
               onClick: () => onRequestDelete(file.path, file.name),
+            },
+            {
+              label: "查看详情",
+              icon: "mdi:information-outline",
+              onClick: () => onShowDetails(file),
             },
           ]}
         />

@@ -10,12 +10,21 @@ const dateFormatterWithoutYear = new Intl.DateTimeFormat(undefined, {
   minute: "2-digit",
 });
 
+const detailedDateFormatter = new Intl.DateTimeFormat(undefined, {
+  dateStyle: "medium",
+  timeStyle: "medium",
+});
+
 export function formatDate(dateInput: string | number | Date): string {
   const date = new Date(dateInput);
   const currentYear = new Date().getFullYear();
   return date.getFullYear() === currentYear
     ? dateFormatterWithoutYear.format(date)
     : dateFormatterWithYear.format(date);
+}
+
+export function formatDetailedDate(dateInput: string | number | Date): string {
+  return detailedDateFormatter.format(new Date(dateInput));
 }
 
 const sizeFormatter = new Intl.NumberFormat(undefined, {
