@@ -1,6 +1,15 @@
-import { BrowserRouter, Routes, Route, Navigate, Outlet, useNavigate } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  Outlet,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { AppLayout } from "./components/AppLayout";
+import { HealthCheckReporter } from "./components/HealthCheckReporter";
 import { AuthProvider } from "./context/AuthContext";
 import { useAuth } from "./hooks/useAuth";
 import { Login } from "./pages/Login";
@@ -8,6 +17,7 @@ import { Register } from "./pages/Register";
 import { Verify } from "./pages/Verify";
 import { Dashboard } from "./pages/Dashboard";
 import { Profile } from "./pages/Profile";
+import { FilePickerDebug } from "./pages/FilePickerDebug";
 
 function AuthGate() {
   const { authLoading } = useAuth();
@@ -84,13 +94,26 @@ function AppContent() {
   );
 }
 
+function AppRoutes() {
+  const location = useLocation();
+
+  if (location.pathname === "/debug/file-picker") {
+    return <FilePickerDebug />;
+  }
+
+  return (
+    <AuthProvider>
+      <HealthCheckReporter />
+      <AppContent />
+    </AuthProvider>
+  );
+}
+
 function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <Toaster position="top-center" toastOptions={{ duration: 5000 }} />
-        <AppContent />
-      </AuthProvider>
+      <Toaster position="top-center" toastOptions={{ duration: 5000 }} />
+      <AppRoutes />
     </BrowserRouter>
   );
 }

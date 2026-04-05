@@ -13,6 +13,7 @@ interface FileToolbarProps {
   isRefreshing: boolean
   isCreatingNewFolder: boolean
   searchQuery: string
+  isSearchPending: boolean
   onSetPath: (path: string) => void
   onUploadClick: () => void
   onCreateFolder: () => void
@@ -31,6 +32,7 @@ export function FileToolbar({
   isRefreshing,
   isCreatingNewFolder,
   searchQuery,
+  isSearchPending,
   onSetPath,
   onUploadClick,
   onCreateFolder,
@@ -116,12 +118,12 @@ export function FileToolbar({
             <input
               ref={searchInputRef}
               type="text"
-              className={`input input-sm input-bordered absolute top-0 right-0 h-8 w-40 min-w-0 transition-opacity duration-150 ease-in-out group-focus-within/search:border-base-300 group-focus-within/search:bg-base-100 group-focus-within/search:opacity-100 group-focus-within/search:outline-none ${
+              className={`placeholder:text-[10px] input input-sm input-bordered absolute top-0 right-0 h-8 w-40 min-w-0 transition-opacity duration-150 ease-in-out group-focus-within/search:border-base-300 group-focus-within/search:bg-base-100 group-focus-within/search:opacity-100 group-focus-within/search:outline-none ${
                 isSearchExpanded
                   ? 'border-base-300 bg-base-100 pr-9 opacity-100'
                   : 'border-transparent bg-transparent pr-9 opacity-0'
               }`}
-              placeholder="搜索文件名..."
+              placeholder="搜索文件(限当前目录)..."
               value={searchQuery}
               onChange={e => onSearchChange(e.target.value)}
               onKeyDown={e => {
@@ -145,6 +147,15 @@ export function FileToolbar({
               <Icon icon="mdi:magnify" className="w-5 h-5" />
             </button>
           </div>
+          {isSearchExpanded && (
+            <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-base-content/40">
+              {isSearchPending ? (
+                <span className="loading loading-spinner loading-xs" />
+              ) : (
+                <Icon icon="mdi:magnify" className="h-4 w-4" />
+              )}
+            </div>
+          )}
         </div>
         <div className="tooltip" data-tip="Refresh">
           <button

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { startTransition, useCallback, useDeferredValue, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Icon } from '@iconify/react'
 import toast from 'react-hot-toast'
@@ -12,6 +12,7 @@ import {
   useUpdateFileMutation,
 } from '../hooks/useFilesApi'
 import { FileToolbar } from '../components/FileToolbar'
+import { DeleteConfirmModal } from '../components/DeleteConfirmModal'
 import { FileRow, FolderRow, NewFolderRow } from '../components/FileTableRows'
 import { PreviewModal } from '../components/PreviewModal'
 import { NewTextFileModal } from '../components/NewTextFileModal'
@@ -19,6 +20,12 @@ import { getPreviewInfo } from '../utils/previewInfo'
 import { getDownloadFilename } from '../utils/fileFormatters'
 import { validateFolderName } from '../utils/folderValidation'
 import type { FileEntry, SortKey, SortOrder } from '../../types'
+
+type DeleteTarget = {
+  type: 'file' | 'folder'
+  path: string
+  name: string
+}
 
 export function Dashboard() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -29,10 +36,13 @@ export function Dashboard() {
   const [downloadingPath, setDownloadingPath] = useState<string | null>(null)
   const [previewFile, setPreviewFile] = useState<FileEntry | null>(null)
   const [isNewTextFileModalOpen, setIsNewTextFileModalOpen] = useState(false)
+  const [pendingDeleteTarget, setPendingDeleteTarget] = useState<DeleteTarget | null>(null)
+  const [searchInputValue, setSearchInputValue] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const currentPath = searchParams.get('path') ?? ''
   const [sort, setSort] = useState<SortKey>('uploadedAt')
   const [order, setOrder] = useState<SortOrder>('desc')
+  const deferredSearchQuery = useDeferredValue(searchQuery)
 
   const {
     data,
@@ -67,11 +77,15 @@ export function Dashboard() {
     return qi === lowerQuery.length
   }
 
-  const filteredFolders = data.folders.filter(f => fuzzyMatch(f.name, searchQuery))
-  const filteredFiles = data.files.filter(f => fuzzyMatch(f.name, searchQuery))
+  const filteredFolders = data.folders.filter(f => fuzzyMatch(f.name, deferredSearchQuery))
+  const filteredFiles = data.files.filter(f => fuzzyMatch(f.name, deferredSearchQuery))
   const totalBytes = filteredFiles.reduce((sum, file) => sum + file.size, 0)
   const breadcrumbs = currentPath ? currentPath.split('/') : []
   const hasItems = filteredFiles.length > 0 || filteredFolders.length > 0
+  const isSearchPending = searchInputValue !== deferredSearchQuery
+  const isDeleteConfirmBusy =
+    (pendingDeleteTarget?.type === 'file' && isDeletingFile) ||
+    (pendingDeleteTarget?.type === 'folder' && isDeletingFolder)
 
   const handleHeaderSort = (key: SortKey) => {
     if (sort === key) {
@@ -86,7 +100,15 @@ export function Dashboard() {
     const nextSearchParams = new URLSearchParams()
     if (path) nextSearchParams.set('path', path)
     setSearchParams(nextSearchParams)
+    setSearchInputValue('')
     setSearchQuery('')
+  }
+
+  const handleSearchChange = (value: string) => {
+    setSearchInputValue(value)
+    startTransition(() => {
+      setSearchQuery(value)
+    })
   }
 
   const getUniqueFolderName = (baseName: string): string => {
@@ -160,8 +182,10 @@ export function Dashboard() {
       await deleteFile(path)
       await refresh()
       toast.success(`"${name}" deleted`)
+      return true
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to delete file')
+      return false
     }
   }
 
@@ -170,8 +194,10 @@ export function Dashboard() {
       await deleteFolder(path)
       await refresh()
       toast.success(`Folder "${name}" deleted`)
+      return true
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to delete folder')
+      return false
     }
   }
 
@@ -208,6 +234,28 @@ export function Dashboard() {
     }
   }
 
+  const handleRequestDelete = (target: DeleteTarget) => {
+    setPendingDeleteTarget(target)
+  }
+
+  const handleCloseDeleteConfirm = () => {
+    if (isDeleteConfirmBusy) return
+    setPendingDeleteTarget(null)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!pendingDeleteTarget || isDeleteConfirmBusy) return
+
+    const isDeleted =
+      pendingDeleteTarget.type === 'file'
+        ? await handleDeleteFile(pendingDeleteTarget.path, pendingDeleteTarget.name)
+        : await handleDeleteFolder(pendingDeleteTarget.path, pendingDeleteTarget.name)
+
+    if (isDeleted) {
+      setPendingDeleteTarget(null)
+    }
+  }
+
   const handleSaveTextFile = async (filename: string, content: string) => {
     try {
       const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
@@ -238,6 +286,12 @@ export function Dashboard() {
 
   return (
     <div className="flex flex-1 flex-col">
+      <DeleteConfirmModal
+        target={pendingDeleteTarget}
+        isDeleting={Boolean(isDeleteConfirmBusy)}
+        onClose={handleCloseDeleteConfirm}
+        onConfirm={handleConfirmDelete}
+      />
       <PreviewModal
         file={previewFile}
         onClose={() => setPreviewFile(null)}
@@ -269,28 +323,22 @@ export function Dashboard() {
               isCreatingFolder={isCreatingFolder}
               isRefreshing={isRefreshing}
               isCreatingNewFolder={isCreatingNewFolder}
-              searchQuery={searchQuery}
+              searchQuery={searchInputValue}
+              isSearchPending={isSearchPending}
               onSetPath={setPath}
               onUploadClick={() => fileInputRef.current?.click()}
               onCreateFolder={handleStartCreateFolder}
               onCreateTextFile={() => setIsNewTextFileModalOpen(true)}
               onRefresh={() => refresh()}
-              onSearchChange={setSearchQuery}
+              onSearchChange={handleSearchChange}
             />
 
             {error ? (
-              <div className="rounded-box border border-base-300 bg-base-200 p-6 text-center">
-                <p className="mb-4 text-sm text-base-content/70">
-                  The current folder could not be loaded.
-                </p>
-                <button
-                  type="button"
-                  className="btn btn-primary btn-sm gap-2"
-                  onClick={() => setPath('')}
-                >
-                  <Icon icon="mdi:home-outline" className="w-4 h-4" />
-                  Go to Home
-                </button>
+              <div className="rounded-box border border-base-300 bg-base-200 p-10">
+                <div className="flex flex-col items-center gap-3 text-center text-base-content/60">
+                  <Icon icon="mdi:alert-circle-outline" className="h-12 w-12 text-error" />
+                  <p className="text-sm">列表加载失败</p>
+                </div>
               </div>
             ) : isLoading ? (
               <div className="flex items-center justify-center py-12">
@@ -392,7 +440,9 @@ export function Dashboard() {
                           busy={busy}
                           isDeletingFolder={isDeletingFolder}
                           onNavigate={setPath}
-                          onDelete={handleDeleteFolder}
+                          onRequestDelete={(path, name) =>
+                            handleRequestDelete({ type: 'folder', path, name })
+                          }
                         />
                       ))}
                       {filteredFiles.map(file => (
@@ -403,7 +453,9 @@ export function Dashboard() {
                           isDeletingFile={isDeletingFile}
                           isDownloading={downloadingPath === file.path}
                           onDownload={handleDownloadFile}
-                          onDelete={handleDeleteFile}
+                          onRequestDelete={(path, name) =>
+                            handleRequestDelete({ type: 'file', path, name })
+                          }
                           onPreview={handlePreviewFile}
                         />
                       ))}
@@ -412,16 +464,16 @@ export function Dashboard() {
                           <tr className="sm:hidden">
                             <td colSpan={2}>
                               <div className="flex flex-col items-center gap-2 py-15 text-base-content/60">
-                                <Icon icon={searchQuery ? 'mdi:magnify-remove-outline' : 'mdi:folder-open-outline'} className="w-12 h-12" />
-                                {searchQuery ? `No results for "${searchQuery}"` : 'This folder is empty.'}
+                                <Icon icon={searchInputValue ? 'mdi:magnify-remove-outline' : 'mdi:folder-open-outline'} className="w-12 h-12" />
+                                {searchInputValue ? `No results for "${searchInputValue}"` : 'This folder is empty.'}
                               </div>
                             </td>
                           </tr>
                           <tr className="hidden sm:table-row">
                             <td colSpan={4}>
                               <div className="flex flex-col items-center gap-2 py-15 text-base-content/60">
-                                <Icon icon={searchQuery ? 'mdi:magnify-remove-outline' : 'mdi:folder-open-outline'} className="w-12 h-12" />
-                                {searchQuery ? `No results for "${searchQuery}"` : 'This folder is empty.'}
+                                <Icon icon={searchInputValue ? 'mdi:magnify-remove-outline' : 'mdi:folder-open-outline'} className="w-12 h-12" />
+                                {searchInputValue ? `No results for "${searchInputValue}"` : 'This folder is empty.'}
                               </div>
                             </td>
                           </tr>

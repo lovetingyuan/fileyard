@@ -3,6 +3,13 @@ import type { FolderEntry, FileEntry } from "../../types";
 import { formatBytes, formatDate } from "../utils/fileFormatters";
 import { getFileIcon } from "../constants/fileIcons";
 
+type RowActionItem = {
+  label: string;
+  icon: string;
+  tone?: "default" | "danger";
+  onClick: () => void;
+};
+
 interface NewFolderRowProps {
   defaultName: string;
   inputRef: React.RefCallback<HTMLInputElement>;
@@ -33,12 +40,56 @@ export function NewFolderRow({ defaultName, inputRef, onBlur, onKeyDown }: NewFo
   );
 }
 
+function RowActionsMenu({
+  busy,
+  isLoading,
+  items,
+}: {
+  busy: boolean;
+  isLoading?: boolean;
+  items: RowActionItem[];
+}) {
+  return (
+    <div className="dropdown dropdown-top dropdown-end">
+      <button
+        type="button"
+        tabIndex={0}
+        className={`btn btn-ghost btn-xs btn-square sm:btn-sm ${isLoading ? "loading" : ""}`}
+        disabled={busy}
+        aria-label="更多操作"
+      >
+        {!isLoading && <Icon icon="mdi:dots-horizontal" className="h-4 w-4" />}
+      </button>
+      <ul
+        tabIndex={0}
+        className="dropdown-content menu menu-sm bg-base-200 rounded-box z-10 mt-1 w-40 border border-base-300/60 p-2 shadow-lg"
+      >
+        {items.map((item) => (
+          <li key={item.label}>
+            <button
+              type="button"
+              className={`gap-2 ${item.tone === "danger" ? "text-error" : ""}`}
+              onClick={() => {
+                (document.activeElement as HTMLElement | null)?.blur();
+                item.onClick();
+              }}
+            >
+              <Icon icon={item.icon} className="h-4 w-4" />
+              {item.label}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 interface FolderRowProps {
   folder: FolderEntry & { isOptimistic?: boolean };
   busy: boolean;
   isDeletingFolder: boolean;
   onNavigate: (path: string) => void;
-  onDelete: (path: string, name: string) => void;
+  onRequestDelete: (path: string, name: string) => void;
 }
 
 export function FolderRow({
@@ -46,7 +97,7 @@ export function FolderRow({
   busy,
   isDeletingFolder,
   onNavigate,
-  onDelete,
+  onRequestDelete,
 }: FolderRowProps) {
   const isOptimistic = "isOptimistic" in folder;
   return (
@@ -71,35 +122,18 @@ export function FolderRow({
       <td className="hidden text-base-content/50 sm:table-cell">-</td>
       <td className="text-right">
         {!isOptimistic && (
-          <div className="flex justify-end gap-1 sm:gap-2">
-            <div className="dropdown dropdown-top dropdown-end">
-              <button
-                type="button"
-                tabIndex={0}
-                className={`btn btn-ghost btn-xs btn-square text-error sm:btn-sm ${isDeletingFolder ? "loading" : ""}`}
-                disabled={busy}
-              >
-                <Icon icon="mdi:delete-outline" className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              </button>
-              <ul
-                tabIndex={0}
-                className="dropdown-content menu menu-sm bg-base-200 rounded-box z-10 w-40 p-2 shadow-sm"
-              >
-                <li>
-                  <button
-                    type="button"
-                    className="text-error"
-                    onClick={() => {
-                      (document.activeElement as HTMLElement)?.blur();
-                      onDelete(folder.path, folder.name);
-                    }}
-                  >
-                    确认删除？
-                  </button>
-                </li>
-              </ul>
-            </div>
-          </div>
+          <RowActionsMenu
+            busy={busy}
+            isLoading={isDeletingFolder}
+            items={[
+              {
+                label: "删除",
+                icon: "mdi:delete-outline",
+                tone: "danger",
+                onClick: () => onRequestDelete(folder.path, folder.name),
+              },
+            ]}
+          />
         )}
       </td>
     </tr>
@@ -112,7 +146,7 @@ interface FileRowProps {
   isDeletingFile: boolean;
   isDownloading: boolean;
   onDownload: (path: string, name: string) => void;
-  onDelete: (path: string, name: string) => void;
+  onRequestDelete: (path: string, name: string) => void;
   onPreview: (file: FileEntry) => void;
 }
 
@@ -122,7 +156,7 @@ export function FileRow({
   isDeletingFile,
   isDownloading,
   onDownload,
-  onDelete,
+  onRequestDelete,
   onPreview,
 }: FileRowProps) {
   const fileIcon = getFileIcon(file.name);
@@ -149,43 +183,23 @@ export function FileRow({
         {formatDate(file.uploadedAt)}
       </td>
       <td className="text-right">
-        <div className="flex justify-end gap-1 sm:gap-2">
-          <button
-            type="button"
-            className={`btn btn-ghost btn-xs btn-square sm:btn-sm ${isDownloading ? "loading" : ""}`}
-            disabled={busy}
-            onClick={() => onDownload(file.path, file.name)}
-          >
-            <Icon icon="mdi:download" className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-          </button>
-          <div className="dropdown dropdown-top dropdown-end">
-            <button
-              type="button"
-              tabIndex={0}
-              className={`btn btn-ghost btn-xs btn-square text-error sm:btn-sm ${isDeletingFile ? "loading" : ""}`}
-              disabled={busy}
-            >
-              <Icon icon="mdi:delete-outline" className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            </button>
-            <ul
-              tabIndex={0}
-              className="dropdown-content menu menu-sm bg-base-200 rounded-box z-10 w-40 p-2 shadow-sm"
-            >
-              <li>
-                <button
-                  type="button"
-                  className="text-error"
-                  onClick={() => {
-                    (document.activeElement as HTMLElement)?.blur();
-                    onDelete(file.path, file.name);
-                  }}
-                >
-                  确认删除？
-                </button>
-              </li>
-            </ul>
-          </div>
-        </div>
+        <RowActionsMenu
+          busy={busy}
+          isLoading={isDownloading || isDeletingFile}
+          items={[
+            {
+              label: "下载",
+              icon: "mdi:download",
+              onClick: () => onDownload(file.path, file.name),
+            },
+            {
+              label: "删除",
+              icon: "mdi:delete-outline",
+              tone: "danger",
+              onClick: () => onRequestDelete(file.path, file.name),
+            },
+          ]}
+        />
       </td>
     </tr>
   );
