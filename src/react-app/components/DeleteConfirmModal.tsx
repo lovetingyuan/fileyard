@@ -1,27 +1,27 @@
-import { Icon } from "@iconify/react";
-import { Dialog } from "./Dialog";
+import { Icon } from '@iconify/react'
+import { Dialog } from './Dialog'
 
 type DeleteTarget = {
-  type: "file" | "folder";
-  name: string;
-};
+  type: 'file' | 'folder'
+  name: string
+}
 
 interface DeleteConfirmModalProps {
-  target: DeleteTarget | null;
-  onClose: () => void;
-  onConfirm: () => Promise<void>;
+  target: DeleteTarget | null
+  onClose: () => void
+  onConfirm: () => Promise<void>
 }
 
 export function DeleteConfirmModal({ target, onClose, onConfirm }: DeleteConfirmModalProps) {
   if (!target) {
-    return null;
+    return null
   }
 
-  const title = target.type === "file" ? "删除文件" : "删除文件夹";
+  const title = target.type === 'file' ? '删除文件' : '删除文件夹'
   const description =
-    target.type === "file"
+    target.type === 'file'
       ? `确认删除 “${target.name}” 吗？此操作无法撤销。`
-      : `确认删除文件夹 “${target.name}” 吗？此操作无法撤销。`;
+      : `确认删除文件夹 “${target.name}” 吗？此操作无法撤销。`
 
   return (
     <Dialog
@@ -36,11 +36,11 @@ export function DeleteConfirmModal({ target, onClose, onConfirm }: DeleteConfirm
       confirmButtonClassName="btn btn-sm btn-error text-error-content"
     >
       <div className="flex items-start gap-3">
-        <span className="mt-0.5 inline-flex h-10 w-10 items-center justify-center rounded-full bg-error/12 text-error">
+        <span className="mt-0.5 shrink-0 inline-flex h-10 w-10 items-center justify-center rounded-full bg-error/12 text-error">
           <Icon icon="mdi:alert-circle-outline" className="h-5 w-5" />
         </span>
         <p className="text-sm leading-6 text-base-content/70">{description}</p>
       </div>
     </Dialog>
-  );
+  )
 }

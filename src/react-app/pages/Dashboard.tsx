@@ -28,6 +28,21 @@ type DeleteTarget = {
   name: string
 }
 
+const LARGE_FILE_UPLOAD_THRESHOLD_BYTES = 20 * 1024 * 1024
+
+async function runWithLargeFileUploadToast<T>(file: File, action: () => Promise<T>) {
+  const waitingToastId =
+    file.size >= LARGE_FILE_UPLOAD_THRESHOLD_BYTES ? toast.loading('文件较大，请等待') : undefined
+
+  try {
+    return await action()
+  } finally {
+    if (waitingToastId) {
+      toast.dismiss(waitingToastId)
+    }
+  }
+}
+
 export function Dashboard() {
   const [searchParams, setSearchParams] = useSearchParams()
   const fileInputRef = useRef<HTMLInputElement | null>(null)
@@ -186,8 +201,10 @@ export function Dashboard() {
       return
     }
     try {
-      await uploadFile(file, currentPath)
-      await refresh()
+      await runWithLargeFileUploadToast(file, async () => {
+        await uploadFile(file, currentPath)
+        await refresh()
+      })
       toast.success(`"${file.name}" uploaded`)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to upload file')
@@ -278,8 +295,10 @@ export function Dashboard() {
     try {
       const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
       const file = new File([blob], filename, { type: 'text/plain;charset=utf-8' })
-      await uploadFile(file, currentPath)
-      await refresh()
+      await runWithLargeFileUploadToast(file, async () => {
+        await uploadFile(file, currentPath)
+        await refresh()
+      })
       setIsNewTextFileModalOpen(false)
       toast.success(`"${filename}" created`)
     } catch (err) {
@@ -294,8 +313,10 @@ export function Dashboard() {
       const parentPath = pathParts.join('/')
       const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
       const file = new File([blob], filename, { type: 'text/plain;charset=utf-8' })
-      await updateFile(file, parentPath)
-      await refresh()
+      await runWithLargeFileUploadToast(file, async () => {
+        await updateFile(file, parentPath)
+        await refresh()
+      })
       toast.success(`"${filename}" updated`)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to update file')
