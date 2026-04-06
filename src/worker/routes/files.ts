@@ -62,8 +62,12 @@ files.get("/api/files", async (c) => {
         include: ["httpMetadata", "customMetadata"],
         prefix,
       });
-      for (const obj of listing.objects) allObjects.push(obj);
-      for (const p of listing.delimitedPrefixes) allPrefixes.add(p);
+      for (const obj of listing.objects) {
+        allObjects.push(obj);
+      }
+      for (const p of listing.delimitedPrefixes) {
+        allPrefixes.add(p);
+      }
       cursor = listing.truncated ? listing.cursor : undefined;
     } while (cursor);
 
@@ -109,7 +113,9 @@ files.get("/api/files", async (c) => {
     return c.json(response);
   } catch (error) {
     const validationError = handlePathValidationError(c, error);
-    if (validationError) return validationError;
+    if (validationError) {
+      return validationError;
+    }
     console.error("Failed to list files", error);
     return jsonError(c, "Failed to list files", 500);
   }
@@ -158,7 +164,9 @@ files.post("/api/files/folders", async (c) => {
     return c.json(response, 201);
   } catch (error) {
     const validationError = handlePathValidationError(c, error);
-    if (validationError) return validationError;
+    if (validationError) {
+      return validationError;
+    }
     console.error("Failed to create folder", error);
     return jsonError(c, "Failed to create folder", 500);
   }
@@ -198,7 +206,9 @@ files.delete("/api/files/folders", async (c) => {
     return c.json(response);
   } catch (error) {
     const validationError = handlePathValidationError(c, error);
-    if (validationError) return validationError;
+    if (validationError) {
+      return validationError;
+    }
     console.error("Failed to delete folder", error);
     return jsonError(c, "Failed to delete folder", 500);
   }
@@ -270,8 +280,12 @@ files.put("/api/files/object", async (c) => {
     return c.json(response, 201);
   } catch (error) {
     const validationError = handlePathValidationError(c, error);
-    if (validationError) return validationError;
-    if (error instanceof UploadTooLargeError) return jsonError(c, error.message, 413);
+    if (validationError) {
+      return validationError;
+    }
+    if (error instanceof UploadTooLargeError) {
+      return jsonError(c, error.message, 413);
+    }
     console.error("Failed to upload file", error);
     return jsonError(c, "Failed to upload file", 500);
   }
@@ -302,7 +316,9 @@ files.get("/api/files/object", async (c) => {
     return new Response(object.body, { headers, status: 200 });
   } catch (error) {
     const validationError = handlePathValidationError(c, error);
-    if (validationError) return validationError;
+    if (validationError) {
+      return validationError;
+    }
     console.error("Failed to download file", error);
     return jsonError(c, "Failed to download file", 500);
   }
@@ -350,7 +366,9 @@ files.get("/api/files/preview", async (c) => {
     return new Response(object.body, { headers, status: 200 });
   } catch (error) {
     const validationError = handlePathValidationError(c, error);
-    if (validationError) return validationError;
+    if (validationError) {
+      return validationError;
+    }
     console.error("Failed to preview file", error);
     return jsonError(c, "Failed to preview file", 500);
   }
@@ -374,7 +392,9 @@ files.delete("/api/files/object", async (c) => {
     return c.json(response);
   } catch (error) {
     const validationError = handlePathValidationError(c, error);
-    if (validationError) return validationError;
+    if (validationError) {
+      return validationError;
+    }
     console.error("Failed to delete file", error);
     return jsonError(c, "Failed to delete file", 500);
   }

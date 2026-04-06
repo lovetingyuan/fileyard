@@ -12,7 +12,9 @@ const isNil = (value) => value === null || value === undefined;
  * simple path match method, only use string and regex
  */
 const pathMatch = (filePath, matches) => {
-  if (!matches?.length) return false;
+  if (!matches?.length) {
+    return false;
+  }
 
   return matches.some((match) => {
     if (typeof match === "string") {
@@ -52,7 +54,9 @@ const doJSXPathName = (name) => {
 
 const doJSXOpeningElement = (node, option) => {
   const { stop } = doJSXPathName(node.name);
-  if (stop) return { stop };
+  if (stop) {
+    return { stop };
+  }
 
   const { relativePath } = option;
   const line = node.loc?.start.line;
@@ -108,8 +112,12 @@ const createVisitor = ({ cwd, excludes }) => {
     JSXOpeningElement: {
       enter(path, state) {
         const filePath = state?.file?.opts?.filename;
-        if (!filePath) return;
-        if (isExclude(filePath)) return;
+        if (!filePath) {
+          return;
+        }
+        if (isExclude(filePath)) {
+          return;
+        }
 
         const relativePath = pathRelative(filePath);
 

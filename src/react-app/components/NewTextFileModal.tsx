@@ -1,23 +1,24 @@
-import { Icon } from "@iconify/react";
 import { useState } from "react";
+import { Dialog } from "./Dialog";
 
 interface NewTextFileModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (filename: string, content: string) => void;
-  isSaving: boolean;
+  onSave: (filename: string, content: string) => Promise<void>;
 }
 
-export function NewTextFileModal({ isOpen, onClose, onSave, isSaving }: NewTextFileModalProps) {
+export function NewTextFileModal({ isOpen, onClose, onSave }: NewTextFileModalProps) {
   const [filename, setFilename] = useState("");
   const [content, setContent] = useState("");
 
-  if (!isOpen) return null;
-
-  const handleSave = () => {
+  const handleSave = async () => {
     const trimmedFilename = filename.trim();
-    if (!trimmedFilename) return;
-    onSave(trimmedFilename, content);
+    if (!trimmedFilename) {
+      return;
+    }
+    await onSave(trimmedFilename, content);
+    setFilename("");
+    setContent("");
   };
 
   const handleClose = () => {
@@ -27,21 +28,20 @@ export function NewTextFileModal({ isOpen, onClose, onSave, isSaving }: NewTextF
   };
 
   return (
-    <dialog className="modal modal-open">
-      <div className="modal-box w-[95vw] max-w-3xl flex flex-col">
-        <div className="flex items-center justify-between mb-4 shrink-0">
-          <h3 className="font-bold text-base">新建文本文件</h3>
-          <button
-            type="button"
-            className="btn btn-ghost btn-sm btn-square"
-            onClick={handleClose}
-            disabled={isSaving}
-          >
-            <Icon icon="mdi:close" className="w-5 h-5" />
-          </button>
-        </div>
-
-        <div className="flex flex-col gap-4 flex-1">
+    <Dialog
+      isOpen={isOpen}
+      title="新建文本文件"
+      onClose={handleClose}
+      onConfirm={handleSave}
+      confirmText="保存"
+      confirmPendingText="保存中..."
+      confirmDisabled={!filename.trim()}
+      boxClassName="flex w-[95vw] max-w-3xl flex-col"
+      bodyClassName="flex flex-1 flex-col gap-4"
+      closeButtonAriaLabel="关闭新建文本文件弹窗"
+    >
+      {({ isConfirming }) => (
+        <>
           <div className="form-control">
             <label className="label">
               <span className="label-text text-sm">文件名</span>
@@ -52,7 +52,7 @@ export function NewTextFileModal({ isOpen, onClose, onSave, isSaving }: NewTextF
               className="input input-bordered w-full"
               value={filename}
               onChange={(e) => setFilename(e.target.value)}
-              disabled={isSaving}
+              disabled={isConfirming}
               autoFocus
             />
           </div>
@@ -66,35 +66,11 @@ export function NewTextFileModal({ isOpen, onClose, onSave, isSaving }: NewTextF
               placeholder="输入文本内容..."
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              disabled={isSaving}
+              disabled={isConfirming}
             />
           </div>
-        </div>
-
-        <div className="modal-action">
-          <button
-            type="button"
-            className="btn btn-sm btn-ghost"
-            onClick={handleClose}
-            disabled={isSaving}
-          >
-            取消
-          </button>
-          <button
-            type="button"
-            className={`btn btn-sm btn-primary ${isSaving ? "loading" : ""}`}
-            onClick={handleSave}
-            disabled={!filename.trim() || isSaving}
-          >
-            {isSaving ? "保存中..." : "保存"}
-          </button>
-        </div>
-      </div>
-      <form method="dialog" className="modal-backdrop">
-        <button type="submit" onClick={handleClose} disabled={isSaving}>
-          close
-        </button>
-      </form>
-    </dialog>
+        </>
+      )}
+    </Dialog>
   );
 }

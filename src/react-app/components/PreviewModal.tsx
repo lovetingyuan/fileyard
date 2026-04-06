@@ -2,6 +2,7 @@ import { Icon } from "@iconify/react";
 import { useEffect, useRef, useState } from "react";
 import useSWR from "swr";
 import type { FileEntry } from "../../types";
+import { Dialog } from "./Dialog";
 import { buildPreviewUrl } from "../hooks/useFilesApi";
 import { type PreviewInfo, getPreviewInfo } from "../utils/previewInfo";
 
@@ -23,6 +24,7 @@ function TextPreview({
   isFullscreen,
   isEditing,
   editContent,
+  isBusy,
   onEditContentChange,
   onDataLoaded,
 }: {
@@ -31,6 +33,7 @@ function TextPreview({
   isFullscreen: boolean;
   isEditing: boolean;
   editContent: string;
+  isBusy: boolean;
   onEditContentChange: (content: string) => void;
   onDataLoaded?: (data: string) => void;
 }) {
@@ -39,7 +42,9 @@ function TextPreview({
     tooLarge ? null : previewUrl,
     (url: string) =>
       fetch(url, { credentials: "include" }).then((r) => {
-        if (!r.ok) throw new Error("加载失败");
+        if (!r.ok) {
+          throw new Error("加载失败");
+        }
         return r.text();
       }),
     { onSuccess: (d) => onDataLoaded?.(d) },
@@ -59,7 +64,9 @@ function TextPreview({
       </div>
     );
   }
-  if (error) return <UnsupportedMessage reason="加载文件内容失败，请稍后重试" />;
+  if (error) {
+    return <UnsupportedMessage reason="加载文件内容失败，请稍后重试" />;
+  }
 
   if (isEditing) {
     return (
@@ -67,6 +74,7 @@ function TextPreview({
         className={`textarea textarea-bordered w-full font-mono text-sm resize-none ${isFullscreen ? "h-full" : "h-[60vh]"}`}
         value={editContent}
         onChange={(e) => onEditContentChange(e.target.value)}
+        disabled={isBusy}
       />
     );
   }
@@ -108,7 +116,9 @@ function PdfPreview({
     tooLarge ? null : previewUrl,
     async (url: string) => {
       const response = await fetch(url, { credentials: "include" });
-      if (!response.ok) throw new Error("加载失败");
+      if (!response.ok) {
+        throw new Error("加载失败");
+      }
       const blob = await response.blob();
       return URL.createObjectURL(blob);
     },
@@ -117,7 +127,9 @@ function PdfPreview({
 
   useEffect(() => {
     return () => {
-      if (blobUrl) URL.revokeObjectURL(blobUrl);
+      if (blobUrl) {
+        URL.revokeObjectURL(blobUrl);
+      }
     };
   }, [blobUrl]);
 
@@ -136,7 +148,9 @@ function PdfPreview({
       </div>
     );
   }
-  if (error) return <UnsupportedMessage reason="加载 PDF 失败，请稍后重试" />;
+  if (error) {
+    return <UnsupportedMessage reason="加载 PDF 失败，请稍后重试" />;
+  }
 
   return (
     <iframe
@@ -166,16 +180,22 @@ function FullscreenContent({
 
   useEffect(() => {
     const el = containerRef.current;
-    if (!el) return;
+    if (!el) {
+      return;
+    }
     el.requestFullscreen().catch(() => {});
 
     const handleChange = () => {
-      if (!document.fullscreenElement) onExit();
+      if (!document.fullscreenElement) {
+        onExit();
+      }
     };
     document.addEventListener("fullscreenchange", handleChange);
     return () => {
       document.removeEventListener("fullscreenchange", handleChange);
-      if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+      }
     };
   }, [onExit]);
 
@@ -204,6 +224,7 @@ function FullscreenContent({
               isFullscreen
               isEditing={false}
               editContent=""
+              isBusy={false}
               onEditContentChange={() => {}}
             />
           )}
@@ -228,14 +249,29 @@ export function PreviewModal({ file, onClose, onSave }: PreviewModalProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
+  const [forceTextPreview, setForceTextPreview] = useState(false);
   const loadedTextRef = useRef("");
+
+  const handleClose = () => {
+    setIsFullscreen(false);
+    setIsEditing(false);
+    setEditContent("");
+    setForceTextPreview(false);
+    loadedTextRef.current = "";
+    onClose();
+  };
 
   const previewUrl = file ? buildPreviewUrl(file.path) : "";
   const info = file ? getPreviewInfo(file) : { kind: "unsupported" as const };
-  const isTextFile = info.kind === "text";
+  const effectiveInfo = forceTextPreview ? { kind: "text" as const } : info;
 
-  if (!file) return null;
+  if (!file) {
+    return null;
+  }
+
+  const canForceTextPreview =
+    info.kind === "unsupported" && file.size <= PREVIEW_SIZE_LIMITS.TEXT;
+  const canEditTextFile = info.kind === "text" && Boolean(onSave);
 
   const handleDataLoaded = (data: string) => {
     loadedTextRef.current = data;
@@ -252,60 +288,89 @@ export function PreviewModal({ file, onClose, onSave }: PreviewModalProps) {
   };
 
   const handleSave = async () => {
-    if (!onSave || !file) return;
-    try {
-      setIsSaving(true);
-      await onSave(file.path, editContent);
-      setIsEditing(false);
-      setEditContent("");
-      onClose();
-    } finally {
-      setIsSaving(false);
+    if (!onSave || !file) {
+      return;
     }
+    await onSave(file.path, editContent);
+    handleClose();
   };
 
   let sizeError: string | null = null;
-  if (info.kind === "image" && file.size > PREVIEW_SIZE_LIMITS.IMAGE) {
+  if (effectiveInfo.kind === "image" && file.size > PREVIEW_SIZE_LIMITS.IMAGE) {
     sizeError = `图片文件过大，无法预览（超过 ${PREVIEW_SIZE_LIMITS.IMAGE / 1024 / 1024}MB）`;
-  } else if (info.kind === "video" && file.size > PREVIEW_SIZE_LIMITS.VIDEO) {
+  } else if (effectiveInfo.kind === "video" && file.size > PREVIEW_SIZE_LIMITS.VIDEO) {
     sizeError = `视频文件过大，无法预览（超过 ${PREVIEW_SIZE_LIMITS.VIDEO / 1024 / 1024}MB）`;
-  } else if (info.kind === "audio" && file.size > PREVIEW_SIZE_LIMITS.AUDIO) {
+  } else if (effectiveInfo.kind === "audio" && file.size > PREVIEW_SIZE_LIMITS.AUDIO) {
     sizeError = `音频文件过大，无法预览（超过 ${PREVIEW_SIZE_LIMITS.AUDIO / 1024 / 1024}MB）`;
   }
 
   return (
     <>
-      <dialog className="modal modal-open">
-        <div className="modal-box w-[95vw] max-w-[95vw] max-h-[95vh] flex flex-col">
-          <div className="flex items-center justify-between mb-4 shrink-0">
-            <h3 className="font-bold text-base truncate pr-4">{file.name}</h3>
-            <div className="flex items-center gap-1 shrink-0">
-              {!isEditing && (
-                <button
-                  type="button"
-                  className="btn btn-ghost btn-sm btn-square"
-                  onClick={() => setIsFullscreen(true)}
-                  title="全屏预览"
-                >
-                  <Icon icon="mdi:fullscreen" className="w-5 h-5" />
-                </button>
-              )}
-              <button
-                type="button"
-                className="btn btn-ghost btn-sm btn-square"
-                onClick={onClose}
-                disabled={isSaving}
-              >
-                <Icon icon="mdi:close" className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-          <div className="flex-1 overflow-auto min-h-0 p-1">
+      <Dialog
+        isOpen
+        title={<h3 className="truncate pr-4 font-bold text-base">{file.name}</h3>}
+        onClose={handleClose}
+        boxClassName="flex max-h-[95vh] w-[95vw] max-w-[95vw] flex-col"
+        bodyClassName="flex-1 min-h-0 overflow-auto p-1"
+        closeButtonAriaLabel="关闭文件预览弹窗"
+        headerClassName="items-center"
+        headerActions={
+          !isEditing && effectiveInfo.kind !== "unsupported" ? (
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm btn-square"
+              onClick={() => setIsFullscreen(true)}
+              title="全屏预览"
+            >
+              <Icon icon="mdi:fullscreen" className="w-5 h-5" />
+            </button>
+          ) : undefined
+        }
+        footer={
+          canEditTextFile && !sizeError
+            ? ({ confirm, isConfirming }) =>
+                isEditing ? (
+                  <>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-ghost"
+                      onClick={handleCancelEdit}
+                      disabled={isConfirming}
+                    >
+                      取消
+                    </button>
+                    <button
+                      type="button"
+                      className={`btn btn-sm btn-primary ${isConfirming ? "loading" : ""}`}
+                      onClick={() => void confirm()}
+                      disabled={isConfirming}
+                    >
+                      {isConfirming ? "保存中..." : "保存"}
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-primary"
+                    onClick={handleStartEdit}
+                  >
+                    <Icon icon="mdi:pencil" className="w-4 h-4" />
+                    编辑
+                  </button>
+                )
+            : undefined
+        }
+        showCancelButton={false}
+        showConfirmButton={false}
+        onConfirm={isEditing ? handleSave : undefined}
+      >
+        {({ isConfirming }) => (
+          <>
             {sizeError ? (
               <UnsupportedMessage reason={sizeError} />
             ) : (
               <>
-                {info.kind === "image" && (
+                {effectiveInfo.kind === "image" && (
                   <div className="flex justify-center">
                     <img
                       src={previewUrl}
@@ -314,75 +379,55 @@ export function PreviewModal({ file, onClose, onSave }: PreviewModalProps) {
                     />
                   </div>
                 )}
-                {info.kind === "video" && (
+                {effectiveInfo.kind === "video" && (
                   <video src={previewUrl} controls className="w-full max-h-[65vh] rounded" />
                 )}
-                {info.kind === "audio" && (
+                {effectiveInfo.kind === "audio" && (
                   <div className="flex justify-center py-8">
                     <audio src={previewUrl} controls className="w-full max-w-lg" />
                   </div>
                 )}
-                {info.kind === "pdf" && (
+                {effectiveInfo.kind === "pdf" && (
                   <PdfPreview file={file} previewUrl={previewUrl} isFullscreen={false} />
                 )}
-                {info.kind === "text" && (
+                {effectiveInfo.kind === "text" && (
                   <TextPreview
                     file={file}
                     previewUrl={previewUrl}
                     isFullscreen={false}
-                    isEditing={isEditing}
+                    isEditing={isEditing && info.kind === "text"}
                     editContent={editContent}
+                    isBusy={isConfirming}
                     onEditContentChange={setEditContent}
                     onDataLoaded={handleDataLoaded}
                   />
                 )}
-                {info.kind === "unsupported" && (
-                  <UnsupportedMessage reason={info.reason ?? "该文件类型暂不支持预览"} />
+                {effectiveInfo.kind === "unsupported" && (
+                  <div className="flex flex-col items-center gap-4 py-12 text-center">
+                    <p className="text-sm text-base-content/70">
+                      此文件类型不支持预览，您可以下载后查看
+                    </p>
+                    {canForceTextPreview ? (
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-primary"
+                        onClick={() => setForceTextPreview(true)}
+                      >
+                        按文本打开
+                      </button>
+                    ) : null}
+                  </div>
                 )}
               </>
             )}
-          </div>
-          {isTextFile && !sizeError && (
-            <div className="modal-action mt-4">
-              {isEditing ? (
-                <>
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-ghost"
-                    onClick={handleCancelEdit}
-                    disabled={isSaving}
-                  >
-                    取消
-                  </button>
-                  <button
-                    type="button"
-                    className={`btn btn-sm btn-primary ${isSaving ? "loading" : ""}`}
-                    onClick={handleSave}
-                    disabled={isSaving}
-                  >
-                    {isSaving ? "保存中..." : "保存"}
-                  </button>
-                </>
-              ) : (
-                <button type="button" className="btn btn-sm btn-primary" onClick={handleStartEdit}>
-                  <Icon icon="mdi:pencil" className="w-4 h-4" />
-                  编辑
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-        <form method="dialog" className="modal-backdrop">
-          <button type="submit" onClick={onClose} disabled={isSaving}>
-            close
-          </button>
-        </form>
-      </dialog>
+          </>
+        )}
+      </Dialog>
       {isFullscreen && (
         <FullscreenContent
           file={file}
           previewUrl={previewUrl}
-          info={info}
+          info={effectiveInfo}
           sizeError={sizeError}
           onExit={() => setIsFullscreen(false)}
         />

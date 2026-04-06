@@ -1,5 +1,5 @@
-import { Icon } from "@iconify/react";
 import type { FileEntry } from "../../types";
+import { Dialog } from "./Dialog";
 import { formatBytes, formatDetailedDate } from "../utils/fileFormatters";
 
 interface FileDetailsModalProps {
@@ -28,23 +28,22 @@ const detailItems = (file: FileEntry) => [
 ];
 
 export function FileDetailsModal({ file, onClose }: FileDetailsModalProps) {
-  if (!file) return null;
+  if (!file) {
+    return null;
+  }
 
   return (
-    <dialog className="modal modal-open">
-      <div className="modal-box max-w-md bg-base-100 p-5 shadow-sm">
-        <div className="mb-4 flex items-start justify-between gap-4">
-          <p className="font-medium text-base-content">文件详情</p>
-          <button
-            type="button"
-            className="btn btn-ghost btn-sm btn-square"
-            onClick={onClose}
-            aria-label="关闭文件详情弹窗"
-          >
-            <Icon icon="mdi:close" className="h-5 w-5" />
-          </button>
-        </div>
-
+    <Dialog
+      isOpen
+      title="文件详情"
+      onClose={onClose}
+      cancelText="关闭"
+      showConfirmButton={false}
+      boxClassName="max-w-md bg-base-100 p-5 shadow-sm"
+      closeButtonAriaLabel="关闭文件详情弹窗"
+      cancelButtonClassName="btn btn-sm btn-primary"
+    >
+      <>
         <ul className="space-y-3">
           {detailItems(file).map((item) => (
             <li key={item.label} className="flex items-start gap-1 text-sm">
@@ -57,18 +56,7 @@ export function FileDetailsModal({ file, onClose }: FileDetailsModalProps) {
             </li>
           ))}
         </ul>
-
-        <div className="modal-action mt-4">
-          <button type="button" className="btn btn-sm btn-primary" onClick={onClose}>
-            关闭
-          </button>
-        </div>
-      </div>
-      <form method="dialog" className="modal-backdrop">
-        <button type="submit" onClick={onClose}>
-          close
-        </button>
-      </form>
-    </dialog>
+      </>
+    </Dialog>
   );
 }

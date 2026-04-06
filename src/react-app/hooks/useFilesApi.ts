@@ -21,7 +21,9 @@ type FileListKey = [string, string, SortKey, SortOrder];
 
 function buildListUrl(path: string, sort: SortKey, order: SortOrder): string {
   const params = new URLSearchParams({ sort, order });
-  if (path) params.set("path", path);
+  if (path) {
+    params.set("path", path);
+  }
   return `${FILES_ENDPOINT}?${params.toString()}`;
 }
 

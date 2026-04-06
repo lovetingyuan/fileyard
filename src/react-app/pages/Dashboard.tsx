@@ -18,7 +18,6 @@ import { FileRow, FolderRow, NewFolderRow } from '../components/FileTableRows'
 import { PreviewModal } from '../components/PreviewModal'
 import { NewTextFileModal } from '../components/NewTextFileModal'
 import { ShareFileModal } from '../components/ShareFileModal'
-import { getPreviewInfo } from '../utils/previewInfo'
 import { getDownloadFilename } from '../utils/fileFormatters'
 import { validateFolderName } from '../utils/folderValidation'
 import type { FileEntry, SortKey, SortOrder } from '../../types'
@@ -71,12 +70,16 @@ export function Dashboard() {
     downloadingPath !== null
 
   const fuzzyMatch = (name: string, query: string) => {
-    if (!query) return true
+    if (!query) {
+      return true
+    }
     const lowerName = name.toLowerCase()
     const lowerQuery = query.toLowerCase()
     let qi = 0
     for (let i = 0; i < lowerName.length && qi < lowerQuery.length; i++) {
-      if (lowerName[i] === lowerQuery[qi]) qi++
+      if (lowerName[i] === lowerQuery[qi]) {
+        qi++
+      }
     }
     return qi === lowerQuery.length
   }
@@ -102,7 +105,9 @@ export function Dashboard() {
 
   const setPath = (path: string) => {
     const nextSearchParams = new URLSearchParams()
-    if (path) nextSearchParams.set('path', path)
+    if (path) {
+      nextSearchParams.set('path', path)
+    }
     setSearchParams(nextSearchParams)
     setSearchInputValue('')
     setSearchQuery('')
@@ -117,9 +122,13 @@ export function Dashboard() {
 
   const getUniqueFolderName = (baseName: string): string => {
     const existingNames = new Set(data.folders.map(f => f.name))
-    if (!existingNames.has(baseName)) return baseName
+    if (!existingNames.has(baseName)) {
+      return baseName
+    }
     let counter = 1
-    while (existingNames.has(`${baseName} (${counter})`)) counter++
+    while (existingNames.has(`${baseName} (${counter})`)) {
+      counter++
+    }
     return `${baseName} (${counter})`
   }
 
@@ -140,7 +149,9 @@ export function Dashboard() {
   const handleNewFolderBlur = async () => {
     const name = newFolderInputRef.current?.value.trim()
     setIsCreatingNewFolder(false)
-    if (!name) return
+    if (!name) {
+      return
+    }
 
     const validationError = validateFolderName(name)
     if (validationError) {
@@ -171,7 +182,9 @@ export function Dashboard() {
   const handleUploadSelection = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     event.target.value = ''
-    if (!file) return
+    if (!file) {
+      return
+    }
     try {
       await uploadFile(file, currentPath)
       await refresh()
@@ -206,11 +219,6 @@ export function Dashboard() {
   }
 
   const handlePreviewFile = (file: FileEntry) => {
-    const info = getPreviewInfo(file)
-    if (info.kind === 'unsupported') {
-      toast.error(info.reason ?? '该文件类型暂不支持预览')
-      return
-    }
     setPreviewFile(file)
   }
 
@@ -218,7 +226,9 @@ export function Dashboard() {
     try {
       setDownloadingPath(path)
       const response = await fetch(buildDownloadUrl(path), { credentials: 'include' })
-      if (!response.ok) throw new Error('Failed to download file')
+      if (!response.ok) {
+        throw new Error('Failed to download file')
+      }
       const blob = await response.blob()
       const downloadUrl = URL.createObjectURL(blob)
       const anchor = document.createElement('a')
@@ -243,12 +253,16 @@ export function Dashboard() {
   }
 
   const handleCloseDeleteConfirm = () => {
-    if (isDeleteConfirmBusy) return
+    if (isDeleteConfirmBusy) {
+      return
+    }
     setPendingDeleteTarget(null)
   }
 
   const handleConfirmDelete = async () => {
-    if (!pendingDeleteTarget || isDeleteConfirmBusy) return
+    if (!pendingDeleteTarget || isDeleteConfirmBusy) {
+      return
+    }
 
     const isDeleted =
       pendingDeleteTarget.type === 'file'
@@ -292,7 +306,6 @@ export function Dashboard() {
     <div className="flex flex-1 flex-col">
       <DeleteConfirmModal
         target={pendingDeleteTarget}
-        isDeleting={Boolean(isDeleteConfirmBusy)}
         onClose={handleCloseDeleteConfirm}
         onConfirm={handleConfirmDelete}
       />
@@ -309,7 +322,6 @@ export function Dashboard() {
         isOpen={isNewTextFileModalOpen}
         onClose={() => setIsNewTextFileModalOpen(false)}
         onSave={handleSaveTextFile}
-        isSaving={isUploadingFile}
       />
       <input
         ref={fileInputRef}
@@ -375,7 +387,7 @@ export function Dashboard() {
                                         : 'mdi:arrow-down'
                                       : 'mdi:swap-vertical'
                                   }
-                                  className={`w-3.5 h-3.5 ${sort === 'name' ? 'text-primary' : 'opacity-40'}`}
+                                  className={`w-3.5 h-3.5 ${sort === 'name' ? 'text-primary' : 'opacity-60'}`}
                                 />
                               </button>
                             )}
@@ -398,7 +410,7 @@ export function Dashboard() {
                                         : 'mdi:arrow-down'
                                       : 'mdi:swap-vertical'
                                   }
-                                  className={`w-3.5 h-3.5 ${sort === 'size' ? 'text-primary' : 'opacity-40'}`}
+                                  className={`w-3.5 h-3.5 ${sort === 'size' ? 'text-primary' : 'opacity-60'}`}
                                 />
                               </button>
                             )}
@@ -421,7 +433,7 @@ export function Dashboard() {
                                         : 'mdi:arrow-down'
                                       : 'mdi:swap-vertical'
                                   }
-                                  className={`w-3.5 h-3.5 ${sort === 'uploadedAt' ? 'text-primary' : 'opacity-40'}`}
+                                  className={`w-3.5 h-3.5 ${sort === 'uploadedAt' ? 'text-primary' : 'opacity-60'}`}
                                 />
                               </button>
                             )}

@@ -74,9 +74,13 @@ export function getPreviewInfo(file: FileEntry): PreviewInfo {
   const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
   const ct = (file.contentType ?? "").toLowerCase();
 
-  if (NATIVE_IMAGE_EXTS.has(ext)) return { kind: "image" };
+  if (NATIVE_IMAGE_EXTS.has(ext)) {
+    return { kind: "image" };
+  }
   if (UNSUPPORTED_IMAGE_EXTS.has(ext) || ct.startsWith("image/")) {
-    if (ct.startsWith("image/") && !UNSUPPORTED_IMAGE_EXTS.has(ext)) return { kind: "image" };
+    if (ct.startsWith("image/") && !UNSUPPORTED_IMAGE_EXTS.has(ext)) {
+      return { kind: "image" };
+    }
     return { kind: "unsupported", reason: "该图片格式需要第三方库支持，暂不支持预览" };
   }
 
@@ -106,7 +110,9 @@ export function getPreviewInfo(file: FileEntry): PreviewInfo {
     return { kind: "unsupported", reason: "该音频格式需要第三方库支持，暂不支持预览" };
   }
 
-  if (ext === "pdf" || ct === "application/pdf") return { kind: "pdf" };
+  if (ext === "pdf" || ct === "application/pdf") {
+    return { kind: "pdf" };
+  }
 
   if (
     TEXT_EXTS.has(ext) ||

@@ -60,7 +60,9 @@ export function ShareDownload() {
   const fileName = data?.fileName ?? "未知文件";
 
   const handleDownload = async () => {
-    if (!data?.downloadUrl || isDownloading) return;
+    if (!data?.downloadUrl || isDownloading) {
+      return;
+    }
 
     try {
       setIsDownloading(true);
