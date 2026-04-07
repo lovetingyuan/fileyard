@@ -25,6 +25,29 @@ import { UploadTooLargeError, handlePathValidationError, jsonError } from "../ut
 
 const files = new Hono<AppContext>();
 
+async function getFolderCreatedAt(
+  bucket: R2Bucket,
+  rootDirId: string,
+  folderPath: string,
+): Promise<string> {
+  const marker = await bucket.head(getFolderMarkerKey(rootDirId, folderPath));
+  const markerCreatedAt = marker?.customMetadata?.createdAt ?? marker?.uploaded.toISOString();
+  if (markerCreatedAt) {
+    return markerCreatedAt;
+  }
+
+  const fallbackListing = await bucket.list({
+    prefix: getFolderPrefix(rootDirId, folderPath),
+    limit: 1,
+  });
+  const fallbackObject = fallbackListing.objects[0];
+  if (fallbackObject) {
+    return fallbackObject.uploaded.toISOString();
+  }
+
+  throw new Error(`Folder metadata missing for ${folderPath}`);
+}
+
 function assertPathNotReserved(path: string): void {
   if (isReservedSystemPath(path)) {
     throw new FilePathValidationError("Path uses a reserved system directory", 403);
@@ -71,12 +94,31 @@ files.get("/api/files", async (c) => {
       cursor = listing.truncated ? listing.cursor : undefined;
     } while (cursor);
 
-    const folders = [...allPrefixes]
+    const folderNames = [...allPrefixes]
       .map((folderPrefix) => folderPrefix.slice(prefix.length).replace(/\/$/, ""))
       .filter((name) => name !== SYSTEM_PROFILE_FOLDER_NAME)
-      .filter(Boolean)
-      .map((name) => ({ name, path: joinRelativePath(path, name) }))
-      .sort((left, right) => left.name.localeCompare(right.name));
+      .filter(Boolean);
+
+    const folders = await Promise.all(
+      folderNames.map(async (name) => {
+        const folderPath = joinRelativePath(path, name);
+        return {
+          name,
+          path: folderPath,
+          createdAt: await getFolderCreatedAt(c.env.FILES_BUCKET, rootDirId, folderPath),
+        };
+      }),
+    );
+
+    folders.sort((a, b) => {
+      let cmp = 0;
+      if (sortParam === "uploadedAt") {
+        cmp = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      } else {
+        cmp = a.name.localeCompare(b.name);
+      }
+      return orderParam === "desc" ? -cmp : cmp;
+    });
 
     const fileItems = allObjects
       .filter((object) => object.key !== `${prefix}${FOLDER_MARKER_NAME}`)
@@ -148,8 +190,9 @@ files.post("/api/files/folders", async (c) => {
     }
 
     const markerKey = getFolderMarkerKey(rootDirId, folderPath);
+    const createdAt = new Date().toISOString();
     const putResult = await c.env.FILES_BUCKET.put(markerKey, new Uint8Array(), {
-      customMetadata: { kind: "folder-marker" },
+      customMetadata: { kind: "folder-marker", createdAt },
       onlyIf: new Headers({ "If-None-Match": "*" }),
     });
 

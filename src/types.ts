@@ -15,6 +15,7 @@ export interface ProfileResponse {
 export interface FolderEntry {
   name: string;
   path: string;
+  createdAt: string;
 }
 
 export interface FileEntry {

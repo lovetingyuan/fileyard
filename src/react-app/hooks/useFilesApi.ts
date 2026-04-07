@@ -92,6 +92,7 @@ export function useCreateFolderMutation() {
 type OptimisticFolder = {
   path: string;
   name: string;
+  createdAt: string;
   isOptimistic: true;
 };
 
@@ -101,7 +102,10 @@ export function useFileListWithOptimistic(path: string, sort: SortKey, order: So
 
   const addOptimisticFolder = (name: string) => {
     const folderPath = path ? `${path}/${name}` : name;
-    setOptimisticFolders((prev) => [...prev, { path: folderPath, name, isOptimistic: true }]);
+    setOptimisticFolders((prev) => [
+      ...prev,
+      { path: folderPath, name, createdAt: "", isOptimistic: true },
+    ]);
     return folderPath;
   };
 

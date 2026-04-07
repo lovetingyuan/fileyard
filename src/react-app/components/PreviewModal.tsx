@@ -1,5 +1,6 @@
 import { Icon } from "@iconify/react";
 import { useEffect, useRef, useState } from "react";
+import toast from "react-hot-toast";
 import useSWR from "swr";
 import type { FileEntry } from "../../types";
 import { Dialog } from "./Dialog";
@@ -15,6 +16,10 @@ const PREVIEW_SIZE_LIMITS = {
   VIDEO: 200 * 1024 * 1024, // 200MB
   AUDIO: 100 * 1024 * 1024, // 100MB
 } as const;
+
+async function copyToClipboard(value: string): Promise<void> {
+  await navigator.clipboard.writeText(value);
+}
 
 // --- Sub-components ---
 
@@ -250,14 +255,16 @@ export function PreviewModal({ file, onClose, onSave }: PreviewModalProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState("");
   const [forceTextPreview, setForceTextPreview] = useState(false);
-  const loadedTextRef = useRef("");
+  const [loadedTextState, setLoadedTextState] = useState<{ path: string; content: string } | null>(
+    null,
+  );
 
   const handleClose = () => {
     setIsFullscreen(false);
     setIsEditing(false);
     setEditContent("");
     setForceTextPreview(false);
-    loadedTextRef.current = "";
+    setLoadedTextState(null);
     onClose();
   };
 
@@ -271,14 +278,15 @@ export function PreviewModal({ file, onClose, onSave }: PreviewModalProps) {
 
   const canForceTextPreview =
     info.kind === "unsupported" && file.size <= PREVIEW_SIZE_LIMITS.TEXT;
-  const canEditTextFile = info.kind === "text" && Boolean(onSave);
+  const canEditTextFile = effectiveInfo.kind === "text" && Boolean(onSave);
+  const loadedText = loadedTextState?.path === file.path ? loadedTextState.content : null;
 
   const handleDataLoaded = (data: string) => {
-    loadedTextRef.current = data;
+    setLoadedTextState({ path: file.path, content: data });
   };
 
   const handleStartEdit = () => {
-    setEditContent(loadedTextRef.current);
+    setEditContent(loadedText ?? "");
     setIsEditing(true);
   };
 
@@ -295,6 +303,19 @@ export function PreviewModal({ file, onClose, onSave }: PreviewModalProps) {
     handleClose();
   };
 
+  const handleCopyText = async () => {
+    if (loadedText === null) {
+      return;
+    }
+
+    try {
+      await copyToClipboard(loadedText);
+      toast.success("文本已复制");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "复制文本失败");
+    }
+  };
+
   let sizeError: string | null = null;
   if (effectiveInfo.kind === "image" && file.size > PREVIEW_SIZE_LIMITS.IMAGE) {
     sizeError = `图片文件过大，无法预览（超过 ${PREVIEW_SIZE_LIMITS.IMAGE / 1024 / 1024}MB）`;
@@ -303,6 +324,7 @@ export function PreviewModal({ file, onClose, onSave }: PreviewModalProps) {
   } else if (effectiveInfo.kind === "audio" && file.size > PREVIEW_SIZE_LIMITS.AUDIO) {
     sizeError = `音频文件过大，无法预览（超过 ${PREVIEW_SIZE_LIMITS.AUDIO / 1024 / 1024}MB）`;
   }
+  const canCopyText = effectiveInfo.kind === "text" && !sizeError;
 
   return (
     <>
@@ -327,7 +349,7 @@ export function PreviewModal({ file, onClose, onSave }: PreviewModalProps) {
           ) : undefined
         }
         footer={
-          canEditTextFile && !sizeError
+          (canCopyText || canEditTextFile) && !sizeError
             ? ({ confirm, isConfirming }) =>
                 isEditing ? (
                   <>
@@ -349,14 +371,27 @@ export function PreviewModal({ file, onClose, onSave }: PreviewModalProps) {
                     </button>
                   </>
                 ) : (
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-primary"
-                    onClick={handleStartEdit}
-                  >
-                    <Icon icon="mdi:pencil" className="w-4 h-4" />
-                    编辑
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-ghost"
+                      onClick={() => void handleCopyText()}
+                      disabled={loadedText === null}
+                    >
+                      <Icon icon="mdi:content-copy" className="w-4 h-4" />
+                      复制文本
+                    </button>
+                    {canEditTextFile ? (
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-primary"
+                        onClick={handleStartEdit}
+                      >
+                        <Icon icon="mdi:pencil" className="w-4 h-4" />
+                        编辑
+                      </button>
+                    ) : null}
+                  </>
                 )
             : undefined
         }
@@ -395,7 +430,7 @@ export function PreviewModal({ file, onClose, onSave }: PreviewModalProps) {
                     file={file}
                     previewUrl={previewUrl}
                     isFullscreen={false}
-                    isEditing={isEditing && info.kind === "text"}
+                    isEditing={isEditing && effectiveInfo.kind === "text"}
                     editContent={editContent}
                     isBusy={isConfirming}
                     onEditContentChange={setEditContent}

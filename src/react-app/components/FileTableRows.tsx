@@ -119,7 +119,9 @@ export function FolderRow({
         </span>
       </td>
       <td className="hidden text-base-content/50 sm:table-cell">-</td>
-      <td className="hidden text-base-content/50 sm:table-cell">-</td>
+      <td className="hidden whitespace-nowrap text-base-content/50 sm:table-cell text-[13px]">
+        {isOptimistic ? "-" : formatDate(folder.createdAt)}
+      </td>
       <td className="text-right">
         {!isOptimistic && (
           <RowActionsMenu

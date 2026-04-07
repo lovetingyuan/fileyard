@@ -133,7 +133,11 @@ describe("authenticated R2 file manager", () => {
     const rootListResponse = await apiFetch("/api/files", {}, cookie);
     const rootList = (await rootListResponse.json()) as FileListResponse;
 
-    expect(rootList.folders).toEqual([{ name: "docs", path: "docs" }]);
+    expect(rootList.folders).toHaveLength(1);
+    expect(rootList.folders[0]).toMatchObject({ name: "docs", path: "docs" });
+    expect(rootList.folders[0]?.createdAt).toMatch(
+      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/,
+    );
 
     const fileContents = "hello world";
     const uploadResponse = await apiFetch(
@@ -410,5 +414,64 @@ describe("authenticated R2 file manager", () => {
     );
     expect(reservedFolderDeleteResponse.status).toBe(403);
     await reservedFolderDeleteResponse.text();
+  });
+
+  it("falls back to marker upload time when folder metadata predates createdAt", async () => {
+    const { email, user } = await createVerifiedUser();
+    const cookie = await createSessionCookie(email);
+    const rootDirId = user?.rootDirId;
+
+    if (!rootDirId) {
+      throw new Error("Expected rootDirId to be set");
+    }
+
+    await env.FILES_BUCKET.put(`${rootDirId}/legacy/.fileshare-folder`, new Uint8Array(), {
+      customMetadata: { kind: "folder-marker" },
+    });
+
+    const listResponse = await apiFetch("/api/files", {}, cookie);
+    const list = (await listResponse.json()) as FileListResponse;
+    const legacyFolder = list.folders.find((folder) => folder.path === "legacy");
+
+    expect(listResponse.status).toBe(200);
+    expect(legacyFolder).toBeDefined();
+    expect(legacyFolder?.createdAt).toMatch(
+      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/,
+    );
+  });
+
+  it("sorts folders by created time when sorting by time while keeping files separate", async () => {
+    const { email, user } = await createVerifiedUser();
+    const cookie = await createSessionCookie(email);
+    const rootDirId = user?.rootDirId;
+
+    if (!rootDirId) {
+      throw new Error("Expected rootDirId to be set");
+    }
+
+    await env.FILES_BUCKET.put(`${rootDirId}/older/.fileshare-folder`, new Uint8Array(), {
+      customMetadata: { kind: "folder-marker", createdAt: "2026-01-01T00:00:00.000Z" },
+    });
+    await env.FILES_BUCKET.put(`${rootDirId}/newer/.fileshare-folder`, new Uint8Array(), {
+      customMetadata: { kind: "folder-marker", createdAt: "2026-02-01T00:00:00.000Z" },
+    });
+    await env.FILES_BUCKET.put(`${rootDirId}/report.txt`, "report", {
+      customMetadata: { originalName: "report.txt" },
+      httpMetadata: { contentType: "text/plain" },
+    });
+
+    const descResponse = await apiFetch("/api/files?sort=uploadedAt&order=desc", {}, cookie);
+    const descList = (await descResponse.json()) as FileListResponse;
+
+    expect(descResponse.status).toBe(200);
+    expect(descList.folders.map((folder) => folder.name)).toEqual(["newer", "older"]);
+    expect(descList.files.map((file) => file.name)).toEqual(["report.txt"]);
+
+    const ascResponse = await apiFetch("/api/files?sort=uploadedAt&order=asc", {}, cookie);
+    const ascList = (await ascResponse.json()) as FileListResponse;
+
+    expect(ascResponse.status).toBe(200);
+    expect(ascList.folders.map((folder) => folder.name)).toEqual(["older", "newer"]);
+    expect(ascList.files.map((file) => file.name)).toEqual(["report.txt"]);
   });
 });
