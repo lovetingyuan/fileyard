@@ -276,8 +276,7 @@ export function PreviewModal({ file, onClose, onSave }: PreviewModalProps) {
     return null;
   }
 
-  const canForceTextPreview =
-    info.kind === "unsupported" && file.size <= PREVIEW_SIZE_LIMITS.TEXT;
+  const canForceTextPreview = info.kind === "unsupported" && file.size <= PREVIEW_SIZE_LIMITS.TEXT;
   const canEditTextFile = effectiveInfo.kind === "text" && Boolean(onSave);
   const loadedText = loadedTextState?.path === file.path ? loadedTextState.content : null;
 

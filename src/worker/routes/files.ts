@@ -48,6 +48,10 @@ async function getFolderCreatedAt(
   throw new Error(`Folder metadata missing for ${folderPath}`);
 }
 
+function resolveFileCreatedAt(object: Pick<R2Object, "uploaded" | "customMetadata">): string {
+  return object.customMetadata?.createdAt ?? object.uploaded.toISOString();
+}
+
 function assertPathNotReserved(path: string): void {
   if (isReservedSystemPath(path)) {
     throw new FilePathValidationError("Path uses a reserved system directory", 403);
@@ -128,6 +132,7 @@ files.get("/api/files", async (c) => {
           name,
           path: joinRelativePath(path, name),
           size: object.size,
+          createdAt: resolveFileCreatedAt(object),
           uploadedAt: object.uploaded.toISOString(),
           contentType: object.httpMetadata?.contentType ?? null,
         };
@@ -305,10 +310,14 @@ files.put("/api/files/object", async (c) => {
 
     // Check if this is an update (allow overwrite) or new file
     const allowOverwrite = c.req.query("overwrite") === "true";
+    const existingObject = allowOverwrite ? await c.env.FILES_BUCKET.head(fileKey) : null;
+    const createdAt = existingObject
+      ? resolveFileCreatedAt(existingObject)
+      : new Date().toISOString();
 
     const putResult = await Promise.all([
       c.env.FILES_BUCKET.put(fileKey, fixedLengthStream.readable, {
-        customMetadata: { originalName: name },
+        customMetadata: { originalName: name, createdAt },
         httpMetadata: { contentType },
         ...(allowOverwrite ? {} : { onlyIf: new Headers({ "If-None-Match": "*" }) }),
       }),

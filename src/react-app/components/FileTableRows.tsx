@@ -1,6 +1,6 @@
 import { Icon } from "@iconify/react";
 import type { FolderEntry, FileEntry } from "../../types";
-import { formatBytes, formatDate } from "../utils/fileFormatters";
+import { formatBytes, formatDate, formatDetailedDate } from "../utils/fileFormatters";
 import { getFileIcon } from "../constants/fileIcons";
 
 type RowActionItem = {
@@ -166,6 +166,7 @@ export function FileRow({
   onShowDetails,
 }: FileRowProps) {
   const fileIcon = getFileIcon(file.name);
+  const createdAtTooltip = `创建时间：${formatDetailedDate(file.createdAt)}`;
   return (
     <tr>
       <td className="min-w-0 font-medium">
@@ -186,7 +187,9 @@ export function FileRow({
         </span>
       </td>
       <td className="hidden whitespace-nowrap text-base-content/50 sm:table-cell text-[13px]">
-        {formatDate(file.uploadedAt)}
+        <span className="tooltip" data-tip={createdAtTooltip}>
+          <span title={createdAtTooltip}>{formatDate(file.uploadedAt)}</span>
+        </span>
       </td>
       <td className="text-right">
         <RowActionsMenu

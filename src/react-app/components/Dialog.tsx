@@ -1,57 +1,57 @@
-import { Icon } from '@iconify/react'
-import { type ReactNode, useEffect, useState } from 'react'
-import { useNativeDialog } from '../hooks/useNativeDialog'
+import { Icon } from "@iconify/react";
+import { type ReactNode, useEffect, useState } from "react";
+import { useNativeDialog } from "../hooks/useNativeDialog";
 
-type DialogAction = () => void | Promise<void>
+type DialogAction = () => void | Promise<void>;
 
 export interface DialogRenderState {
-  isConfirming: boolean
-  isInteractionDisabled: boolean
-  requestClose: () => void
-  cancel: () => void
-  confirm: () => Promise<void>
+  isConfirming: boolean;
+  isInteractionDisabled: boolean;
+  requestClose: () => void;
+  cancel: () => void;
+  confirm: () => Promise<void>;
 }
 
-type DialogSlot = ReactNode | ((state: DialogRenderState) => ReactNode)
+type DialogSlot = ReactNode | ((state: DialogRenderState) => ReactNode);
 
 interface DialogProps {
-  isOpen: boolean
-  title?: ReactNode
-  children: DialogSlot
-  footer?: DialogSlot
-  headerActions?: DialogSlot
-  onClose: () => void
-  onCancel?: () => void
-  onConfirm?: DialogAction
-  cancelText?: string
-  confirmText?: string
-  confirmPendingText?: string
-  confirmLoadingText?: string
-  showCancelButton?: boolean
-  showConfirmButton?: boolean
-  showCloseButton?: boolean
-  isDismissDisabled?: boolean
-  cancelDisabled?: boolean
-  confirmDisabled?: boolean
-  confirmLoading?: boolean
-  dialogClassName?: string
-  boxClassName?: string
-  bodyClassName?: string
-  headerClassName?: string
-  footerClassName?: string
-  titleClassName?: string
-  closeButtonAriaLabel?: string
-  closeButtonClassName?: string
-  cancelButtonClassName?: string
-  confirmButtonClassName?: string
+  isOpen: boolean;
+  title?: ReactNode;
+  children: DialogSlot;
+  footer?: DialogSlot;
+  headerActions?: DialogSlot;
+  onClose: () => void;
+  onCancel?: () => void;
+  onConfirm?: DialogAction;
+  cancelText?: string;
+  confirmText?: string;
+  confirmPendingText?: string;
+  confirmLoadingText?: string;
+  showCancelButton?: boolean;
+  showConfirmButton?: boolean;
+  showCloseButton?: boolean;
+  isDismissDisabled?: boolean;
+  cancelDisabled?: boolean;
+  confirmDisabled?: boolean;
+  confirmLoading?: boolean;
+  dialogClassName?: string;
+  boxClassName?: string;
+  bodyClassName?: string;
+  headerClassName?: string;
+  footerClassName?: string;
+  titleClassName?: string;
+  closeButtonAriaLabel?: string;
+  closeButtonClassName?: string;
+  cancelButtonClassName?: string;
+  confirmButtonClassName?: string;
 }
 
 function renderSlot(slot: DialogSlot | undefined, state: DialogRenderState) {
-  if (typeof slot === 'function') {
-    return slot(state)
+  if (typeof slot === "function") {
+    return slot(state);
   }
 
-  return slot ?? null
+  return slot ?? null;
 }
 
 export function Dialog({
@@ -63,8 +63,8 @@ export function Dialog({
   onClose,
   onCancel,
   onConfirm,
-  cancelText = '取消',
-  confirmText = '确定',
+  cancelText = "取消",
+  confirmText = "确定",
   confirmPendingText,
   confirmLoadingText,
   showCancelButton = true,
@@ -74,62 +74,62 @@ export function Dialog({
   cancelDisabled = false,
   confirmDisabled = false,
   confirmLoading = false,
-  dialogClassName = '',
-  boxClassName = '',
-  bodyClassName = '',
-  headerClassName = '',
-  footerClassName = '',
-  titleClassName = '',
-  closeButtonAriaLabel = '关闭弹窗',
-  closeButtonClassName = '',
-  cancelButtonClassName = '',
-  confirmButtonClassName = '',
+  dialogClassName = "",
+  boxClassName = "",
+  bodyClassName = "",
+  headerClassName = "",
+  footerClassName = "",
+  titleClassName = "",
+  closeButtonAriaLabel = "关闭弹窗",
+  closeButtonClassName = "",
+  cancelButtonClassName = "",
+  confirmButtonClassName = "",
 }: DialogProps) {
-  const [isConfirming, setIsConfirming] = useState(false)
-  const isInteractionDisabled = isDismissDisabled || isConfirming
+  const [isConfirming, setIsConfirming] = useState(false);
+  const isInteractionDisabled = isDismissDisabled || isConfirming;
 
   useEffect(() => {
     if (!isOpen) {
-      setIsConfirming(false)
+      setIsConfirming(false);
     }
-  }, [isOpen])
+  }, [isOpen]);
 
   const requestClose = () => {
     if (isInteractionDisabled) {
-      return
+      return;
     }
-    onClose()
-  }
+    onClose();
+  };
 
   const cancel = () => {
     if (isInteractionDisabled || cancelDisabled) {
-      return
+      return;
     }
-    onCancel?.()
-    onClose()
-  }
+    onCancel?.();
+    onClose();
+  };
 
   const confirm = async () => {
     if (!onConfirm || isConfirming || confirmDisabled || confirmLoading) {
-      return
+      return;
     }
 
-    setIsConfirming(true)
+    setIsConfirming(true);
     try {
-      await onConfirm()
+      await onConfirm();
     } finally {
-      setIsConfirming(false)
+      setIsConfirming(false);
     }
-  }
+  };
 
   const dialogRef = useNativeDialog({
     isOpen,
     isDismissDisabled: isInteractionDisabled,
     onCancel: requestClose,
-  })
+  });
 
   if (!isOpen) {
-    return null
+    return null;
   }
 
   const renderState: DialogRenderState = {
@@ -138,15 +138,15 @@ export function Dialog({
     requestClose,
     cancel,
     confirm,
-  }
+  };
 
   const shouldRenderFooter =
-    footer !== undefined || showCancelButton || (showConfirmButton && Boolean(onConfirm))
+    footer !== undefined || showCancelButton || (showConfirmButton && Boolean(onConfirm));
   const confirmLabel = isConfirming
     ? (confirmPendingText ?? confirmText)
     : confirmLoading
       ? (confirmLoadingText ?? confirmText)
-      : confirmText
+      : confirmText;
 
   return (
     <dialog ref={dialogRef} className={`modal ${dialogClassName}`.trim()}>
@@ -154,7 +154,7 @@ export function Dialog({
         {(title || showCloseButton || headerActions !== undefined) && (
           <div className={`mb-4 flex items-center justify-between gap-4 ${headerClassName}`.trim()}>
             <div className="min-w-0 flex-1">
-              {typeof title === 'string' ? (
+              {typeof title === "string" ? (
                 <h3 className={`font-bold text-base ${titleClassName}`.trim()}>{title}</h3>
               ) : (
                 title
@@ -188,7 +188,7 @@ export function Dialog({
                 {showCancelButton && (
                   <button
                     type="button"
-                    className={(cancelButtonClassName || 'btn btn-sm btn-ghost').trim()}
+                    className={(cancelButtonClassName || "btn btn-sm btn-ghost").trim()}
                     onClick={cancel}
                     disabled={isInteractionDisabled || cancelDisabled}
                   >
@@ -198,7 +198,7 @@ export function Dialog({
                 {showConfirmButton && onConfirm && (
                   <button
                     type="button"
-                    className={`${(confirmButtonClassName || 'btn btn-sm btn-primary').trim()} ${confirmLoading || isConfirming ? 'loading' : ''}`.trim()}
+                    className={`${(confirmButtonClassName || "btn btn-sm btn-primary").trim()} ${confirmLoading || isConfirming ? "loading" : ""}`.trim()}
                     onClick={() => void confirm()}
                     disabled={isConfirming || confirmLoading || confirmDisabled}
                   >
@@ -216,5 +216,5 @@ export function Dialog({
         </button>
       </form>
     </dialog>
-  )
+  );
 }

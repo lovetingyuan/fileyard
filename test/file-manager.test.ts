@@ -135,9 +135,7 @@ describe("authenticated R2 file manager", () => {
 
     expect(rootList.folders).toHaveLength(1);
     expect(rootList.folders[0]).toMatchObject({ name: "docs", path: "docs" });
-    expect(rootList.folders[0]?.createdAt).toMatch(
-      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/,
-    );
+    expect(rootList.folders[0]?.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
 
     const fileContents = "hello world";
     const uploadResponse = await apiFetch(
@@ -163,6 +161,8 @@ describe("authenticated R2 file manager", () => {
       name: "hello.txt",
       path: "docs/hello.txt",
       size: fileContents.length,
+      createdAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/),
+      uploadedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/),
       contentType: "text/plain",
     });
 
@@ -435,9 +435,72 @@ describe("authenticated R2 file manager", () => {
 
     expect(listResponse.status).toBe(200);
     expect(legacyFolder).toBeDefined();
-    expect(legacyFolder?.createdAt).toMatch(
-      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/,
+    expect(legacyFolder?.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+  });
+
+  it("preserves file createdAt on overwrite and falls back for legacy file metadata", async () => {
+    const { email, user } = await createVerifiedUser();
+    const cookie = await createSessionCookie(email);
+    const rootDirId = user?.rootDirId;
+
+    if (!rootDirId) {
+      throw new Error("Expected rootDirId to be set");
+    }
+
+    const initialUploadResponse = await apiFetch(
+      "/api/files/object?name=notes.txt",
+      {
+        method: "PUT",
+        headers: {
+          "Content-Length": String("first".length),
+          "Content-Type": "text/plain",
+        },
+        body: "first",
+      },
+      cookie,
     );
+    expect(initialUploadResponse.status).toBe(201);
+
+    const initialListResponse = await apiFetch("/api/files", {}, cookie);
+    const initialList = (await initialListResponse.json()) as FileListResponse;
+    const initialFile = initialList.files.find((file) => file.path === "notes.txt");
+
+    expect(initialFile).toBeDefined();
+    expect(initialFile?.createdAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    expect(initialFile?.uploadedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+
+    await env.FILES_BUCKET.put(`${rootDirId}/legacy.txt`, "legacy", {
+      customMetadata: { originalName: "legacy.txt" },
+      httpMetadata: { contentType: "text/plain" },
+    });
+
+    const overwriteResponse = await apiFetch(
+      "/api/files/object?name=notes.txt&overwrite=true",
+      {
+        method: "PUT",
+        headers: {
+          "Content-Length": String("second version".length),
+          "Content-Type": "text/plain",
+        },
+        body: "second version",
+      },
+      cookie,
+    );
+    expect(overwriteResponse.status).toBe(201);
+
+    const updatedListResponse = await apiFetch("/api/files", {}, cookie);
+    const updatedList = (await updatedListResponse.json()) as FileListResponse;
+    const updatedFile = updatedList.files.find((file) => file.path === "notes.txt");
+    const legacyFile = updatedList.files.find((file) => file.path === "legacy.txt");
+
+    expect(updatedFile).toBeDefined();
+    expect(updatedFile?.createdAt).toBe(initialFile?.createdAt);
+    expect(Date.parse(updatedFile?.uploadedAt ?? "")).toBeGreaterThanOrEqual(
+      Date.parse(initialFile?.uploadedAt ?? ""),
+    );
+
+    expect(legacyFile).toBeDefined();
+    expect(legacyFile?.createdAt).toBe(legacyFile?.uploadedAt);
   });
 
   it("sorts folders by created time when sorting by time while keeping files separate", async () => {

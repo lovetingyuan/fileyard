@@ -1,27 +1,27 @@
-import { Icon } from '@iconify/react'
-import { Dialog } from './Dialog'
+import { Icon } from "@iconify/react";
+import { Dialog } from "./Dialog";
 
 type DeleteTarget = {
-  type: 'file' | 'folder'
-  name: string
-}
+  type: "file" | "folder";
+  name: string;
+};
 
 interface DeleteConfirmModalProps {
-  target: DeleteTarget | null
-  onClose: () => void
-  onConfirm: () => Promise<void>
+  target: DeleteTarget | null;
+  onClose: () => void;
+  onConfirm: () => Promise<void>;
 }
 
 export function DeleteConfirmModal({ target, onClose, onConfirm }: DeleteConfirmModalProps) {
   if (!target) {
-    return null
+    return null;
   }
 
-  const title = target.type === 'file' ? '删除文件' : '删除文件夹'
+  const title = target.type === "file" ? "删除文件" : "删除文件夹";
   const description =
-    target.type === 'file'
+    target.type === "file"
       ? `确认删除 “${target.name}” 吗？此操作无法撤销。`
-      : `确认删除文件夹 “${target.name}” 吗？此操作无法撤销。`
+      : `确认删除文件夹 “${target.name}” 吗？此操作无法撤销。`;
 
   return (
     <Dialog
@@ -42,5 +42,5 @@ export function DeleteConfirmModal({ target, onClose, onConfirm }: DeleteConfirm
         <p className="text-sm leading-6 text-base-content/70">{description}</p>
       </div>
     </Dialog>
-  )
+  );
 }

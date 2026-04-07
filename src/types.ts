@@ -22,6 +22,7 @@ export interface FileEntry {
   name: string;
   path: string;
   size: number;
+  createdAt: string;
   uploadedAt: string;
   contentType: string | null;
 }
