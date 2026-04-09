@@ -9,10 +9,18 @@ export class UploadTooLargeError extends Error {
   }
 }
 
-export function jsonError(_c: Context<AppContext>, message: string, status: number): Response {
+export function jsonError(
+  _c: Context<AppContext>,
+  message: string,
+  status: number,
+  headers?: HeadersInit,
+): Response {
+  const responseHeaders = new Headers(headers);
+  responseHeaders.set("Content-Type", "application/json");
+
   return new Response(JSON.stringify({ success: false, error: message }), {
     status,
-    headers: { "Content-Type": "application/json" },
+    headers: responseHeaders,
   });
 }
 

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import toast from "react-hot-toast";
@@ -11,6 +11,8 @@ interface LoginProps {
 export function Login({ onSwitchToRegister }: LoginProps) {
   const [searchParams] = useSearchParams();
   const { login, loading } = useAuth();
+  const emailId = useId();
+  const passwordId = useId();
   const registered = searchParams.get("registered") === "1";
   const initialEmail = searchParams.get("email") ?? "";
   const [email, setEmail] = useState(initialEmail);
@@ -40,39 +42,46 @@ export function Login({ onSwitchToRegister }: LoginProps) {
   };
 
   return (
-    <div className="flex flex-1 items-center justify-center p-4">
+    <main className="flex flex-1 items-center justify-center p-4">
       <div className="card w-full max-w-md bg-base-100 shadow-xl">
         <div className="card-body">
           <h2 className="card-title text-2xl font-bold text-center justify-center mb-4">Login</h2>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="form-control">
-              <label className="label">
+              <label className="label" htmlFor={emailId}>
                 <span className="label-text flex items-center gap-1">
                   <Icon icon="mdi:email-outline" className="w-4 h-4" />
                   Email
                 </span>
               </label>
               <input
+                id={emailId}
                 type="email"
+                name="email"
+                autoComplete="email"
                 placeholder="email@example.com"
                 className="input input-bordered w-full"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
                 required
+                spellCheck={false}
               />
             </div>
 
             <div className="form-control">
-              <label className="label">
+              <label className="label" htmlFor={passwordId}>
                 <span className="label-text flex items-center gap-1">
                   <Icon icon="mdi:lock-outline" className="w-4 h-4" />
                   Password
                 </span>
               </label>
               <input
+                id={passwordId}
                 type="password"
+                name="password"
+                autoComplete="current-password"
                 placeholder="••••••••"
                 className="input input-bordered w-full"
                 value={password}
@@ -113,6 +122,6 @@ export function Login({ onSwitchToRegister }: LoginProps) {
           </button>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

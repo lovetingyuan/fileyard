@@ -62,7 +62,7 @@ function RowActionsMenu({
       </button>
       <ul
         tabIndex={0}
-        className="dropdown-content menu menu-sm bg-base-200 rounded-box z-10 mt-1 w-40 border border-base-300/60 p-2 shadow-lg"
+        className="dropdown-content menu menu-sm bg-base-200 rounded-box z-10 mt-1 w-40 border border-base-300/60 p-2 shadow-lg space-y-1"
       >
         {items.map((item) => (
           <li key={item.label}>
@@ -131,15 +131,15 @@ export function FolderRow({
             isLoading={isDeletingFolder}
             items={[
               {
-                label: "查看详情",
-                icon: "mdi:information-outline",
-                onClick: () => onShowDetails(folder.path),
-              },
-              {
                 label: "删除",
                 icon: "mdi:delete-outline",
                 tone: "danger",
                 onClick: () => onRequestDelete(folder.path, folder.name),
+              },
+              {
+                label: "查看详情",
+                icon: "mdi:information-outline",
+                onClick: () => onShowDetails(folder.path),
               },
             ]}
           />

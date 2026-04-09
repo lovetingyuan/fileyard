@@ -436,7 +436,7 @@ export function Dashboard() {
               </div>
             ) : (
               <>
-                <div className="overflow-x-hidden">
+                <div>
                   <table className="table table-zebra table-md table-fixed w-full [&_td]:px-2 [&_th]:px-2 sm:[&_td]:px-4 sm:[&_th]:px-4">
                     <thead className="bg-base-300">
                       <tr className="bg-base-200">

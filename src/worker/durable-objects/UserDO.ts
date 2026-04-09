@@ -301,6 +301,23 @@ export class UserDO extends DurableObject {
   }
 
   /**
+   * Delete the user and any related sessions or verification tokens.
+   */
+  async deleteUser(): Promise<void> {
+    await this.storage.delete("user");
+
+    const sessions = await this.storage.list({ prefix: "session:" });
+    for (const key of sessions.keys()) {
+      await this.storage.delete(key);
+    }
+
+    const verificationTokens = await this.storage.list({ prefix: "verify:" });
+    for (const key of verificationTokens.keys()) {
+      await this.storage.delete(key);
+    }
+  }
+
+  /**
    * Clean up expired sessions and verification tokens
    */
   private async cleanupExpiredSessions(): Promise<void> {

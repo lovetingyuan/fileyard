@@ -1,6 +1,7 @@
 import type { DirectoryStatsResponse } from "../../types";
 import { formatBytes } from "../utils/fileFormatters";
 import { Dialog } from "./Dialog";
+import { DetailsList } from "./DetailsList";
 
 interface DirectoryStatsModalProps {
   isOpen: boolean;
@@ -15,6 +16,15 @@ function getDisplayPath(path: string): string {
   return path ? `/${path}` : "/";
 }
 
+function getFolderName(path: string): string {
+  if (!path) {
+    return "根目录";
+  }
+
+  const segments = path.split("/").filter(Boolean);
+  return segments[segments.length - 1] ?? path;
+}
+
 export function DirectoryStatsModal({
   isOpen,
   path,
@@ -23,54 +33,73 @@ export function DirectoryStatsModal({
   isLoading,
   onClose,
 }: DirectoryStatsModalProps) {
+  const detailItems = [
+    {
+      label: "名称",
+      value: getFolderName(path),
+    },
+    {
+      label: "路径",
+      value: getDisplayPath(path),
+      valueClassName: "break-all font-mono text-xs sm:text-sm",
+    },
+    ...(isLoading
+      ? [
+          {
+            label: "状态",
+            value: (
+              <span className="inline-flex items-center gap-2 text-base-content/70">
+                <span className="loading loading-spinner loading-xs text-primary" />
+                正在统计当前目录下的全部文件...
+              </span>
+            ),
+          },
+        ]
+      : error
+        ? [
+            {
+              label: "状态",
+              value: "加载目录统计失败",
+              valueClassName: "text-error",
+            },
+            {
+              label: "原因",
+              value: error,
+              valueClassName: "text-base-content/70",
+            },
+          ]
+        : stats
+          ? [
+              {
+                label: "文件数",
+                value: `${stats.fileCount.toLocaleString()} 个`,
+              },
+              {
+                label: "总大小",
+                value: `${formatBytes(stats.totalBytes)} (${stats.totalBytes.toLocaleString()} 字节)`,
+              },
+            ]
+          : [
+              {
+                label: "状态",
+                value: "暂无目录统计数据",
+                valueClassName: "text-base-content/60",
+              },
+            ]),
+  ];
+
   return (
     <Dialog
       isOpen={isOpen}
-      title="目录统计"
+      title="文件夹详情"
       onClose={onClose}
       cancelText="关闭"
       showConfirmButton={false}
       boxClassName="max-w-md bg-base-100 p-5 shadow-sm"
-      closeButtonAriaLabel="关闭目录统计弹窗"
+      closeButtonAriaLabel="关闭文件夹详情弹窗"
       cancelButtonClassName="btn btn-sm btn-primary"
     >
-      <>
-        <div className="mb-4 text-sm">
-          <span className="text-base-content/60">目录：</span>
-          <span className="break-all font-mono text-base-content">{getDisplayPath(path)}</span>
-        </div>
-
-        {isLoading ? (
-          <div className="flex min-h-32 flex-col items-center justify-center gap-3 text-sm text-base-content/60">
-            <span className="loading loading-spinner loading-md text-primary" />
-            <span>正在统计当前目录下的全部文件...</span>
-          </div>
-        ) : error ? (
-          <div className="rounded-box border border-error/25 bg-error/8 p-4 text-sm">
-            <p className="font-medium text-error">加载目录统计失败</p>
-            <p className="mt-2 text-base-content/70">{error}</p>
-          </div>
-        ) : stats ? (
-          <ul className="space-y-3">
-            <li className="flex items-start gap-1 text-sm">
-              <span className="w-20 shrink-0 text-base-content/60">文件总数：</span>
-              <span className="font-medium text-base-content">
-                {stats.fileCount.toLocaleString()} 个
-              </span>
-            </li>
-            <li className="flex items-start gap-1 text-sm">
-              <span className="w-20 shrink-0 text-base-content/60">总大小：</span>
-              <span className="font-medium text-base-content">
-                {formatBytes(stats.totalBytes)} ({stats.totalBytes.toLocaleString()} 字节)
-              </span>
-            </li>
-          </ul>
-        ) : (
-          <div className="rounded-box bg-base-200 p-4 text-sm text-base-content/60">
-            暂无目录统计数据
-          </div>
-        )}
-      </>
+      <DetailsList items={detailItems} labelWidthClassName="w-16 sm:w-20" />
     </Dialog>
   );
 }

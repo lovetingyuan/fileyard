@@ -1,1 +1,4 @@
+RESEND_API_KEY="replace-with-your-resend-api-key"
 SHARE_LINK_SECRET="replace-with-a-long-random-secret"
+APP_URL="http://localhost:5173"
+SENDER_EMAIL="File Share <noreply@example.com>"

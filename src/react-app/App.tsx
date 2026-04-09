@@ -9,7 +9,6 @@ import {
 } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { AppLayout } from "./components/AppLayout";
-import { HealthCheckReporter } from "./components/HealthCheckReporter";
 import { AuthProvider } from "./context/AuthContext";
 import { useAuth } from "./hooks/useAuth";
 import { Login } from "./pages/Login";
@@ -105,7 +104,6 @@ function AppRoutes() {
 
   return (
     <AuthProvider>
-      <HealthCheckReporter />
       <AppContent />
     </AuthProvider>
   );

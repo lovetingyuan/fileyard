@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { deleteCookie, setCookie } from "hono/cookie";
+import type { Context } from "hono";
 import type { AppContext } from "../context";
 import { sendVerificationEmail } from "../utils/email";
 import {
@@ -10,8 +11,39 @@ import {
   verifyPassword,
 } from "../utils/password";
 import { jsonError } from "../utils/response";
+import { enforceRateLimit } from "../utils/rateLimit";
 
 const auth = new Hono<AppContext>();
+
+function isSecureRequest(c: Context<AppContext>): boolean {
+  const forwardedProto = c.req.header("X-Forwarded-Proto");
+  if (forwardedProto) {
+    return forwardedProto.toLowerCase() === "https";
+  }
+
+  return new URL(c.req.url).protocol === "https:";
+}
+
+function getVerificationEmailConfig(c: Context<AppContext>):
+  | {
+      appUrl: string;
+      resendApiKey: string;
+      senderEmail: string;
+    }
+  | Response {
+  const resendApiKey = c.env.RESEND_API_KEY;
+  const senderEmail = c.env.SENDER_EMAIL;
+
+  if (!resendApiKey || !senderEmail) {
+    return jsonError(c, "Verification email delivery is not fully configured", 500);
+  }
+
+  return {
+    resendApiKey,
+    senderEmail,
+    appUrl: c.env.APP_URL ?? new URL(c.req.url).origin,
+  };
+}
 
 auth.post("/api/auth/register", async (c) => {
   const body = await c.req.json<{ email: string; password: string }>();
@@ -27,6 +59,16 @@ auth.post("/api/auth/register", async (c) => {
   }
 
   const normalizedEmail = email.toLowerCase().trim();
+  const rateLimitResponse = await enforceRateLimit(c, "register", normalizedEmail);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
+  const emailConfig = getVerificationEmailConfig(c);
+  if (emailConfig instanceof Response) {
+    return emailConfig;
+  }
+
   const stub = c.env.USER_DO.getByName(normalizedEmail);
   const existingUser = await stub.getUser();
   if (existingUser) {
@@ -41,20 +83,20 @@ auth.post("/api/auth/register", async (c) => {
     return jsonError(c, createResult.error ?? "Failed to create user", 400);
   }
 
-  const resendApiKey = c.env.RESEND_API_KEY;
-  if (!resendApiKey) {
-    return jsonError(c, "Email delivery is not configured", 500);
-  }
-
   const verificationToken = await stub.createVerificationToken("email");
-  const appUrl = c.env.APP_URL ?? new URL(c.req.url).origin;
-  const senderEmail = c.env.SENDER_EMAIL ?? "fileshare@tingyuan.in";
-
-  await sendVerificationEmail(
-    { to: normalizedEmail, verificationToken, appUrl },
-    resendApiKey,
-    senderEmail,
+  const emailResult = await sendVerificationEmail(
+    { to: normalizedEmail, verificationToken, appUrl: emailConfig.appUrl },
+    emailConfig.resendApiKey,
+    emailConfig.senderEmail,
   );
+  if (!emailResult.success) {
+    await stub.deleteUser();
+    return jsonError(
+      c,
+      emailResult.error ?? "Failed to send verification email",
+      emailResult.status,
+    );
+  }
 
   return c.json({
     success: true,
@@ -72,6 +114,11 @@ auth.post("/api/auth/login", async (c) => {
     }
 
     const normalizedEmail = email.toLowerCase().trim();
+    const rateLimitResponse = await enforceRateLimit(c, "login", normalizedEmail);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     const stub = c.env.USER_DO.getByName(normalizedEmail);
     const user = await stub.getUser();
 
@@ -89,10 +136,9 @@ auth.post("/api/auth/login", async (c) => {
     }
 
     const session = await stub.createSession();
-    const isProduction = c.env.ENVIRONMENT === "production";
     const cookieOptions = {
       path: "/",
-      secure: isProduction,
+      secure: isSecureRequest(c),
       httpOnly: true,
       sameSite: "Strict" as const,
       maxAge: 30 * 24 * 60 * 60,
@@ -121,8 +167,19 @@ auth.post("/api/auth/logout", async (c) => {
     await stub.deleteSession(sessionToken);
   }
 
-  deleteCookie(c, "session_token");
-  deleteCookie(c, "user_email");
+  const secure = isSecureRequest(c);
+  deleteCookie(c, "session_token", {
+    path: "/",
+    secure,
+    httpOnly: true,
+    sameSite: "Strict",
+  });
+  deleteCookie(c, "user_email", {
+    path: "/",
+    secure,
+    httpOnly: true,
+    sameSite: "Strict",
+  });
 
   return c.json({ success: true, message: "Logged out successfully" });
 });
@@ -180,12 +237,17 @@ auth.post("/api/auth/resend-verification", async (c) => {
     return jsonError(c, "Invalid email address", 400);
   }
 
-  const resendApiKey = c.env.RESEND_API_KEY;
-  if (!resendApiKey) {
-    return jsonError(c, "Email delivery is not configured", 500);
+  const normalizedEmail = email.toLowerCase().trim();
+  const rateLimitResponse = await enforceRateLimit(c, "resend-verification", normalizedEmail);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
   }
 
-  const normalizedEmail = email.toLowerCase().trim();
+  const emailConfig = getVerificationEmailConfig(c);
+  if (emailConfig instanceof Response) {
+    return emailConfig;
+  }
+
   const stub = c.env.USER_DO.getByName(normalizedEmail);
   const user = await stub.getUser();
 
@@ -201,14 +263,18 @@ auth.post("/api/auth/resend-verification", async (c) => {
   }
 
   const verificationToken = await stub.createVerificationToken("email");
-  const appUrl = c.env.APP_URL ?? new URL(c.req.url).origin;
-  const senderEmail = c.env.SENDER_EMAIL ?? "fileshare@tingyuan.in";
-
-  await sendVerificationEmail(
-    { to: normalizedEmail, verificationToken, appUrl },
-    resendApiKey,
-    senderEmail,
+  const emailResult = await sendVerificationEmail(
+    { to: normalizedEmail, verificationToken, appUrl: emailConfig.appUrl },
+    emailConfig.resendApiKey,
+    emailConfig.senderEmail,
   );
+  if (!emailResult.success) {
+    return jsonError(
+      c,
+      emailResult.error ?? "Failed to resend verification email",
+      emailResult.status,
+    );
+  }
 
   return c.json({
     success: true,

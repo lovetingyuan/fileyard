@@ -90,6 +90,7 @@ export function FileToolbar({
             className={`btn btn-primary btn-square btn-sm ${isUploadingFile ? "loading" : ""}`}
             disabled={busy}
             onClick={onUploadClick}
+            aria-label="上传文件"
           >
             {!isUploadingFile && <Icon icon="mdi:upload" className="w-5 h-5" />}
           </button>
@@ -100,6 +101,7 @@ export function FileToolbar({
             className="btn btn-accent btn-square btn-sm"
             disabled={busy}
             onClick={onCreateTextFile}
+            aria-label="新建文本文件"
           >
             <Icon icon="mdi:file-plus" className="w-5 h-5" />
           </button>
@@ -110,6 +112,7 @@ export function FileToolbar({
             className={`btn btn-secondary btn-square btn-sm ${isCreatingFolder ? "loading" : ""}`}
             disabled={busy || isCreatingNewFolder}
             onClick={onCreateFolder}
+            aria-label="新建文件夹"
           >
             {!isCreatingFolder && <Icon icon="mdi:folder-plus" className="w-5 h-5" />}
           </button>
@@ -148,6 +151,7 @@ export function FileToolbar({
               }`}
               onMouseDown={(e) => e.preventDefault()}
               onClick={focusSearchInput}
+              aria-label="搜索文件"
             >
               <Icon icon="mdi:magnify" className="w-5 h-5" />
             </button>
@@ -168,6 +172,7 @@ export function FileToolbar({
             className={`btn btn-ghost btn-square btn-sm ${isRefreshing ? "loading w-8 scale-75" : ""}`}
             disabled={busy}
             onClick={onRefresh}
+            aria-label="刷新文件列表"
           >
             {!isRefreshing && <Icon icon="mdi:refresh" className="w-5 h-5" />}
           </button>

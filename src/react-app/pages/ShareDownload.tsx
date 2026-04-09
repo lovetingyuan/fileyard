@@ -1,10 +1,7 @@
-import { useState } from "react";
-import toast from "react-hot-toast";
 import useSWR from "swr";
 import { useParams } from "react-router-dom";
 import type { SharedFileMetadataResponse } from "../../types";
 import { ApiError, apiRequest } from "../utils/apiRequest";
-import { getDownloadFilename } from "../utils/fileFormatters";
 import { formatShareDuration } from "../utils/shareDurations";
 
 function buildSharedFileMetadataUrl(token: string): string {
@@ -50,7 +47,6 @@ function getUnavailableReason(status: SharePageStatus, error?: ApiError): string
 
 export function ShareDownload() {
   const { token } = useParams<{ token: string }>();
-  const [isDownloading, setIsDownloading] = useState(false);
   const { data, error, isLoading } = useSWR<SharedFileMetadataResponse, ApiError>(
     token ? buildSharedFileMetadataUrl(token) : null,
     (url: string) => apiRequest<SharedFileMetadataResponse>(url, { credentials: "same-origin" }),
@@ -58,42 +54,6 @@ export function ShareDownload() {
 
   const status = getSharePageStatus(data, error);
   const fileName = data?.fileName ?? "未知文件";
-
-  const handleDownload = async () => {
-    if (!data?.downloadUrl || isDownloading) {
-      return;
-    }
-
-    try {
-      setIsDownloading(true);
-      const response = await fetch(data.downloadUrl, { credentials: "same-origin" });
-      if (!response.ok) {
-        throw new Error(
-          response.status === 410
-            ? "链接已过期，不再提供下载"
-            : response.status === 404
-              ? "文件不存在或已不可用"
-              : "Failed to download file",
-        );
-      }
-
-      const blob = await response.blob();
-      const downloadUrl = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = downloadUrl;
-      anchor.download = getDownloadFilename(response.headers.get("Content-Disposition"), fileName);
-      document.body.append(anchor);
-      anchor.click();
-      anchor.remove();
-      URL.revokeObjectURL(downloadUrl);
-    } catch (downloadError) {
-      toast.error(
-        downloadError instanceof Error ? downloadError.message : "Failed to download file",
-      );
-    } finally {
-      setIsDownloading(false);
-    }
-  };
 
   return (
     <main className="mx-auto flex w-[94%] max-w-2xl flex-1 items-center py-10 sm:py-16">
@@ -117,14 +77,13 @@ export function ShareDownload() {
                 </p>
               </div>
 
-              <button
-                type="button"
-                className={`btn btn-primary w-full sm:w-auto ${isDownloading ? "loading" : ""}`}
-                onClick={handleDownload}
-                disabled={isDownloading}
+              <a
+                href={data.downloadUrl}
+                download={fileName}
+                className="btn btn-primary w-full sm:w-auto"
               >
                 下载文件
-              </button>
+              </a>
             </>
           ) : (
             <div className="space-y-2 text-base-content">

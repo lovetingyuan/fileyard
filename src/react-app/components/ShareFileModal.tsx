@@ -137,83 +137,85 @@ export function ShareFileModal({ file, onClose }: ShareFileModalProps) {
       confirmLoadingText="生成中"
       confirmDisabled={isLoading || Boolean(loadError) || !shareLink}
       confirmLoading={isLoading}
-      boxClassName="max-w-lg bg-base-100 px-5 py-4 shadow-xl"
-      bodyClassName="space-y-4"
+      boxClassName="max-w-xl bg-base-100 px-4 py-3.5 shadow-xl sm:px-5"
+      bodyClassName="pt-1"
       closeButtonAriaLabel="关闭分享弹窗"
       closeButtonClassName="btn-xs"
     >
       <>
-        <div className="grid gap-3 sm:grid-cols-[1fr_11rem] sm:items-start">
-          <div className="min-w-0 space-y-2">
-            <div className="flex h-5 items-end text-xs text-base-content/50">文件名</div>
-            <div className="truncate text-[15px] font-mono font-medium tracking-tight text-base-content">
-              {file.name}
+        <div className="flex flex-col gap-4 sm:grid sm:grid-cols-[1.15fr_0.85fr] sm:items-start">
+          <div className="order-last sm:order-first">
+            <div className="flex w-full flex-col items-center gap-1">
+              <div className="text-sm text-base-content/50">扫码下载</div>
+              <div className="flex w-full justify-center   bg-white p-2 ">
+                {shareLink ? (
+                  <QRCode
+                    value={shareLink.shareUrl}
+                    size={216}
+                    className="h-54 w-54"
+                    bgColor="#ffffff"
+                    fgColor="#111827"
+                    style={{ shapeRendering: "crispEdges" }}
+                  />
+                ) : (
+                  <div className="flex h-54 w-54 items-center justify-center text-base-content/45">
+                    <span className="loading loading-spinner loading-md" />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          <label className="form-control gap-1">
-            <span className="flex h-5 items-end text-xs mb-1 text-base-content/50">有效时长</span>
-            <select
-              className="select select-sm w-full"
-              value={String(expiresInSeconds)}
-              onChange={(event) =>
-                setExpiresInSeconds(Number(event.target.value) as ShareDurationOption)
-              }
-            >
-              {shareDurationOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-
-        <div className="space-y-2">
-          <div className="text-xs text-base-content/50">下载链接</div>
-          {loadError ? (
-            <div className="text-sm text-error">{loadError}</div>
-          ) : shareLink ? (
-            <div className="flex items-center gap-2">
-              <a
-                href={shareLink.shareUrl}
-                target="_blank"
-                rel="noreferrer"
-                title={shareLink.shareUrl}
-                className="link min-w-0 flex-1 truncate font-mono text-xs text-primary"
-              >
-                {shareLink.shareUrl}
-              </a>
-              <button
-                type="button"
-                className="btn btn-ghost btn-xs shrink-0"
-                onClick={handleCopyLink}
-              >
-                复制
-              </button>
+          <div className="min-w-0 space-y-3.5">
+            <div className="space-y-1">
+              <div className="text-sm text-base-content/50">文件名</div>
+              <div className="truncate font-mono font-medium tracking-tight text-base-content">
+                {file.name}
+              </div>
             </div>
-          ) : (
-            <div className="text-sm text-base-content/50">正在生成链接...</div>
-          )}
-        </div>
 
-        <div className="space-y-2">
-          <div className="text-xs text-base-content/50">链接二维码</div>
-          <div className="flex justify-center">
-            <div className="inline-flex bg-white p-2">
-              {shareLink ? (
-                <QRCode
-                  value={shareLink.shareUrl}
-                  size={180}
-                  className="h-45 w-45"
-                  bgColor="#ffffff"
-                  fgColor="#111827"
-                  style={{ shapeRendering: "crispEdges" }}
-                />
-              ) : (
-                <div className="flex h-36 w-36 items-center justify-center text-base-content/45">
-                  <span className="loading loading-spinner loading-md" />
+            <label className="form-control gap-1.5 flex justify-between items-center">
+              <span className="text-sm text-base-content/50">有效时长</span>
+              <select
+                className="select select-sm w-full max-w-35"
+                value={String(expiresInSeconds)}
+                onChange={(event) =>
+                  setExpiresInSeconds(Number(event.target.value) as ShareDurationOption)
+                }
+              >
+                {shareDurationOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <div className="space-y-1.5">
+              <div className="text-sm text-base-content/50">下载链接</div>
+              {loadError ? (
+                <div className="text-base text-error">{loadError}</div>
+              ) : shareLink ? (
+                <div className="flex items-center gap-2">
+                  <a
+                    href={shareLink.shareUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    title={shareLink.shareUrl}
+                    className="link min-w-0 flex-1 truncate font-mono text-sm text-primary"
+                  >
+                    {shareLink.shareUrl}
+                  </a>
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm shrink-0"
+                    onClick={handleCopyLink}
+                  >
+                    复制
+                  </button>
                 </div>
+              ) : (
+                <div className="text-base text-base-content/50">正在生成链接...</div>
               )}
             </div>
           </div>

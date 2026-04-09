@@ -1,25 +1,19 @@
-import { Link, Outlet, useNavigate } from "react-router-dom";
+import { Link, Outlet } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useProfile } from "../hooks/useProfileApi";
 import { UserAvatar } from "./UserAvatar";
 import { ThemeSwitcher } from "./ThemeSwitcher";
 
 function AuthenticatedNavMenu() {
-  const navigate = useNavigate();
   const { user } = useAuth();
   const { profile } = useProfile();
 
   return (
     <div className="flex-none flex items-center gap-2">
       <ThemeSwitcher />
-      <button
-        type="button"
-        className="btn btn-ghost btn-circle avatar"
-        aria-label="Go to profile"
-        onClick={() => navigate("/profile")}
-      >
+      <Link to="/profile" className="btn btn-ghost btn-circle avatar" aria-label="Go to profile">
         <UserAvatar email={user?.email} avatarUrl={profile?.avatarUrl} />
-      </button>
+      </Link>
     </div>
   );
 }
@@ -63,8 +57,8 @@ export function AppLayout() {
           <Outlet />
         </div>
 
-        <footer className="select-none py-1 text-center text-[10px] text-base-content/40 italic bg-base-200">
-          Built at {_builtTime}
+        <footer className="bg-base-200 py-2 text-center text-xs text-base-content/80">
+          Built at {import.meta.env.VITE_BUILD_TIME}
         </footer>
       </div>
     </div>

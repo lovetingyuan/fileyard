@@ -1,21 +1,34 @@
 import { Hono } from "hono";
 import type { Context } from "hono";
 import { csrf } from "hono/csrf";
+import { RateLimitDO } from "./durable-objects/RateLimitDO";
 import { UserDO } from "./durable-objects/UserDO";
 import { authMiddleware, requireAuth } from "./middleware/auth";
 import type { AppContext } from "./context";
 import { applyCorsHeaders, isAllowedOrigin } from "./utils/appHelpers";
 import { jsonError } from "./utils/response";
+import { applySecurityHeaders } from "./utils/securityHeaders";
 import authRoutes from "./routes/auth";
 import profileRoutes from "./routes/profile";
 import fileRoutes from "./routes/files";
 import shareRoutes from "./routes/shares";
 
-export { UserDO };
+export { RateLimitDO, UserDO };
 
 const app = new Hono<AppContext>();
 
 app.get("/health", (c) => c.json({ status: "ok", time: new Date().toISOString() }));
+
+app.use("*", async (c, next) => {
+  await next();
+  const headers = new Headers(c.res.headers);
+  applySecurityHeaders(headers);
+  c.res = new Response(c.res.body, {
+    headers,
+    status: c.res.status,
+    statusText: c.res.statusText,
+  });
+});
 
 app.use("/api/*", async (c, next) => {
   const origin = c.req.header("Origin");
@@ -53,5 +66,7 @@ app.route("/", authRoutes);
 app.route("/", profileRoutes);
 app.route("/", fileRoutes);
 app.route("/", shareRoutes);
+app.all("/api/*", (c) => jsonError(c, "Not found", 404));
+app.all("*", async (c) => c.env.ASSETS.fetch(c.req.raw));
 
 export default app;

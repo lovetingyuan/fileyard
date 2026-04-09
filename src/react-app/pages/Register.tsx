@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Icon } from "@iconify/react";
 import toast from "react-hot-toast";
 import { useAuth } from "../hooks/useAuth";
@@ -9,6 +9,9 @@ interface RegisterProps {
 
 export function Register({ onSwitchToLogin }: RegisterProps) {
   const { register, loading } = useAuth();
+  const emailId = useId();
+  const passwordId = useId();
+  const confirmPasswordId = useId();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -57,7 +60,7 @@ export function Register({ onSwitchToLogin }: RegisterProps) {
   };
 
   return (
-    <div className="flex flex-1 items-center justify-center p-4">
+    <main className="flex flex-1 items-center justify-center p-4">
       <div className="card w-full max-w-md bg-base-100 shadow-xl">
         <div className="card-body">
           <h2 className="card-title text-2xl font-bold text-center justify-center mb-4">
@@ -66,32 +69,39 @@ export function Register({ onSwitchToLogin }: RegisterProps) {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="form-control">
-              <label className="label">
+              <label className="label" htmlFor={emailId}>
                 <span className="label-text flex items-center gap-1">
                   <Icon icon="mdi:email-outline" className="w-4 h-4" />
                   Email
                 </span>
               </label>
               <input
+                id={emailId}
                 type="email"
+                name="email"
+                autoComplete="email"
                 placeholder="email@example.com"
                 className="input input-bordered w-full"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
                 required
+                spellCheck={false}
               />
             </div>
 
             <div className="form-control">
-              <label className="label">
+              <label className="label" htmlFor={passwordId}>
                 <span className="label-text flex items-center gap-1">
                   <Icon icon="mdi:lock-outline" className="w-4 h-4" />
                   Password
                 </span>
               </label>
               <input
+                id={passwordId}
                 type="password"
+                name="password"
+                autoComplete="new-password"
                 placeholder="••••••••"
                 className="input input-bordered w-full"
                 value={password}
@@ -111,21 +121,24 @@ export function Register({ onSwitchToLogin }: RegisterProps) {
                 </div>
               )}
               <div className="label">
-                <span className="label-text-alt text-gray-500 text-xs">
+                <span className="label-text-alt text-xs text-base-content/80">
                   8-64 characters, must include uppercase, lowercase, and number
                 </span>
               </div>
             </div>
 
             <div className="form-control">
-              <label className="label">
+              <label className="label" htmlFor={confirmPasswordId}>
                 <span className="label-text flex items-center gap-1">
                   <Icon icon="mdi:lock-check-outline" className="w-4 h-4" />
                   Confirm Password
                 </span>
               </label>
               <input
+                id={confirmPasswordId}
                 type="password"
+                name="confirmPassword"
+                autoComplete="new-password"
                 placeholder="••••••••"
                 className="input input-bordered w-full"
                 value={confirmPassword}
@@ -165,6 +178,6 @@ export function Register({ onSwitchToLogin }: RegisterProps) {
           </button>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
