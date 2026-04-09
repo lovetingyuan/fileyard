@@ -4,6 +4,7 @@ import useSWRMutation from "swr/mutation";
 import type {
   CreateFolderRequest,
   CreateShareLinkRequest,
+  DirectoryStatsResponse,
   FileListResponse,
   FileMutationResponse,
   ShareLinkResponse,
@@ -16,6 +17,7 @@ const FILES_ENDPOINT = "/api/files";
 const FILE_OBJECT_ENDPOINT = "/api/files/object";
 const FILE_FOLDERS_ENDPOINT = "/api/files/folders";
 const FILE_SHARE_LINKS_ENDPOINT = "/api/files/share-links";
+const FILE_STATS_ENDPOINT = "/api/files/stats";
 
 type FileListKey = [string, string, SortKey, SortOrder];
 
@@ -27,6 +29,16 @@ function buildListUrl(path: string, sort: SortKey, order: SortOrder): string {
   return `${FILES_ENDPOINT}?${params.toString()}`;
 }
 
+function buildStatsUrl(path: string): string {
+  const params = new URLSearchParams();
+  if (path) {
+    params.set("path", path);
+  }
+
+  const query = params.toString();
+  return query ? `${FILE_STATS_ENDPOINT}?${query}` : FILE_STATS_ENDPOINT;
+}
+
 export function buildDownloadUrl(path: string): string {
   const params = new URLSearchParams({ path });
   return `${FILE_OBJECT_ENDPOINT}?${params.toString()}`;
@@ -35,6 +47,10 @@ export function buildDownloadUrl(path: string): string {
 export function buildPreviewUrl(path: string): string {
   const params = new URLSearchParams({ path });
   return `/api/files/preview?${params.toString()}`;
+}
+
+export function getDirectoryStats(path: string) {
+  return apiRequest<DirectoryStatsResponse>(buildStatsUrl(path));
 }
 
 function useFileList(path: string, sort: SortKey, order: SortOrder) {

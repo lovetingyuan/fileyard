@@ -37,6 +37,13 @@ export interface FileListResponse {
   files: FileEntry[];
 }
 
+export interface DirectoryStatsResponse {
+  success: true;
+  path: string;
+  fileCount: number;
+  totalBytes: number;
+}
+
 export interface CreateFolderRequest {
   parentPath: string;
   name: string;

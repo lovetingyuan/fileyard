@@ -89,6 +89,7 @@ interface FolderRowProps {
   busy: boolean;
   isDeletingFolder: boolean;
   onNavigate: (path: string) => void;
+  onShowDetails: (path: string) => void;
   onRequestDelete: (path: string, name: string) => void;
 }
 
@@ -97,6 +98,7 @@ export function FolderRow({
   busy,
   isDeletingFolder,
   onNavigate,
+  onShowDetails,
   onRequestDelete,
 }: FolderRowProps) {
   const isOptimistic = "isOptimistic" in folder;
@@ -128,6 +130,11 @@ export function FolderRow({
             busy={busy}
             isLoading={isDeletingFolder}
             items={[
+              {
+                label: "查看详情",
+                icon: "mdi:information-outline",
+                onClick: () => onShowDetails(folder.path),
+              },
               {
                 label: "删除",
                 icon: "mdi:delete-outline",

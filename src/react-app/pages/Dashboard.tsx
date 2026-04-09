@@ -4,6 +4,7 @@ import { Icon } from "@iconify/react";
 import toast from "react-hot-toast";
 import {
   buildDownloadUrl,
+  getDirectoryStats,
   useCreateFolderMutation,
   useDeleteFileMutation,
   useDeleteFolderMutation,
@@ -13,6 +14,7 @@ import {
 } from "../hooks/useFilesApi";
 import { FileToolbar } from "../components/FileToolbar";
 import { DeleteConfirmModal } from "../components/DeleteConfirmModal";
+import { DirectoryStatsModal } from "../components/DirectoryStatsModal";
 import { FileDetailsModal } from "../components/FileDetailsModal";
 import { FileRow, FolderRow, NewFolderRow } from "../components/FileTableRows";
 import { PreviewModal } from "../components/PreviewModal";
@@ -20,7 +22,7 @@ import { NewTextFileModal } from "../components/NewTextFileModal";
 import { ShareFileModal } from "../components/ShareFileModal";
 import { getDownloadFilename } from "../utils/fileFormatters";
 import { validateFolderName } from "../utils/folderValidation";
-import type { FileEntry, SortKey, SortOrder } from "../../types";
+import type { DirectoryStatsResponse, FileEntry, SortKey, SortOrder } from "../../types";
 
 type DeleteTarget = {
   type: "file" | "folder";
@@ -57,10 +59,16 @@ export function Dashboard() {
   const [pendingDeleteTarget, setPendingDeleteTarget] = useState<DeleteTarget | null>(null);
   const [searchInputValue, setSearchInputValue] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isDirectoryStatsModalOpen, setIsDirectoryStatsModalOpen] = useState(false);
+  const [isDirectoryStatsLoading, setIsDirectoryStatsLoading] = useState(false);
+  const [directoryStatsPath, setDirectoryStatsPath] = useState("");
+  const [directoryStats, setDirectoryStats] = useState<DirectoryStatsResponse | null>(null);
+  const [directoryStatsError, setDirectoryStatsError] = useState<string | null>(null);
   const currentPath = searchParams.get("path") ?? "";
   const [sort, setSort] = useState<SortKey>("uploadedAt");
   const [order, setOrder] = useState<SortOrder>("desc");
   const deferredSearchQuery = useDeferredValue(searchQuery);
+  const directoryStatsRequestIdRef = useRef(0);
 
   const {
     data,
@@ -133,6 +141,39 @@ export function Dashboard() {
     startTransition(() => {
       setSearchQuery(value);
     });
+  };
+
+  const handleCloseDirectoryStatsModal = () => {
+    setIsDirectoryStatsModalOpen(false);
+  };
+
+  const handleShowDirectoryStats = async (path = currentPath) => {
+    const requestedPath = path;
+    const requestId = directoryStatsRequestIdRef.current + 1;
+    directoryStatsRequestIdRef.current = requestId;
+
+    setIsDirectoryStatsModalOpen(true);
+    setIsDirectoryStatsLoading(true);
+    setDirectoryStatsPath(requestedPath);
+    setDirectoryStats(null);
+    setDirectoryStatsError(null);
+
+    try {
+      const stats = await getDirectoryStats(requestedPath);
+      if (directoryStatsRequestIdRef.current !== requestId) {
+        return;
+      }
+      setDirectoryStats(stats);
+    } catch (err) {
+      if (directoryStatsRequestIdRef.current !== requestId) {
+        return;
+      }
+      setDirectoryStatsError(err instanceof Error ? err.message : "Failed to load directory stats");
+    } finally {
+      if (directoryStatsRequestIdRef.current === requestId) {
+        setIsDirectoryStatsLoading(false);
+      }
+    }
   };
 
   const getUniqueFolderName = (baseName: string): string => {
@@ -330,6 +371,14 @@ export function Dashboard() {
         onClose={handleCloseDeleteConfirm}
         onConfirm={handleConfirmDelete}
       />
+      <DirectoryStatsModal
+        isOpen={isDirectoryStatsModalOpen}
+        path={directoryStatsPath}
+        stats={directoryStats}
+        error={directoryStatsError}
+        isLoading={isDirectoryStatsLoading}
+        onClose={handleCloseDirectoryStatsModal}
+      />
       <FileDetailsModal file={detailsFile} onClose={() => setDetailsFile(null)} />
       {shareFile ? (
         <ShareFileModal key={shareFile.path} file={shareFile} onClose={() => setShareFile(null)} />
@@ -355,7 +404,6 @@ export function Dashboard() {
         <section className="card bg-base-100 shadow-sm">
           <div className="card-body gap-4">
             <FileToolbar
-              currentPath={currentPath}
               breadcrumbs={breadcrumbs}
               fileCount={filteredFiles.length}
               totalBytes={totalBytes}
@@ -372,6 +420,7 @@ export function Dashboard() {
               onCreateTextFile={() => setIsNewTextFileModalOpen(true)}
               onRefresh={() => refresh()}
               onSearchChange={handleSearchChange}
+              onShowDirectoryStats={() => void handleShowDirectoryStats()}
             />
 
             {error ? (
@@ -481,6 +530,7 @@ export function Dashboard() {
                           busy={busy}
                           isDeletingFolder={isDeletingFolder}
                           onNavigate={setPath}
+                          onShowDetails={(path) => void handleShowDirectoryStats(path)}
                           onRequestDelete={(path, name) =>
                             handleRequestDelete({ type: "folder", path, name })
                           }

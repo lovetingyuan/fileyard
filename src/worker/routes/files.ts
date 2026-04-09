@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import type { AppContext } from "../context";
-import type { FileListResponse, FileMutationResponse } from "../../types";
+import type { DirectoryStatsResponse, FileListResponse, FileMutationResponse } from "../../types";
 import {
   FilePathValidationError,
   FOLDER_MARKER_NAME,
@@ -165,6 +165,55 @@ files.get("/api/files", async (c) => {
     }
     console.error("Failed to list files", error);
     return jsonError(c, "Failed to list files", 500);
+  }
+});
+
+files.get("/api/files/stats", async (c) => {
+  try {
+    const path = normalizeRelativePath(c.req.query("path"), { allowEmpty: true, label: "Path" });
+    assertPathNotReserved(path);
+    const { rootDirId } = await getFileContext(c);
+
+    if (path && !(await folderExists(c.env, rootDirId, path))) {
+      return jsonError(c, "Folder not found", 404);
+    }
+
+    const prefix = getFolderPrefix(rootDirId, path);
+    const systemPrefix = path ? null : getFolderPrefix(rootDirId, SYSTEM_PROFILE_FOLDER_NAME);
+    let fileCount = 0;
+    let totalBytes = 0;
+
+    let cursor: string | undefined;
+    do {
+      const listing = await c.env.FILES_BUCKET.list({ prefix, cursor });
+      for (const object of listing.objects) {
+        if (object.key === `${prefix}${FOLDER_MARKER_NAME}`) {
+          continue;
+        }
+        if (systemPrefix && object.key.startsWith(systemPrefix)) {
+          continue;
+        }
+        fileCount += 1;
+        totalBytes += object.size;
+      }
+      cursor = listing.truncated ? listing.cursor : undefined;
+    } while (cursor);
+
+    const response: DirectoryStatsResponse = {
+      success: true,
+      path,
+      fileCount,
+      totalBytes,
+    };
+
+    return c.json(response);
+  } catch (error) {
+    const validationError = handlePathValidationError(c, error);
+    if (validationError) {
+      return validationError;
+    }
+    console.error("Failed to get directory stats", error);
+    return jsonError(c, "Failed to get directory stats", 500);
   }
 });
 

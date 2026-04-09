@@ -3,7 +3,6 @@ import { Icon } from "@iconify/react";
 import { formatBytes } from "../utils/fileFormatters";
 
 interface FileToolbarProps {
-  currentPath: string;
   breadcrumbs: string[];
   fileCount: number;
   totalBytes: number;
@@ -20,6 +19,7 @@ interface FileToolbarProps {
   onCreateTextFile: () => void;
   onRefresh: () => void;
   onSearchChange: (q: string) => void;
+  onShowDirectoryStats: () => void;
 }
 
 export function FileToolbar({
@@ -39,6 +39,7 @@ export function FileToolbar({
   onCreateTextFile,
   onRefresh,
   onSearchChange,
+  onShowDirectoryStats,
 }: FileToolbarProps) {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const isSearchExpanded = searchQuery.length > 0;
@@ -76,9 +77,13 @@ export function FileToolbar({
       </div>
 
       <div className="ml-auto flex shrink-0 items-center gap-3 sm:gap-4">
-        <span className="text-xs text-base-content/60 whitespace-nowrap">
+        <button
+          type="button"
+          className="link link-hover text-xs text-base-content/60 whitespace-nowrap"
+          onClick={onShowDirectoryStats}
+        >
           {fileCount} 个文件，共 {formatBytes(totalBytes)}
-        </span>
+        </button>
         <div className="tooltip" data-tip={isUploadingFile ? "Uploading..." : "Upload File"}>
           <button
             type="button"
