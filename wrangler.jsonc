@@ -12,8 +12,9 @@
     "enabled": true,
   },
   "vars": {
-    // Override these before production deploy.
-    "APP_URL": "https://files.example.com",
+    // Set to your production domain before deploying (e.g. "https://files.example.com").
+    // When empty, the app falls back to the request origin.
+    "APP_URL": "",
     "MAX_UPLOAD_BYTES": "104857600",
     "SENDER_EMAIL": "File Share <noreply@example.com>",
   },

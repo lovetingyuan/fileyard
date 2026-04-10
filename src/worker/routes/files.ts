@@ -446,6 +446,8 @@ files.get("/api/files/preview", async (c) => {
     headers.set("ETag", object.httpEtag);
     headers.set("Last-Modified", object.uploaded.toUTCString());
     headers.set("Accept-Ranges", "bytes");
+    // Sandbox previewed content to prevent script execution in HTML/SVG files
+    headers.set("Content-Security-Policy", "sandbox");
 
     if (object.range) {
       const r = object.range;

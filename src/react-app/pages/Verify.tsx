@@ -1,17 +1,8 @@
-import { useEffect } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useCallback } from "react";
+import { useParams } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import { useVerifyEmail } from "../hooks/useAuthApi";
-
-function useDelayedCallback(callback: () => void, delay: number, enabled: boolean) {
-  useEffect(() => {
-    if (!enabled) {
-      return;
-    }
-    const timeout = window.setTimeout(callback, delay);
-    return () => window.clearTimeout(timeout);
-  }, [callback, delay, enabled]);
-}
+import { useDelayedCallback } from "../hooks/useDelayedCallback";
 
 interface VerifyProps {
   onSuccess: () => void;
@@ -19,18 +10,20 @@ interface VerifyProps {
 
 export function Verify({ onSuccess }: VerifyProps) {
   const { token } = useParams<{ token: string }>();
-  const [searchParams] = useSearchParams();
-  const email = searchParams.get("email");
-  const { result, error, isLoading } = useVerifyEmail(token, email ?? undefined);
-  const status: "loading" | "success" | "error" =
-    !token || !email ? "error" : isLoading ? "loading" : result ? "success" : "error";
+  const { result, error, isLoading } = useVerifyEmail(token);
+  const status: "loading" | "success" | "error" = !token
+    ? "error"
+    : isLoading
+      ? "loading"
+      : result
+        ? "success"
+        : "error";
   const errorMessage = !token
     ? "Invalid verification link"
-    : !email
-      ? "Email is missing from the verification link"
-      : (error?.message ?? "An error occurred during verification");
+    : (error?.message ?? "An error occurred during verification");
 
-  useDelayedCallback(onSuccess, 2000, !!result);
+  const stableOnSuccess = useCallback(onSuccess, [onSuccess]);
+  useDelayedCallback(stableOnSuccess, 2000, !!result);
 
   return (
     <div className="flex flex-1 items-center justify-center p-4">

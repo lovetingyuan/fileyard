@@ -2,6 +2,41 @@
  * Email utilities using Resend API
  */
 
+/**
+ * Encode email and token into a single opaque verification code.
+ * Format: base64url(email + ":" + token)
+ * This avoids exposing the email as a plain query parameter in the URL.
+ */
+export function encodeVerificationCode(email: string, token: string): string {
+  const raw = `${email}:${token}`;
+  const encoded = btoa(raw).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/u, "");
+  return encoded;
+}
+
+/**
+ * Decode a verification code back into email and token.
+ * Returns null if the code is malformed.
+ */
+export function decodeVerificationCode(code: string): { email: string; token: string } | null {
+  try {
+    const padding = code.length % 4 === 0 ? "" : "=".repeat(4 - (code.length % 4));
+    const normalized = code.replace(/-/g, "+").replace(/_/g, "/") + padding;
+    const raw = atob(normalized);
+    const separatorIndex = raw.indexOf(":");
+    if (separatorIndex === -1) {
+      return null;
+    }
+    const email = raw.slice(0, separatorIndex);
+    const token = raw.slice(separatorIndex + 1);
+    if (!email || !token) {
+      return null;
+    }
+    return { email, token };
+  } catch {
+    return null;
+  }
+}
+
 interface SendVerificationEmailOptions {
   to: string;
   verificationToken: string;
@@ -18,9 +53,8 @@ export async function sendVerificationEmail(
 ): Promise<{ success: boolean; error?: string; status: number }> {
   const { to, verificationToken, appUrl } = options;
 
-  // Include email as query param so frontend can extract it
-  const encodedEmail = encodeURIComponent(to);
-  const verificationUrl = `${appUrl}/verify/${verificationToken}?email=${encodedEmail}`;
+  const verificationCode = encodeVerificationCode(to, verificationToken);
+  const verificationUrl = `${appUrl}/verify/${verificationCode}`;
 
   try {
     const response = await fetch("https://api.resend.com/emails", {

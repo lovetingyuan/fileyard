@@ -67,12 +67,17 @@ export async function enforceRateLimit(
   identifier?: string | null,
 ): Promise<Response | null> {
   const policy = RATE_LIMIT_POLICIES[action];
-  const keys = [
-    {
-      key: `${action}:ip:${getClientIp(c)}`,
+  const clientIp = getClientIp(c);
+  const keys = [];
+
+  // Skip IP-based rate limiting when IP is unknown to avoid
+  // all unknown-IP requests sharing a single bucket
+  if (clientIp !== "unknown") {
+    keys.push({
+      key: `${action}:ip:${clientIp}`,
       limit: policy.perIp,
-    },
-  ];
+    });
+  }
 
   if (identifier) {
     keys.push({

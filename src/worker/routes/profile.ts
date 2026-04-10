@@ -7,6 +7,15 @@ import { jsonError } from "../utils/response";
 
 const AVATAR_MAX_UPLOAD_BYTES = 1024 * 1024;
 const AVATAR_CONTENT_TYPE = "image/png";
+const PNG_MAGIC_BYTES = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+
+function isPngFile(buffer: ArrayBuffer): boolean {
+  if (buffer.byteLength < PNG_MAGIC_BYTES.length) {
+    return false;
+  }
+  const header = new Uint8Array(buffer, 0, PNG_MAGIC_BYTES.length);
+  return PNG_MAGIC_BYTES.every((byte, i) => header[i] === byte);
+}
 
 const profile = new Hono<AppContext>();
 
@@ -78,6 +87,10 @@ profile.put("/api/profile/avatar", async (c) => {
     const contentType = (c.req.header("content-type") ?? "").split(";")[0]?.trim();
     if (contentType !== AVATAR_CONTENT_TYPE) {
       return jsonError(c, "Avatar must be uploaded as PNG", 400);
+    }
+
+    if (!isPngFile(body)) {
+      return jsonError(c, "File content is not a valid PNG image", 400);
     }
 
     const { rootDirId } = await getFileContext(c);

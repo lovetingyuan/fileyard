@@ -1,12 +1,4 @@
-import {
-  BrowserRouter,
-  Routes,
-  Route,
-  Navigate,
-  Outlet,
-  useLocation,
-  useNavigate,
-} from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useNavigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { AppLayout } from "./components/AppLayout";
 import { AuthProvider } from "./context/AuthContext";
@@ -16,7 +8,6 @@ import { Register } from "./pages/Register";
 import { Verify } from "./pages/Verify";
 import { Dashboard } from "./pages/Dashboard";
 import { Profile } from "./pages/Profile";
-import { FilePickerDebug } from "./pages/FilePickerDebug";
 import { ShareDownload } from "./pages/ShareDownload";
 
 function AuthGate() {
@@ -96,12 +87,6 @@ function AppContent() {
 }
 
 function AppRoutes() {
-  const location = useLocation();
-
-  if (location.pathname === "/debug/file-picker") {
-    return <FilePickerDebug />;
-  }
-
   return (
     <AuthProvider>
       <AppContent />

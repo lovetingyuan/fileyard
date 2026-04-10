@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ComponentType, type CSSProperties } from "react";
+import { useRef, useState, type ComponentType, type CSSProperties } from "react";
 import QRCodeImport from "react-qr-code";
 import toast from "react-hot-toast";
 import type { FileEntry, ShareLinkResponse, ShareDurationOption } from "../../types";
@@ -48,19 +48,16 @@ export function ShareFileModal({ file, onClose }: ShareFileModalProps) {
   const [shareLink, setShareLink] = useState<ShareLinkResponse | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const requestIdRef = useRef(0);
+  const initialFetchDoneRef = useRef(false);
   const { createShareLink, isMutating } = useCreateShareLinkMutation();
 
-  useEffect(() => {
-    if (!file) {
-      return;
-    }
-
+  const fetchShareLink = (filePath: string, duration: ShareDurationOption) => {
     const currentRequestId = requestIdRef.current + 1;
     requestIdRef.current = currentRequestId;
     setLoadError(null);
     setShareLink(null);
 
-    void createShareLink(file.path, expiresInSeconds)
+    void createShareLink(filePath, duration)
       .then((response) => {
         if (requestIdRef.current !== currentRequestId) {
           return;
@@ -73,7 +70,13 @@ export function ShareFileModal({ file, onClose }: ShareFileModalProps) {
         }
         setLoadError(error instanceof Error ? error.message : "Failed to generate share link");
       });
-  }, [createShareLink, expiresInSeconds, file]);
+  };
+
+  // Trigger initial fetch on first render with file
+  if (file && !initialFetchDoneRef.current) {
+    initialFetchDoneRef.current = true;
+    fetchShareLink(file.path, expiresInSeconds);
+  }
 
   if (!file) {
     return null;
@@ -179,9 +182,13 @@ export function ShareFileModal({ file, onClose }: ShareFileModalProps) {
               <select
                 className="select select-sm w-full max-w-35"
                 value={String(expiresInSeconds)}
-                onChange={(event) =>
-                  setExpiresInSeconds(Number(event.target.value) as ShareDurationOption)
-                }
+                onChange={(event) => {
+                  const newDuration = Number(event.target.value) as ShareDurationOption;
+                  setExpiresInSeconds(newDuration);
+                  if (file) {
+                    fetchShareLink(file.path, newDuration);
+                  }
+                }}
               >
                 {shareDurationOptions.map((option) => (
                   <option key={option.value} value={option.value}>

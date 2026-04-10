@@ -267,8 +267,8 @@ export class UserDO extends DurableObject {
 
     await this.storage.put(`session:${token}`, session);
 
-    // Clean up expired sessions
-    this.cleanupExpiredSessions();
+    // Clean up expired sessions in the background
+    this.ctx.waitUntil(this.cleanupExpiredSessions());
 
     return session;
   }

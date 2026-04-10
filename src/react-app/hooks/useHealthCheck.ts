@@ -12,5 +12,7 @@ export function useHealthCheck() {
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
     shouldRetryOnError: false,
+    onSuccess: (data) => console.log("Health check:", data),
+    onError: (err) => console.error("Health check failed:", err),
   });
 }

@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { deleteCookie, setCookie } from "hono/cookie";
 import type { Context } from "hono";
 import type { AppContext } from "../context";
-import { sendVerificationEmail } from "../utils/email";
+import { sendVerificationEmail, decodeVerificationCode } from "../utils/email";
 import {
   generateSalt,
   hashPassword,
@@ -72,7 +72,11 @@ auth.post("/api/auth/register", async (c) => {
   const stub = c.env.USER_DO.getByName(normalizedEmail);
   const existingUser = await stub.getUser();
   if (existingUser) {
-    return jsonError(c, "An account with this email already exists", 400);
+    // Return the same message as a successful registration to prevent email enumeration
+    return c.json({
+      success: true,
+      message: "Registration successful! Please check your email to verify your account.",
+    });
   }
 
   const salt = generateSalt();
@@ -154,7 +158,7 @@ auth.post("/api/auth/login", async (c) => {
     });
   } catch (error) {
     console.error("Login route failed", error);
-    return jsonError(c, error instanceof Error ? error.message : "Login failed", 500);
+    return jsonError(c, "Login failed", 500);
   }
 });
 
@@ -191,6 +195,12 @@ auth.get("/api/auth/verify/:token", async (c) => {
     return c.redirect("/login?error=Invalid verification link");
   }
 
+  // The token is now an opaque code containing email + verification token
+  const decoded = decodeVerificationCode(token);
+  if (!decoded) {
+    return c.redirect("/login?error=Invalid verification link");
+  }
+
   return jsonError(
     c,
     "Email required for verification. Please use the verification link from your email.",
@@ -199,16 +209,21 @@ auth.get("/api/auth/verify/:token", async (c) => {
 });
 
 auth.post("/api/auth/verify", async (c) => {
-  const body = await c.req.json<{ token: string; email: string }>();
-  const { token, email } = body;
+  const body = await c.req.json<{ code: string }>();
+  const { code } = body;
 
-  if (!token || !email) {
-    return jsonError(c, "Token and email are required", 400);
+  if (!code) {
+    return jsonError(c, "Verification code is required", 400);
   }
 
-  const normalizedEmail = email.toLowerCase().trim();
+  const decoded = decodeVerificationCode(code);
+  if (!decoded) {
+    return jsonError(c, "Invalid verification code", 400);
+  }
+
+  const normalizedEmail = decoded.email.toLowerCase().trim();
   const stub = c.env.USER_DO.getByName(normalizedEmail);
-  const verification = await stub.consumeVerificationToken(token);
+  const verification = await stub.consumeVerificationToken(decoded.token);
   if (!verification) {
     return jsonError(c, "Invalid or expired verification token", 400);
   }

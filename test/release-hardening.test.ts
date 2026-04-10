@@ -250,7 +250,8 @@ describe("release hardening backend", () => {
   it("applies security headers to html, api, and download responses", async () => {
     const htmlResponse = await apiFetch("/login");
     expect(htmlResponse.status).toBe(200);
-    expect(htmlResponse.headers.has("Content-Security-Policy")).toBe(false);
+    expect(htmlResponse.headers.has("Content-Security-Policy")).toBe(true);
+    expect(htmlResponse.headers.get("Content-Security-Policy")).toContain("default-src 'self'");
     expect(htmlResponse.headers.get("Referrer-Policy")).toBe("strict-origin-when-cross-origin");
     expect(htmlResponse.headers.get("Permissions-Policy")).toContain("camera=()");
 
@@ -278,7 +279,6 @@ describe("release hardening backend", () => {
 
     const downloadResponse = await apiFetch("/api/files/object?path=security.txt", {}, { cookie });
     expect(downloadResponse.status).toBe(200);
-    expect(downloadResponse.headers.has("Content-Security-Policy")).toBe(false);
     expect(downloadResponse.headers.get("X-Frame-Options")).toBe("DENY");
   });
 });

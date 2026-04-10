@@ -5,6 +5,7 @@
 const ITERATIONS = 100000;
 const KEY_LENGTH = 256;
 const SALT_LENGTH = 16;
+const HASH_VERSION_PREFIX = "v1:";
 
 /**
  * Convert ArrayBuffer to hex string
@@ -36,9 +37,15 @@ export function generateSalt(): string {
 }
 
 /**
- * Hash a password with PBKDF2
+ * Hash a password with PBKDF2 and return a versioned hash string.
+ * Format: "v1:<hex>" — the version prefix enables future algorithm upgrades.
  */
 export async function hashPassword(password: string, salt: string): Promise<string> {
+  const rawHash = await derivePasswordHash(password, salt);
+  return `${HASH_VERSION_PREFIX}${rawHash}`;
+}
+
+async function derivePasswordHash(password: string, salt: string): Promise<string> {
   const encoder = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey(
     "raw",
@@ -63,15 +70,24 @@ export async function hashPassword(password: string, salt: string): Promise<stri
 }
 
 /**
- * Verify a password against a hash
+ * Verify a password against a hash (supports both versioned "v1:..." and legacy unversioned hashes).
  */
 export async function verifyPassword(
   password: string,
   salt: string,
   hash: string,
 ): Promise<boolean> {
-  const computedHash = await hashPassword(password, salt);
-  return computedHash === hash;
+  // Strip version prefix if present; legacy hashes have no prefix
+  const rawHash = hash.startsWith(HASH_VERSION_PREFIX)
+    ? hash.slice(HASH_VERSION_PREFIX.length)
+    : hash;
+  const computedHash = await derivePasswordHash(password, salt);
+  const a = hexToBuffer(computedHash);
+  const b = hexToBuffer(rawHash);
+  if (a.byteLength !== b.byteLength) {
+    return false;
+  }
+  return crypto.subtle.timingSafeEqual(a, b);
 }
 
 /**

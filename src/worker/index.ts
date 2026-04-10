@@ -22,7 +22,8 @@ app.get("/health", (c) => c.json({ status: "ok", time: new Date().toISOString() 
 app.use("*", async (c, next) => {
   await next();
   const headers = new Headers(c.res.headers);
-  applySecurityHeaders(headers);
+  const isDev = new URL(c.req.url).hostname === "localhost";
+  applySecurityHeaders(headers, { skipCSP: isDev });
   c.res = new Response(c.res.body, {
     headers,
     status: c.res.status,

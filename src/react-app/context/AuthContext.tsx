@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   useAuthUser,
   useLoginMutation,
@@ -8,7 +8,7 @@ import {
 import { AuthContext } from "./auth-context";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [error, setError] = useState<string | null>(null);
+  const [localError, setLocalError] = useState<string | null>(null);
   const { user, error: authError, isLoading: isAuthLoading, mutate } = useAuthUser();
   const { login: triggerLogin, isMutating: isLoggingIn } = useLoginMutation();
   const { logout: triggerLogout, isMutating: isLoggingOut } = useLogoutMutation();
@@ -16,50 +16,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const authLoading = isAuthLoading;
   const loading = authLoading || isLoggingIn || isRegistering || isLoggingOut;
+  const error = authError?.message ?? localError;
 
   const checkAuth = async () => {
-    setError(null);
+    setLocalError(null);
     await mutate();
   };
 
-  useEffect(() => {
-    if (authError) {
-      setError(authError.message);
-    }
-  }, [authError]);
-
   const login = async (email: string, password: string) => {
-    setError(null);
+    setLocalError(null);
 
     try {
       await triggerLogin(email, password);
       return { success: true };
     } catch (err) {
       const message = err instanceof Error ? err.message : "Login failed";
-      setError(message);
+      setLocalError(message);
       return { success: false, error: message };
     }
   };
 
   const logout = async () => {
     try {
-      setError(null);
+      setLocalError(null);
       await triggerLogout();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Logout failed";
-      setError(message);
+      setLocalError(message);
     }
   };
 
   const register = async (email: string, password: string) => {
-    setError(null);
+    setLocalError(null);
 
     try {
       const data = await triggerRegister(email, password);
       return { success: true, message: data.message };
     } catch (err) {
       const message = err instanceof Error ? err.message : "Registration failed";
-      setError(message);
+      setLocalError(message);
       return { success: false, error: message };
     }
   };

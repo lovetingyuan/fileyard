@@ -156,16 +156,13 @@ export function useLogoutMutation() {
   };
 }
 
-export function useVerifyEmail(token?: string, email?: string) {
+export function useVerifyEmail(code?: string) {
   const { data, error, isLoading } = useSWR<VerifyResponse, ApiError>(
-    token && email ? ["/api/auth/verify", token, email] : null,
-    ([url, verificationToken, verificationEmail]) =>
+    code ? ["/api/auth/verify", code] : null,
+    ([url, verificationCode]) =>
       apiRequest<VerifyResponse>(url, {
         method: "POST",
-        body: JSON.stringify({
-          token: verificationToken,
-          email: verificationEmail,
-        }),
+        body: JSON.stringify({ code: verificationCode }),
       }),
     {
       revalidateIfStale: false,
