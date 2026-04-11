@@ -203,3 +203,4 @@ dist
 
 .claude/
 .agents/
+.worktrees/

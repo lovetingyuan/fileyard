@@ -1,6 +1,7 @@
 import { Icon } from "@iconify/react";
 import { type ReactNode, useEffect, useState } from "react";
 import { useNativeDialog } from "../hooks/useNativeDialog";
+import { getDialogBoxClassName, type DialogWidthMode } from "./previewModalLayout";
 
 type DialogAction = () => void | Promise<void>;
 
@@ -34,6 +35,7 @@ interface DialogProps {
   cancelDisabled?: boolean;
   confirmDisabled?: boolean;
   confirmLoading?: boolean;
+  widthMode?: DialogWidthMode;
   dialogClassName?: string;
   boxClassName?: string;
   bodyClassName?: string;
@@ -74,6 +76,7 @@ export function Dialog({
   cancelDisabled = false,
   confirmDisabled = false,
   confirmLoading = false,
+  widthMode = "default",
   dialogClassName = "",
   boxClassName = "",
   bodyClassName = "",
@@ -150,7 +153,7 @@ export function Dialog({
 
   return (
     <dialog ref={dialogRef} className={`modal ${dialogClassName}`.trim()}>
-      <div className={`modal-box ${boxClassName}`.trim()}>
+      <div className={getDialogBoxClassName(widthMode, boxClassName)}>
         {(title || showCloseButton || headerActions !== undefined) && (
           <div className={`mb-4 flex items-center justify-between gap-4 ${headerClassName}`.trim()}>
             <div className="min-w-0 flex-1">
