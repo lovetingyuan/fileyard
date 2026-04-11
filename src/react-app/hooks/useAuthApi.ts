@@ -45,6 +45,26 @@ type VerifyResponse = {
   message: string;
 };
 
+type ForgotPasswordPayload = {
+  email: string;
+};
+
+type ForgotPasswordResponse = {
+  success: true;
+  message: string;
+  nextAction?: "verify-email";
+};
+
+type ResetPasswordPayload = {
+  code: string;
+  password: string;
+};
+
+type ResetPasswordResponse = {
+  success: true;
+  message: string;
+};
+
 const AUTH_USER_KEY = "/api/auth/me";
 
 async function fetchAuthUser(): Promise<User | null> {
@@ -176,5 +196,57 @@ export function useVerifyEmail(code?: string) {
     result: data,
     error,
     isLoading,
+  };
+}
+
+export function useForgotPasswordMutation() {
+  const { trigger, isMutating } = useSWRMutation<
+    ForgotPasswordResponse,
+    ApiError,
+    string,
+    ForgotPasswordPayload
+  >(
+    "/api/auth/forgot-password",
+    (url, { arg }) =>
+      apiRequest<ForgotPasswordResponse>(url, {
+        method: "POST",
+        body: JSON.stringify(arg),
+      }),
+    {
+      throwOnError: true,
+    },
+  );
+
+  const forgotPassword = (email: string) => trigger({ email });
+
+  return {
+    forgotPassword,
+    isMutating,
+  };
+}
+
+export function useResetPasswordMutation() {
+  const { trigger, isMutating } = useSWRMutation<
+    ResetPasswordResponse,
+    ApiError,
+    string,
+    ResetPasswordPayload
+  >(
+    "/api/auth/reset-password",
+    (url, { arg }) =>
+      apiRequest<ResetPasswordResponse>(url, {
+        method: "POST",
+        body: JSON.stringify(arg),
+      }),
+    {
+      throwOnError: true,
+    },
+  );
+
+  const resetPassword = (code: string, password: string) => trigger({ code, password });
+
+  return {
+    resetPassword,
+    isMutating,
   };
 }

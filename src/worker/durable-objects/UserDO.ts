@@ -37,6 +37,8 @@ export class UserDO extends DurableObject {
           return this.handleVerifyEmail();
         case "/create-verification-token":
           return this.handleCreateVerificationToken(request);
+        case "/get-verification-token":
+          return this.handleGetVerificationToken(request);
         case "/consume-verification-token":
           return this.handleConsumeVerificationToken(request);
         case "/create-session":
@@ -45,6 +47,10 @@ export class UserDO extends DurableObject {
           return this.handleValidateSession(request);
         case "/delete-session":
           return this.handleDeleteSession(request);
+        case "/delete-all-sessions":
+          return this.handleDeleteAllSessions();
+        case "/update-password":
+          return this.handleUpdatePassword(request);
         case "/ensure-root-dir":
           return this.handleEnsureRootDir();
         default:
@@ -96,9 +102,21 @@ export class UserDO extends DurableObject {
     });
   }
 
-  private async handleConsumeVerificationToken(request: Request): Promise<Response> {
+  private async handleGetVerificationToken(request: Request): Promise<Response> {
     const body = (await request.json()) as { token: string };
-    const result = await this.consumeVerificationToken(body.token);
+    const token = await this.getVerificationToken(body.token);
+    return new Response(JSON.stringify(token), {
+      status: token ? 200 : 404,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  private async handleConsumeVerificationToken(request: Request): Promise<Response> {
+    const body = (await request.json()) as {
+      token: string;
+      expectedType?: VerificationToken["type"];
+    };
+    const result = await this.consumeVerificationToken(body.token, body.expectedType);
     if (!result) {
       return new Response(JSON.stringify({ error: "Invalid or expired token" }), {
         status: 400,
@@ -137,6 +155,22 @@ export class UserDO extends DurableObject {
     const body = (await request.json()) as { token: string };
     await this.deleteSession(body.token);
     return new Response(JSON.stringify({ success: true }), {
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  private async handleDeleteAllSessions(): Promise<Response> {
+    await this.deleteAllSessions();
+    return new Response(JSON.stringify({ success: true }), {
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  private async handleUpdatePassword(request: Request): Promise<Response> {
+    const body = (await request.json()) as { passwordHash: string; salt: string };
+    const success = await this.updatePassword(body.passwordHash, body.salt);
+    return new Response(JSON.stringify({ success }), {
+      status: success ? 200 : 404,
       headers: { "Content-Type": "application/json" },
     });
   }
@@ -233,9 +267,9 @@ export class UserDO extends DurableObject {
   }
 
   /**
-   * Validate and consume a verification token
+   * Peek at a verification token without consuming it.
    */
-  async consumeVerificationToken(token: string): Promise<VerificationToken | null> {
+  async getVerificationToken(token: string): Promise<VerificationToken | null> {
     const key = `verify:${token}`;
     const verificationToken = await this.storage.get<VerificationToken>(key);
 
@@ -243,9 +277,29 @@ export class UserDO extends DurableObject {
       return null;
     }
 
-    // Check expiry
     if (verificationToken.expiresAt < Date.now()) {
       await this.storage.delete(key);
+      return null;
+    }
+
+    return verificationToken;
+  }
+
+  /**
+   * Validate and consume a verification token
+   */
+  async consumeVerificationToken(
+    token: string,
+    expectedType?: VerificationToken["type"],
+  ): Promise<VerificationToken | null> {
+    const key = `verify:${token}`;
+    const verificationToken = await this.getVerificationToken(token);
+
+    if (!verificationToken) {
+      return null;
+    }
+
+    if (expectedType && verificationToken.type !== expectedType) {
       return null;
     }
 
@@ -301,15 +355,37 @@ export class UserDO extends DurableObject {
   }
 
   /**
+   * Delete all sessions for the current user.
+   */
+  async deleteAllSessions(): Promise<void> {
+    const sessions = await this.storage.list({ prefix: "session:" });
+    for (const key of sessions.keys()) {
+      await this.storage.delete(key);
+    }
+  }
+
+  /**
+   * Update the user's password hash and salt.
+   */
+  async updatePassword(passwordHash: string, salt: string): Promise<boolean> {
+    const user = await this.storage.get<User>("user");
+    if (!user) {
+      return false;
+    }
+
+    user.passwordHash = passwordHash;
+    user.salt = salt;
+    await this.storage.put("user", user);
+    return true;
+  }
+
+  /**
    * Delete the user and any related sessions or verification tokens.
    */
   async deleteUser(): Promise<void> {
     await this.storage.delete("user");
 
-    const sessions = await this.storage.list({ prefix: "session:" });
-    for (const key of sessions.keys()) {
-      await this.storage.delete(key);
-    }
+    await this.deleteAllSessions();
 
     const verificationTokens = await this.storage.list({ prefix: "verify:" });
     for (const key of verificationTokens.keys()) {

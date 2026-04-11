@@ -1,27 +1,29 @@
 import { useId, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import toast from "react-hot-toast";
-import { useAuth } from "../hooks/useAuth";
+import { useResetPasswordMutation } from "../hooks/useAuthApi";
 import { getPasswordErrors, PASSWORD_REQUIREMENTS_HINT } from "../utils/passwordRules";
 
-interface RegisterProps {
-  onSwitchToLogin: (email?: string) => void;
-}
-
-export function Register({ onSwitchToLogin }: RegisterProps) {
-  const { register, loading } = useAuth();
-  const emailId = useId();
+export function ResetPassword() {
+  const navigate = useNavigate();
+  const { token } = useParams<{ token: string }>();
   const passwordId = useId();
   const confirmPasswordId = useId();
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const passwordErrors = getPasswordErrors(password);
+  const { resetPassword, isMutating } = useResetPasswordMutation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!email || !password || !confirmPassword) {
+    if (!token) {
+      toast.error("Invalid reset link");
+      return;
+    }
+
+    if (!password || !confirmPassword) {
       toast.error("Please fill in all fields");
       return;
     }
@@ -36,50 +38,49 @@ export function Register({ onSwitchToLogin }: RegisterProps) {
       return;
     }
 
-    const result = await register(email, password);
-    if (result.success) {
-      onSwitchToLogin(email.trim().toLowerCase());
-    } else {
-      toast.error(result.error || "Registration failed");
+    try {
+      await resetPassword(token, password);
+      navigate("/login?reset=1");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to reset password");
     }
   };
+
+  if (!token) {
+    return (
+      <main className="flex flex-1 items-center justify-center p-4">
+        <div className="card w-full max-w-md bg-base-100 shadow-xl">
+          <div className="card-body text-center">
+            <Icon icon="mdi:close-circle" className="mx-auto mb-4 text-6xl text-error" width={72} />
+            <h2 className="card-title justify-center text-2xl font-bold">Invalid reset link</h2>
+            <p className="mt-2 text-error">Please request a new password reset email.</p>
+            <Link to="/forgot-password" className="btn btn-primary mt-4 gap-2">
+              <Icon icon="mdi:lock-reset" className="h-5 w-5" />
+              Request a new link
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="flex flex-1 items-center justify-center p-4">
       <div className="card w-full max-w-md bg-base-100 shadow-xl">
         <div className="card-body">
-          <h2 className="card-title text-2xl font-bold text-center justify-center mb-4">
-            Create Account
+          <h2 className="card-title mb-2 justify-center text-center text-2xl font-bold">
+            Reset password
           </h2>
+          <p className="text-center text-sm text-base-content/75">
+            Choose a new password for your account.
+          </p>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="form-control">
-              <label className="label" htmlFor={emailId}>
-                <span className="label-text flex items-center gap-1">
-                  <Icon icon="mdi:email-outline" className="w-4 h-4" />
-                  Email
-                </span>
-              </label>
-              <input
-                id={emailId}
-                type="email"
-                name="email"
-                autoComplete="email"
-                placeholder="email@example.com"
-                className="input input-bordered w-full"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={loading}
-                required
-                spellCheck={false}
-              />
-            </div>
-
+          <form onSubmit={handleSubmit} className="mt-4 space-y-4">
             <div className="form-control">
               <label className="label" htmlFor={passwordId}>
                 <span className="label-text flex items-center gap-1">
-                  <Icon icon="mdi:lock-outline" className="w-4 h-4" />
-                  Password
+                  <Icon icon="mdi:lock-outline" className="h-4 w-4" />
+                  New Password
                 </span>
               </label>
               <input
@@ -91,16 +92,16 @@ export function Register({ onSwitchToLogin }: RegisterProps) {
                 className="input input-bordered w-full"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                disabled={loading}
+                disabled={isMutating}
                 required
                 minLength={8}
                 maxLength={64}
               />
               {passwordErrors.length > 0 && (
                 <div className="label">
-                  <ul className="text-error text-sm list-disc list-inside">
-                    {passwordErrors.map((err) => (
-                      <li key={err}>{err}</li>
+                  <ul className="list-inside list-disc text-sm text-error">
+                    {passwordErrors.map((error) => (
+                      <li key={error}>{error}</li>
                     ))}
                   </ul>
                 </div>
@@ -115,7 +116,7 @@ export function Register({ onSwitchToLogin }: RegisterProps) {
             <div className="form-control">
               <label className="label" htmlFor={confirmPasswordId}>
                 <span className="label-text flex items-center gap-1">
-                  <Icon icon="mdi:lock-check-outline" className="w-4 h-4" />
+                  <Icon icon="mdi:lock-check-outline" className="h-4 w-4" />
                   Confirm Password
                 </span>
               </label>
@@ -128,7 +129,7 @@ export function Register({ onSwitchToLogin }: RegisterProps) {
                 className="input input-bordered w-full"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                disabled={loading}
+                disabled={isMutating}
                 required
               />
               {confirmPassword && password !== confirmPassword && (
@@ -141,26 +142,21 @@ export function Register({ onSwitchToLogin }: RegisterProps) {
             <div className="form-control mt-6">
               <button
                 type="submit"
-                className={`btn btn-primary gap-2 ${loading ? "loading" : ""}`}
-                disabled={loading}
+                className={`btn btn-primary gap-2 ${isMutating ? "loading" : ""}`}
+                disabled={isMutating}
               >
-                <Icon icon="mdi:account-plus" className="w-5 h-5" />
-                {loading ? "Creating account..." : "Register"}
+                {!isMutating && <Icon icon="mdi:lock-reset" className="h-5 w-5" />}
+                {isMutating ? "Resetting password..." : "Reset password"}
               </button>
             </div>
           </form>
 
           <div className="divider">OR</div>
 
-          <button
-            type="button"
-            className="btn btn-outline gap-2"
-            onClick={() => onSwitchToLogin()}
-            disabled={loading}
-          >
-            <Icon icon="mdi:login" className="w-5 h-5" />
-            Already have an account? Login
-          </button>
+          <Link to="/login" className="btn btn-outline gap-2">
+            <Icon icon="mdi:login" className="h-5 w-5" />
+            Back to login
+          </Link>
         </div>
       </div>
     </main>

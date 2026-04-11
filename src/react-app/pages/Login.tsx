@@ -1,5 +1,5 @@
 import { useId, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import toast from "react-hot-toast";
 import { useAuth } from "../hooks/useAuth";
@@ -14,16 +14,24 @@ export function Login({ onSwitchToRegister }: LoginProps) {
   const emailId = useId();
   const passwordId = useId();
   const registered = searchParams.get("registered") === "1";
+  const reset = searchParams.get("reset") === "1";
   const initialEmail = searchParams.get("email") ?? "";
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
-  const toastShownRef = useRef(false);
+  const toastShownRef = useRef({ registered: false, reset: false });
 
-  if (registered && !toastShownRef.current) {
-    toastShownRef.current = true;
+  if (registered && !toastShownRef.current.registered) {
+    toastShownRef.current.registered = true;
     // Schedule toast after render to avoid calling during render phase
     Promise.resolve().then(() =>
       toast.success("Registration successful. Please verify your email, then log in."),
+    );
+  }
+
+  if (reset && !toastShownRef.current.reset) {
+    toastShownRef.current.reset = true;
+    Promise.resolve().then(() =>
+      toast.success("Password reset successful. Please log in with your new password."),
     );
   }
 
@@ -108,6 +116,12 @@ export function Login({ onSwitchToRegister }: LoginProps) {
               </button>
             </div>
           </form>
+
+          <div className="mt-2 text-right">
+            <Link to="/forgot-password" className="link link-hover text-sm text-primary">
+              Forgot password?
+            </Link>
+          </div>
 
           <div className="divider">OR</div>
 
