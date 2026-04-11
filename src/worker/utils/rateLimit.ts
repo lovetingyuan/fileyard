@@ -8,7 +8,13 @@ type RateLimitPolicy = {
   windowMs: number;
 };
 
-type RateLimitedAction = "login" | "register" | "resend-verification" | "create-share-link";
+type RateLimitedAction =
+  | "login"
+  | "register"
+  | "resend-verification"
+  | "forgot-password"
+  | "reset-password"
+  | "create-share-link";
 
 const RATE_LIMIT_POLICIES: Record<RateLimitedAction, RateLimitPolicy> = {
   login: {
@@ -25,6 +31,16 @@ const RATE_LIMIT_POLICIES: Record<RateLimitedAction, RateLimitPolicy> = {
     perIp: 3,
     perIdentifier: 3,
     windowMs: 15 * 60 * 1000,
+  },
+  "forgot-password": {
+    perIp: 3,
+    perIdentifier: 3,
+    windowMs: 15 * 60 * 1000,
+  },
+  "reset-password": {
+    perIp: 5,
+    perIdentifier: 5,
+    windowMs: 10 * 60 * 1000,
   },
   "create-share-link": {
     perIp: 10,

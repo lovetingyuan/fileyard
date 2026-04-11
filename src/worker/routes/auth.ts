@@ -2,7 +2,11 @@ import { Hono } from "hono";
 import { deleteCookie, setCookie } from "hono/cookie";
 import type { Context } from "hono";
 import type { AppContext } from "../context";
-import { sendVerificationEmail, decodeVerificationCode } from "../utils/email";
+import {
+  decodeVerificationCode,
+  sendPasswordResetEmail,
+  sendVerificationEmail,
+} from "../utils/email";
 import {
   generateSalt,
   hashPassword,
@@ -14,6 +18,8 @@ import { jsonError } from "../utils/response";
 import { enforceRateLimit } from "../utils/rateLimit";
 
 const auth = new Hono<AppContext>();
+const PASSWORD_RESET_SUCCESS_MESSAGE =
+  "If an account exists, a password reset email has been sent.";
 
 function isSecureRequest(c: Context<AppContext>): boolean {
   const forwardedProto = c.req.header("X-Forwarded-Proto");
@@ -89,7 +95,7 @@ auth.post("/api/auth/register", async (c) => {
 
   const verificationToken = await stub.createVerificationToken("email");
   const emailResult = await sendVerificationEmail(
-    { to: normalizedEmail, verificationToken, appUrl: emailConfig.appUrl },
+    { to: normalizedEmail, token: verificationToken, appUrl: emailConfig.appUrl },
     emailConfig.resendApiKey,
     emailConfig.senderEmail,
   );
@@ -223,7 +229,7 @@ auth.post("/api/auth/verify", async (c) => {
 
   const normalizedEmail = decoded.email.toLowerCase().trim();
   const stub = c.env.USER_DO.getByName(normalizedEmail);
-  const verification = await stub.consumeVerificationToken(decoded.token);
+  const verification = await stub.consumeVerificationToken(decoded.token, "email");
   if (!verification) {
     return jsonError(c, "Invalid or expired verification token", 400);
   }
@@ -279,7 +285,7 @@ auth.post("/api/auth/resend-verification", async (c) => {
 
   const verificationToken = await stub.createVerificationToken("email");
   const emailResult = await sendVerificationEmail(
-    { to: normalizedEmail, verificationToken, appUrl: emailConfig.appUrl },
+    { to: normalizedEmail, token: verificationToken, appUrl: emailConfig.appUrl },
     emailConfig.resendApiKey,
     emailConfig.senderEmail,
   );
@@ -294,6 +300,118 @@ auth.post("/api/auth/resend-verification", async (c) => {
   return c.json({
     success: true,
     message: "If an account exists, a verification email has been sent.",
+  });
+});
+
+auth.post("/api/auth/forgot-password", async (c) => {
+  const body = await c.req.json<{ email: string }>();
+  const { email } = body;
+
+  if (!email || !validateEmail(email)) {
+    return jsonError(c, "Invalid email address", 400);
+  }
+
+  const normalizedEmail = email.toLowerCase().trim();
+  const rateLimitResponse = await enforceRateLimit(c, "forgot-password", normalizedEmail);
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
+  const emailConfig = getVerificationEmailConfig(c);
+  if (emailConfig instanceof Response) {
+    return emailConfig;
+  }
+
+  const stub = c.env.USER_DO.getByName(normalizedEmail);
+  const user = await stub.getUser();
+
+  if (!user) {
+    return c.json({
+      success: true,
+      message: PASSWORD_RESET_SUCCESS_MESSAGE,
+    });
+  }
+
+  if (!user.verified) {
+    return c.json({
+      success: true,
+      message: "Please verify your email before resetting your password.",
+      nextAction: "verify-email" as const,
+    });
+  }
+
+  const resetToken = await stub.createVerificationToken("password");
+  const emailResult = await sendPasswordResetEmail(
+    { to: normalizedEmail, token: resetToken, appUrl: emailConfig.appUrl },
+    emailConfig.resendApiKey,
+    emailConfig.senderEmail,
+  );
+  if (!emailResult.success) {
+    return jsonError(
+      c,
+      emailResult.error ?? "Failed to send password reset email",
+      emailResult.status,
+    );
+  }
+
+  return c.json({
+    success: true,
+    message: PASSWORD_RESET_SUCCESS_MESSAGE,
+  });
+});
+
+auth.post("/api/auth/reset-password", async (c) => {
+  const rateLimitResponse = await enforceRateLimit(c, "reset-password");
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
+  const body = await c.req.json<{ code: string; password: string }>();
+  const { code, password } = body;
+
+  if (!code || !password) {
+    return jsonError(c, "Verification code and password are required", 400);
+  }
+
+  const decoded = decodeVerificationCode(code);
+  if (!decoded) {
+    return jsonError(c, "Invalid reset token", 400);
+  }
+
+  const normalizedEmail = decoded.email.toLowerCase().trim();
+  const stub = c.env.USER_DO.getByName(normalizedEmail);
+  const verification = await stub.getVerificationToken(decoded.token);
+
+  if (!verification) {
+    return jsonError(c, "Invalid or expired reset token", 400);
+  }
+
+  if (verification.type !== "password") {
+    return jsonError(c, "Invalid reset token type", 400);
+  }
+
+  const passwordValidation = validatePassword(password);
+  if (!passwordValidation.valid) {
+    return jsonError(c, passwordValidation.errors.join(", "), 400);
+  }
+
+  const consumedVerification = await stub.consumeVerificationToken(decoded.token, "password");
+  if (!consumedVerification) {
+    return jsonError(c, "Invalid or expired reset token", 400);
+  }
+
+  const salt = generateSalt();
+  const passwordHash = await hashPassword(password, salt);
+  const updated = await stub.updatePassword(passwordHash, salt);
+  if (!updated) {
+    return jsonError(c, "Account not found", 404);
+  }
+
+  await stub.deleteAllSessions();
+
+  return c.json({
+    success: true,
+    message: "Password reset successful. Please log in with your new password.",
   });
 });
 

@@ -3,8 +3,10 @@ import { Toaster } from "react-hot-toast";
 import { AppLayout } from "./components/AppLayout";
 import { AuthProvider } from "./context/AuthContext";
 import { useAuth } from "./hooks/useAuth";
+import { ForgotPassword } from "./pages/ForgotPassword";
 import { Login } from "./pages/Login";
 import { Register } from "./pages/Register";
+import { ResetPassword } from "./pages/ResetPassword";
 import { Verify } from "./pages/Verify";
 import { Dashboard } from "./pages/Dashboard";
 import { Profile } from "./pages/Profile";
@@ -65,6 +67,14 @@ function AppContent() {
                 <Register onSwitchToLogin={handleSwitchToLogin} />
               )
             }
+          />
+          <Route
+            path="forgot-password"
+            element={user ? <Navigate to="/" replace /> : <ForgotPassword />}
+          />
+          <Route
+            path="reset-password/:token"
+            element={user ? <Navigate to="/" replace /> : <ResetPassword />}
           />
           <Route
             path="verify/:token"
