@@ -1,12 +1,13 @@
 import { useId, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import toast from "react-hot-toast";
 import { useForgotPasswordMutation } from "../hooks/useAuthApi";
 
 export function ForgotPassword() {
+  const [searchParams] = useSearchParams();
   const emailId = useId();
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(() => searchParams.get("email") ?? "");
   const [message, setMessage] = useState<string | null>(null);
   const [nextAction, setNextAction] = useState<"verify-email" | null>(null);
   const { forgotPassword, isMutating } = useForgotPasswordMutation();

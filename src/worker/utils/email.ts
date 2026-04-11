@@ -165,7 +165,7 @@ export async function sendVerificationEmail(
       actionLabel: "Verify Email",
       path: "/verify",
       footnote:
-        "This link will expire in 24 hours. If you did not create an account, you can safely ignore this email.",
+        "This link will expire in 30 minutes. If you did not create an account, you can safely ignore this email.",
       failureMessage: "Failed to send verification email",
     },
     resendApiKey,
@@ -191,7 +191,7 @@ export async function sendPasswordResetEmail(
       actionLabel: "Reset Password",
       path: "/reset-password",
       footnote:
-        "This link will expire in 24 hours. If you did not request a password reset, you can safely ignore this email.",
+        "This link will expire in 30 minutes. If you did not request a password reset, you can safely ignore this email.",
       failureMessage: "Failed to send password reset email",
     },
     resendApiKey,

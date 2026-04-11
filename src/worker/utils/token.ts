@@ -39,7 +39,7 @@ export function generateRootDirId(): string {
  * Session duration constants
  */
 const SESSION_DURATION_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
-const VERIFICATION_TOKEN_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
+const VERIFICATION_TOKEN_DURATION_MS = 30 * 60 * 1000; // 30 minutes
 
 /**
  * Calculate session expiry time

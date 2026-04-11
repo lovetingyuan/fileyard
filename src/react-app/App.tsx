@@ -1,4 +1,12 @@
-import { BrowserRouter, Routes, Route, Navigate, Outlet, useNavigate } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  Outlet,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { AppLayout } from "./components/AppLayout";
 import { AuthProvider } from "./context/AuthContext";
@@ -11,6 +19,7 @@ import { Verify } from "./pages/Verify";
 import { Dashboard } from "./pages/Dashboard";
 import { Profile } from "./pages/Profile";
 import { ShareDownload } from "./pages/ShareDownload";
+import { allowsAuthenticatedEmailActionPath } from "./utils/authRouteAccess";
 
 function AuthGate() {
   const { authLoading } = useAuth();
@@ -28,7 +37,9 @@ function AuthGate() {
 
 function AppContent() {
   const { user } = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
+  const allowAuthenticatedEmailAction = allowsAuthenticatedEmailActionPath(location.pathname);
 
   const handleSwitchToRegister = () => {
     navigate("/register");
@@ -70,16 +81,24 @@ function AppContent() {
           />
           <Route
             path="forgot-password"
-            element={user ? <Navigate to="/" replace /> : <ForgotPassword />}
+            element={
+              user && !allowAuthenticatedEmailAction ? <Navigate to="/" replace /> : <ForgotPassword />
+            }
           />
           <Route
             path="reset-password/:token"
-            element={user ? <Navigate to="/" replace /> : <ResetPassword />}
+            element={
+              user && !allowAuthenticatedEmailAction ? <Navigate to="/" replace /> : <ResetPassword />
+            }
           />
           <Route
             path="verify/:token"
             element={
-              user ? <Navigate to="/" replace /> : <Verify onSuccess={handleVerifySuccess} />
+              user && !allowAuthenticatedEmailAction ? (
+                <Navigate to="/" replace />
+              ) : (
+                <Verify onSuccess={handleVerifySuccess} />
+              )
             }
           />
           <Route

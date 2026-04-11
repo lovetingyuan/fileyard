@@ -14,7 +14,7 @@
   "vars": {
     "APP_URL": "https://files.example.com",
     "MAX_UPLOAD_BYTES": "104857600",
-    "SENDER_EMAIL": "File Share <noreply@example.com>"
+    "SENDER_EMAIL": "File Share <files-share@tingyuan.in>"
   },
   "secrets": {
     "required": ["RESEND_API_KEY", "SHARE_LINK_SECRET"]

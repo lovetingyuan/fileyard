@@ -65,6 +65,11 @@ type ResetPasswordResponse = {
   message: string;
 };
 
+type ResetPasswordValidationResponse = {
+  success: true;
+  message: string;
+};
+
 const AUTH_USER_KEY = "/api/auth/me";
 
 async function fetchAuthUser(): Promise<User | null> {
@@ -226,6 +231,7 @@ export function useForgotPasswordMutation() {
 }
 
 export function useResetPasswordMutation() {
+  const { mutate } = useSWRConfig();
   const { trigger, isMutating } = useSWRMutation<
     ResetPasswordResponse,
     ApiError,
@@ -243,10 +249,37 @@ export function useResetPasswordMutation() {
     },
   );
 
-  const resetPassword = (code: string, password: string) => trigger({ code, password });
+  const resetPassword = async (code: string, password: string) => {
+    const data = await trigger({ code, password });
+    await mutate(AUTH_USER_KEY, null, { revalidate: false });
+    return data;
+  };
 
   return {
     resetPassword,
     isMutating,
+  };
+}
+
+export function useResetPasswordTokenValidation(code?: string) {
+  const { data, error, isLoading } = useSWR<ResetPasswordValidationResponse, ApiError>(
+    code ? ["/api/auth/reset-password/validate", code] : null,
+    ([url, verificationCode]) =>
+      apiRequest<ResetPasswordValidationResponse>(url, {
+        method: "POST",
+        body: JSON.stringify({ code: verificationCode }),
+      }),
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      shouldRetryOnError: false,
+    },
+  );
+
+  return {
+    isValid: data?.success ?? false,
+    error,
+    isLoading,
   };
 }

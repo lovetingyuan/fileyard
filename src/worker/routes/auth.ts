@@ -7,6 +7,7 @@ import {
   sendPasswordResetEmail,
   sendVerificationEmail,
 } from "../utils/email";
+import { resolveAppOrigin } from "../utils/shareLinks";
 import {
   generateSalt,
   hashPassword,
@@ -20,6 +21,45 @@ import { enforceRateLimit } from "../utils/rateLimit";
 const auth = new Hono<AppContext>();
 const PASSWORD_RESET_SUCCESS_MESSAGE =
   "If an account exists, a password reset email has been sent.";
+
+async function validatePasswordResetCode(
+  c: Context<AppContext>,
+  code: string,
+): Promise<
+  | {
+      decoded: { email: string; token: string };
+      normalizedEmail: string;
+      stub: ReturnType<AppContext["Bindings"]["USER_DO"]["getByName"]>;
+    }
+  | Response
+> {
+  if (!code) {
+    return jsonError(c, "Verification code is required", 400);
+  }
+
+  const decoded = decodeVerificationCode(code);
+  if (!decoded) {
+    return jsonError(c, "Invalid reset token", 400);
+  }
+
+  const normalizedEmail = decoded.email.toLowerCase().trim();
+  const stub = c.env.USER_DO.getByName(normalizedEmail);
+  const verification = await stub.getVerificationToken(decoded.token);
+
+  if (!verification) {
+    return jsonError(c, "Invalid or expired reset token", 400);
+  }
+
+  if (verification.type !== "password") {
+    return jsonError(c, "Invalid reset token type", 400);
+  }
+
+  return {
+    decoded,
+    normalizedEmail,
+    stub,
+  };
+}
 
 function isSecureRequest(c: Context<AppContext>): boolean {
   const forwardedProto = c.req.header("X-Forwarded-Proto");
@@ -47,7 +87,7 @@ function getVerificationEmailConfig(c: Context<AppContext>):
   return {
     resendApiKey,
     senderEmail,
-    appUrl: c.env.APP_URL ?? new URL(c.req.url).origin,
+    appUrl: resolveAppOrigin(c.req.url, c.env),
   };
 }
 
@@ -360,6 +400,20 @@ auth.post("/api/auth/forgot-password", async (c) => {
   });
 });
 
+auth.post("/api/auth/reset-password/validate", async (c) => {
+  const body = await c.req.json<{ code: string }>();
+  const validation = await validatePasswordResetCode(c, body.code);
+
+  if (validation instanceof Response) {
+    return validation;
+  }
+
+  return c.json({
+    success: true,
+    message: "Reset token is valid.",
+  });
+});
+
 auth.post("/api/auth/reset-password", async (c) => {
   const rateLimitResponse = await enforceRateLimit(c, "reset-password");
   if (rateLimitResponse) {
@@ -373,21 +427,9 @@ auth.post("/api/auth/reset-password", async (c) => {
     return jsonError(c, "Verification code and password are required", 400);
   }
 
-  const decoded = decodeVerificationCode(code);
-  if (!decoded) {
-    return jsonError(c, "Invalid reset token", 400);
-  }
-
-  const normalizedEmail = decoded.email.toLowerCase().trim();
-  const stub = c.env.USER_DO.getByName(normalizedEmail);
-  const verification = await stub.getVerificationToken(decoded.token);
-
-  if (!verification) {
-    return jsonError(c, "Invalid or expired reset token", 400);
-  }
-
-  if (verification.type !== "password") {
-    return jsonError(c, "Invalid reset token type", 400);
+  const validation = await validatePasswordResetCode(c, code);
+  if (validation instanceof Response) {
+    return validation;
   }
 
   const passwordValidation = validatePassword(password);
@@ -395,19 +437,22 @@ auth.post("/api/auth/reset-password", async (c) => {
     return jsonError(c, passwordValidation.errors.join(", "), 400);
   }
 
-  const consumedVerification = await stub.consumeVerificationToken(decoded.token, "password");
+  const consumedVerification = await validation.stub.consumeVerificationToken(
+    validation.decoded.token,
+    "password",
+  );
   if (!consumedVerification) {
     return jsonError(c, "Invalid or expired reset token", 400);
   }
 
   const salt = generateSalt();
   const passwordHash = await hashPassword(password, salt);
-  const updated = await stub.updatePassword(passwordHash, salt);
+  const updated = await validation.stub.updatePassword(passwordHash, salt);
   if (!updated) {
     return jsonError(c, "Account not found", 404);
   }
 
-  await stub.deleteAllSessions();
+  await validation.stub.deleteAllSessions();
 
   return c.json({
     success: true,

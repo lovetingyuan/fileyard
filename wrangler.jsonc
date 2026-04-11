@@ -16,7 +16,7 @@
     // When empty, the app falls back to the request origin.
     "APP_URL": "",
     "MAX_UPLOAD_BYTES": "104857600",
-    "SENDER_EMAIL": "File Share <noreply@example.com>",
+    "SENDER_EMAIL": "File Share <files-share@tingyuan.in>",
   },
   "secrets": {
     "required": ["RESEND_API_KEY", "SHARE_LINK_SECRET"],
