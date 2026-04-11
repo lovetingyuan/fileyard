@@ -2,21 +2,17 @@ import { Hono } from "hono";
 import type { Context } from "hono";
 import { csrf } from "hono/csrf";
 import { RateLimitDO } from "./durable-objects/RateLimitDO";
-import { UserDO } from "./durable-objects/UserDO";
-import { authMiddleware, requireAuth } from "./middleware/auth";
+import { authMiddleware, requireAuth } from "./auth/middleware";
+import { getAuth } from "./auth";
 import type { AppContext } from "./context";
 import { applyCorsHeaders, isAllowedOrigin } from "./utils/appHelpers";
 import { jsonError } from "./utils/response";
-import {
-  applySecurityHeaders,
-  shouldSkipContentSecurityPolicy,
-} from "./utils/securityHeaders";
-import authRoutes from "./routes/auth";
+import { applySecurityHeaders, shouldSkipContentSecurityPolicy } from "./utils/securityHeaders";
 import profileRoutes from "./routes/profile";
 import fileRoutes from "./routes/files";
 import shareRoutes from "./routes/shares";
 
-export { RateLimitDO, UserDO };
+export { RateLimitDO };
 
 const app = new Hono<AppContext>();
 
@@ -35,6 +31,10 @@ app.use("*", async (c, next) => {
 });
 
 app.use("/api/*", async (c, next) => {
+  if (c.req.path.startsWith("/api/auth/")) {
+    return next();
+  }
+
   const origin = c.req.header("Origin");
   if (origin && !isAllowedOrigin(c, origin)) {
     return jsonError(c, "Origin not allowed", 403);
@@ -56,17 +56,41 @@ app.use("/api/*", async (c, next) => {
 });
 
 app.use(
-  "/api/*",
+  "/api/profile",
+  csrf({
+    origin: (origin, c) => isAllowedOrigin(c as Context<AppContext>, origin),
+  }),
+);
+app.use(
+  "/api/profile/*",
+  csrf({
+    origin: (origin, c) => isAllowedOrigin(c as Context<AppContext>, origin),
+  }),
+);
+app.use(
+  "/api/files",
+  csrf({
+    origin: (origin, c) => isAllowedOrigin(c as Context<AppContext>, origin),
+  }),
+);
+app.use(
+  "/api/files/*",
   csrf({
     origin: (origin, c) => isAllowedOrigin(c as Context<AppContext>, origin),
   }),
 );
 
-app.use("/api/*", authMiddleware());
+app.on(["GET", "POST"], "/api/auth/*", (c) => getAuth(c).handler(c.req.raw));
+
+app.use("/api/profile", authMiddleware());
+app.use("/api/profile/*", authMiddleware());
+app.use("/api/files", authMiddleware());
+app.use("/api/files/*", authMiddleware());
+app.use("/api/profile", requireAuth());
 app.use("/api/profile/*", requireAuth());
+app.use("/api/files", requireAuth());
 app.use("/api/files/*", requireAuth());
 
-app.route("/", authRoutes);
 app.route("/", profileRoutes);
 app.route("/", fileRoutes);
 app.route("/", shareRoutes);

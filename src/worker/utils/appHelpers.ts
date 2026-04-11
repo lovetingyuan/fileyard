@@ -1,6 +1,8 @@
 import type { Context } from "hono";
 import type { AppContext, AppBindings } from "../context";
-import type { User } from "../types";
+import { createDb } from "../db/client";
+import { getOrCreateAppProfileByDb } from "../auth/profile";
+import type { AuthUser } from "../auth";
 import {
   DEFAULT_MAX_UPLOAD_BYTES,
   getFolderMarkerKey,
@@ -94,21 +96,25 @@ export async function folderExists(
 
 export async function getFileContext(
   c: Context<AppContext>,
-): Promise<{ rootDirId: string; user: User }> {
+): Promise<{ rootDirId: string; user: AuthUser }> {
   const user = c.get("user");
   if (!user) {
     throw new Error("Authenticated user missing from context");
   }
 
-  const stub = c.env.USER_DO.getByName(user.email);
-  const rootDirId = user.rootDirId ?? (await stub.ensureRootDirId());
-  if (!rootDirId) {
-    throw new Error("Failed to resolve user root directory");
+  const cachedProfile = c.get("appProfile");
+  if (cachedProfile) {
+    return {
+      rootDirId: cachedProfile.rootDirId,
+      user,
+    };
   }
 
-  if (!user.rootDirId) {
-    c.set("user", { ...user, rootDirId });
-  }
+  const profile = await getOrCreateAppProfileByDb(createDb(c.env), user.id, user.email);
+  c.set("appProfile", profile);
 
-  return { rootDirId, user: { ...user, rootDirId } };
+  return {
+    rootDirId: profile.rootDirId,
+    user,
+  };
 }

@@ -19,7 +19,13 @@
     "SENDER_EMAIL": "File Share <files-share@tingyuan.in>",
   },
   "secrets": {
-    "required": ["RESEND_API_KEY", "SHARE_LINK_SECRET"],
+    "required": [
+      "BETTER_AUTH_SECRET",
+      "GOOGLE_CLIENT_ID",
+      "GOOGLE_CLIENT_SECRET",
+      "RESEND_API_KEY",
+      "SHARE_LINK_SECRET",
+    ],
   },
   "upload_source_maps": true,
   "assets": {
@@ -34,25 +40,25 @@
       "bucket_name": "fileshare",
     },
   ],
+  "d1_databases": [
+    {
+      "binding": "AUTH_DB",
+      "database_name": "fileshare-auth",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "./drizzle",
+    },
+  ],
   "durable_objects": {
     "bindings": [
       {
         "name": "RATE_LIMITER",
         "class_name": "RateLimitDO",
       },
-      {
-        "name": "USER_DO",
-        "class_name": "UserDO",
-      },
     ],
   },
   "migrations": [
     {
       "tag": "v1",
-      "new_sqlite_classes": ["UserDO"],
-    },
-    {
-      "tag": "v2",
       "new_sqlite_classes": ["RateLimitDO"],
     },
   ],

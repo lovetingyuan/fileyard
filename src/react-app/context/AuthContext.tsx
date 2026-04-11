@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from "react";
 import {
+  useGoogleLoginMutation,
   useAuthUser,
   useLoginMutation,
   useLogoutMutation,
@@ -11,11 +12,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [localError, setLocalError] = useState<string | null>(null);
   const { user, error: authError, isLoading: isAuthLoading, mutate } = useAuthUser();
   const { login: triggerLogin, isMutating: isLoggingIn } = useLoginMutation();
+  const { loginWithGoogle: triggerGoogleLogin, isMutating: isGoogleLoggingIn } =
+    useGoogleLoginMutation();
   const { logout: triggerLogout, isMutating: isLoggingOut } = useLogoutMutation();
   const { register: triggerRegister, isMutating: isRegistering } = useRegisterMutation();
 
   const authLoading = isAuthLoading;
-  const loading = authLoading || isLoggingIn || isRegistering || isLoggingOut;
+  const loading = authLoading || isLoggingIn || isGoogleLoggingIn || isRegistering || isLoggingOut;
   const error = authError?.message ?? localError;
 
   const checkAuth = async () => {
@@ -28,9 +31,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       await triggerLogin(email, password);
+      await mutate();
       return { success: true };
     } catch (err) {
       const message = err instanceof Error ? err.message : "Login failed";
+      setLocalError(message);
+      return { success: false, error: message };
+    }
+  };
+
+  const loginWithGoogle = async () => {
+    setLocalError(null);
+
+    try {
+      await triggerGoogleLogin();
+      return { success: true };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Google login failed";
       setLocalError(message);
       return { success: false, error: message };
     }
@@ -40,6 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setLocalError(null);
       await triggerLogout();
+      await mutate();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Logout failed";
       setLocalError(message);
@@ -61,7 +79,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, authLoading, loading, error, login, logout, register, checkAuth }}
+      value={{
+        user,
+        authLoading,
+        loading,
+        error,
+        login,
+        loginWithGoogle,
+        logout,
+        register,
+        checkAuth,
+      }}
     >
       {children}
     </AuthContext.Provider>

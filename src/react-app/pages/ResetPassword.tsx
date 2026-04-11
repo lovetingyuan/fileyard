@@ -1,31 +1,28 @@
 import { useId, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import toast from "react-hot-toast";
-import { useResetPasswordMutation, useResetPasswordTokenValidation } from "../hooks/useAuthApi";
+import { useResetPasswordMutation } from "../hooks/useAuthApi";
 import { getPasswordErrors, PASSWORD_REQUIREMENTS_HINT } from "../utils/passwordRules";
 
 export function ResetPassword() {
   const navigate = useNavigate();
-  const { token } = useParams<{ token: string }>();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get("token");
+  const resetError = searchParams.get("error");
   const passwordId = useId();
   const confirmPasswordId = useId();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const passwordErrors = getPasswordErrors(password);
-  const {
-    isValid: isValidToken,
-    error: validationError,
-    isLoading: isValidatingToken,
-  } = useResetPasswordTokenValidation(token);
   const { resetPassword, isMutating } = useResetPasswordMutation();
-
-  const invalidMessage = validationError instanceof Error ? validationError.message : null;
+  const invalidMessage =
+    resetError === "INVALID_TOKEN" ? "This reset link is invalid or has expired." : null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!token || !isValidToken) {
+    if (!token) {
       toast.error("Invalid reset link");
       return;
     }
@@ -53,7 +50,7 @@ export function ResetPassword() {
     }
   };
 
-  if (!token || (!isValidatingToken && !isValidToken)) {
+  if (!token || resetError) {
     return (
       <main className="flex flex-1 items-center justify-center p-4">
         <div className="card w-full max-w-md bg-base-100 shadow-xl">
@@ -67,22 +64,6 @@ export function ResetPassword() {
               <Icon icon="mdi:lock-reset" className="h-5 w-5" />
               Request a new link
             </Link>
-          </div>
-        </div>
-      </main>
-    );
-  }
-
-  if (isValidatingToken) {
-    return (
-      <main className="flex flex-1 items-center justify-center p-4">
-        <div className="card w-full max-w-md bg-base-100 shadow-xl">
-          <div className="card-body items-center text-center">
-            <span className="loading loading-spinner loading-lg text-primary"></span>
-            <h2 className="card-title justify-center text-2xl font-bold">Checking reset link</h2>
-            <p className="text-sm text-base-content/75">
-              Verifying that your password reset link is still valid.
-            </p>
           </div>
         </div>
       </main>

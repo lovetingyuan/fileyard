@@ -1,12 +1,12 @@
-import { Link, Outlet } from 'react-router-dom'
-import { useAuth } from '../hooks/useAuth'
-import { useProfile } from '../hooks/useProfileApi'
-import { UserAvatar } from './UserAvatar'
-import { ThemeSwitcher } from './ThemeSwitcher'
+import { Link, Outlet } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
+import { useProfile } from "../hooks/useProfileApi";
+import { UserAvatar } from "./UserAvatar";
+import { ThemeSwitcher } from "./ThemeSwitcher";
 
 function AuthenticatedNavMenu() {
-  const { user } = useAuth()
-  const { profile } = useProfile()
+  const { user } = useAuth();
+  const { profile } = useProfile();
 
   return (
     <div className="flex-none flex items-center gap-2">
@@ -15,11 +15,11 @@ function AuthenticatedNavMenu() {
         <UserAvatar email={user?.email} avatarUrl={profile?.avatarUrl} />
       </Link>
     </div>
-  )
+  );
 }
 
 export function AppLayout() {
-  const { user } = useAuth()
+  const { user } = useAuth();
 
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden bg-base-200">
@@ -62,5 +62,5 @@ export function AppLayout() {
         </footer>
       </div>
     </div>
-  )
+  );
 }

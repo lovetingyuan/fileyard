@@ -4,10 +4,7 @@ export function shouldSkipContentSecurityPolicy(url: string): boolean {
   return LOCAL_DEVELOPMENT_HOSTS.has(new URL(url).hostname);
 }
 
-export function applySecurityHeaders(
-  headers: Headers,
-  options?: { skipCSP?: boolean },
-): void {
+export function applySecurityHeaders(headers: Headers, options?: { skipCSP?: boolean }): void {
   if (!options?.skipCSP) {
     headers.set(
       "Content-Security-Policy",

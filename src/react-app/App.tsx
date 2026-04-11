@@ -15,7 +15,6 @@ import { ForgotPassword } from "./pages/ForgotPassword";
 import { Login } from "./pages/Login";
 import { Register } from "./pages/Register";
 import { ResetPassword } from "./pages/ResetPassword";
-import { Verify } from "./pages/Verify";
 import { Dashboard } from "./pages/Dashboard";
 import { Profile } from "./pages/Profile";
 import { ShareDownload } from "./pages/ShareDownload";
@@ -50,10 +49,6 @@ function AppContent() {
     navigate(`/login${search}`);
   };
 
-  const handleVerifySuccess = () => {
-    navigate("/login");
-  };
-
   return (
     <Routes>
       <Route element={<AppLayout />}>
@@ -82,22 +77,20 @@ function AppContent() {
           <Route
             path="forgot-password"
             element={
-              user && !allowAuthenticatedEmailAction ? <Navigate to="/" replace /> : <ForgotPassword />
+              user && !allowAuthenticatedEmailAction ? (
+                <Navigate to="/" replace />
+              ) : (
+                <ForgotPassword />
+              )
             }
           />
           <Route
-            path="reset-password/:token"
-            element={
-              user && !allowAuthenticatedEmailAction ? <Navigate to="/" replace /> : <ResetPassword />
-            }
-          />
-          <Route
-            path="verify/:token"
+            path="reset-password"
             element={
               user && !allowAuthenticatedEmailAction ? (
                 <Navigate to="/" replace />
               ) : (
-                <Verify onSuccess={handleVerifySuccess} />
+                <ResetPassword />
               )
             }
           />

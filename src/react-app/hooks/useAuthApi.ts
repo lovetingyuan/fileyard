@@ -1,63 +1,23 @@
-import useSWR from "swr";
-import { useSWRConfig } from "swr";
-import useSWRMutation from "swr/mutation";
-import { ApiError, apiRequest } from "../utils/apiRequest";
+import { useState } from "react";
+import { authClient, type BetterAuthSession } from "../lib/auth-client";
 
 export interface User {
+  id: string;
   email: string;
+  image: string | null;
+  name: string;
   verified: boolean;
-  createdAt?: number;
+  createdAt?: string;
 }
-
-type AuthUserResponse = {
-  success: true;
-  user: User;
-};
-
-type LoginPayload = {
-  email: string;
-  password: string;
-};
-
-type LoginResponse = {
-  success: true;
-  message: string;
-  user: User;
-};
-
-type RegisterPayload = {
-  email: string;
-  password: string;
-};
 
 type RegisterResponse = {
   success: true;
   message: string;
 };
 
-type LogoutResponse = {
-  success: true;
-  message: string;
-};
-
-type VerifyResponse = {
-  success: true;
-  message: string;
-};
-
-type ForgotPasswordPayload = {
-  email: string;
-};
-
 type ForgotPasswordResponse = {
   success: true;
   message: string;
-  nextAction?: "verify-email";
-};
-
-type ResetPasswordPayload = {
-  code: string;
-  password: string;
 };
 
 type ResetPasswordResponse = {
@@ -65,221 +25,182 @@ type ResetPasswordResponse = {
   message: string;
 };
 
-type ResetPasswordValidationResponse = {
-  success: true;
-  message: string;
-};
-
-const AUTH_USER_KEY = "/api/auth/me";
-
-async function fetchAuthUser(): Promise<User | null> {
-  try {
-    const data = await apiRequest<AuthUserResponse>(AUTH_USER_KEY);
-    return data.user;
-  } catch (error) {
-    if (error instanceof ApiError && error.status === 401) {
-      return null;
-    }
-
-    throw error;
+function mapUser(user: BetterAuthSession["user"] | null | undefined): User | null {
+  if (!user) {
+    return null;
   }
+
+  return {
+    id: user.id,
+    email: user.email,
+    image: user.image ?? null,
+    name: user.name,
+    verified: user.emailVerified,
+    createdAt: user.createdAt ? new Date(user.createdAt).toISOString() : undefined,
+  };
 }
 
 export function useAuthUser() {
-  const { data, error, isLoading, mutate } = useSWR<User | null, ApiError>(
-    AUTH_USER_KEY,
-    fetchAuthUser,
-    {
-      shouldRetryOnError: false,
-    },
-  );
+  const session = authClient.useSession();
 
   return {
-    user: data ?? null,
-    error,
-    isLoading,
-    mutate,
+    user: mapUser(session.data?.user),
+    error: session.error,
+    isLoading: session.isPending,
+    mutate: () => session.refetch(),
   };
 }
 
-export function useLoginMutation() {
-  const { mutate } = useSWRConfig();
-  const { trigger, isMutating } = useSWRMutation<LoginResponse, ApiError, string, LoginPayload>(
-    "/api/auth/login",
-    (url, { arg }) =>
-      apiRequest<LoginResponse>(url, {
-        method: "POST",
-        body: JSON.stringify(arg),
-      }),
-    {
-      throwOnError: true,
-    },
-  );
+function useAsyncMutation<TArgs extends unknown[], TResult>(
+  action: (...args: TArgs) => Promise<TResult>,
+) {
+  const [isMutating, setIsMutating] = useState(false);
 
-  const login = async (email: string, password: string) => {
-    const data = await trigger({ email, password });
-    await mutate(AUTH_USER_KEY, data.user, { revalidate: false });
-    return data;
+  const run = async (...args: TArgs) => {
+    setIsMutating(true);
+    try {
+      return await action(...args);
+    } finally {
+      setIsMutating(false);
+    }
   };
 
   return {
-    login,
+    run,
     isMutating,
+  };
+}
+
+function getErrorMessage(
+  error: { message?: string | undefined } | null | undefined,
+  fallback: string,
+) {
+  return error?.message || fallback;
+}
+
+export function useLoginMutation() {
+  const mutation = useAsyncMutation(async (email: string, password: string) => {
+    const result = await authClient.signIn.email({
+      email,
+      password,
+      callbackURL: "/login?verified=1",
+    });
+
+    if (result.error) {
+      throw new Error(getErrorMessage(result.error, "Login failed"));
+    }
+
+    return result.data;
+  });
+
+  return {
+    login: mutation.run,
+    isMutating: mutation.isMutating,
+  };
+}
+
+export function useGoogleLoginMutation() {
+  const mutation = useAsyncMutation(async () => {
+    const result = await authClient.signIn.social({
+      provider: "google",
+      callbackURL: "/",
+    });
+
+    if (result.error) {
+      throw new Error(getErrorMessage(result.error, "Google login failed"));
+    }
+
+    return result.data;
+  });
+
+  return {
+    loginWithGoogle: mutation.run,
+    isMutating: mutation.isMutating,
   };
 }
 
 export function useRegisterMutation() {
-  const { trigger, isMutating } = useSWRMutation<
-    RegisterResponse,
-    ApiError,
-    string,
-    RegisterPayload
-  >(
-    "/api/auth/register",
-    (url, { arg }) =>
-      apiRequest<RegisterResponse>(url, {
-        method: "POST",
-        body: JSON.stringify(arg),
-      }),
-    {
-      throwOnError: true,
-    },
-  );
+  const mutation = useAsyncMutation(async (email: string, password: string) => {
+    const result = await authClient.signUp.email({
+      email,
+      password,
+      name: "",
+      callbackURL: "/login?verified=1",
+    });
 
-  const register = (email: string, password: string) => trigger({ email, password });
+    if (result.error) {
+      throw new Error(getErrorMessage(result.error, "Registration failed"));
+    }
+
+    return {
+      success: true,
+      message: "Registration successful. Please check your email to verify your account.",
+    } satisfies RegisterResponse;
+  });
 
   return {
-    register,
-    isMutating,
+    register: mutation.run,
+    isMutating: mutation.isMutating,
   };
 }
 
 export function useLogoutMutation() {
-  const { mutate } = useSWRConfig();
-  const { trigger, isMutating } = useSWRMutation<LogoutResponse, ApiError>(
-    "/api/auth/logout",
-    (url: string) =>
-      apiRequest<LogoutResponse>(url, {
-        method: "POST",
-      }),
-    {
-      throwOnError: true,
-    },
-  );
+  const mutation = useAsyncMutation(async () => {
+    const result = await authClient.signOut();
 
-  const logout = async () => {
-    try {
-      await trigger();
-    } finally {
-      await mutate(AUTH_USER_KEY, null, { revalidate: false });
+    if (result.error) {
+      throw new Error(getErrorMessage(result.error, "Logout failed"));
     }
-  };
+  });
 
   return {
-    logout,
-    isMutating,
-  };
-}
-
-export function useVerifyEmail(code?: string) {
-  const { data, error, isLoading } = useSWR<VerifyResponse, ApiError>(
-    code ? ["/api/auth/verify", code] : null,
-    ([url, verificationCode]) =>
-      apiRequest<VerifyResponse>(url, {
-        method: "POST",
-        body: JSON.stringify({ code: verificationCode }),
-      }),
-    {
-      revalidateIfStale: false,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      shouldRetryOnError: false,
-    },
-  );
-
-  return {
-    result: data,
-    error,
-    isLoading,
+    logout: mutation.run,
+    isMutating: mutation.isMutating,
   };
 }
 
 export function useForgotPasswordMutation() {
-  const { trigger, isMutating } = useSWRMutation<
-    ForgotPasswordResponse,
-    ApiError,
-    string,
-    ForgotPasswordPayload
-  >(
-    "/api/auth/forgot-password",
-    (url, { arg }) =>
-      apiRequest<ForgotPasswordResponse>(url, {
-        method: "POST",
-        body: JSON.stringify(arg),
-      }),
-    {
-      throwOnError: true,
-    },
-  );
+  const mutation = useAsyncMutation(async (email: string) => {
+    const result = await authClient.requestPasswordReset({
+      email,
+      redirectTo: "/reset-password",
+    });
 
-  const forgotPassword = (email: string) => trigger({ email });
+    if (result.error) {
+      throw new Error(getErrorMessage(result.error, "Failed to send reset email"));
+    }
+
+    return {
+      success: true,
+      message: "If an account exists, a password reset email has been sent.",
+    } satisfies ForgotPasswordResponse;
+  });
 
   return {
-    forgotPassword,
-    isMutating,
+    forgotPassword: mutation.run,
+    isMutating: mutation.isMutating,
   };
 }
 
 export function useResetPasswordMutation() {
-  const { mutate } = useSWRConfig();
-  const { trigger, isMutating } = useSWRMutation<
-    ResetPasswordResponse,
-    ApiError,
-    string,
-    ResetPasswordPayload
-  >(
-    "/api/auth/reset-password",
-    (url, { arg }) =>
-      apiRequest<ResetPasswordResponse>(url, {
-        method: "POST",
-        body: JSON.stringify(arg),
-      }),
-    {
-      throwOnError: true,
-    },
-  );
+  const mutation = useAsyncMutation(async (token: string, password: string) => {
+    const result = await authClient.resetPassword({
+      token,
+      newPassword: password,
+    });
 
-  const resetPassword = async (code: string, password: string) => {
-    const data = await trigger({ code, password });
-    await mutate(AUTH_USER_KEY, null, { revalidate: false });
-    return data;
-  };
+    if (result.error) {
+      throw new Error(getErrorMessage(result.error, "Failed to reset password"));
+    }
+
+    return {
+      success: true,
+      message: "Password reset successful. Please log in with your new password.",
+    } satisfies ResetPasswordResponse;
+  });
 
   return {
-    resetPassword,
-    isMutating,
-  };
-}
-
-export function useResetPasswordTokenValidation(code?: string) {
-  const { data, error, isLoading } = useSWR<ResetPasswordValidationResponse, ApiError>(
-    code ? ["/api/auth/reset-password/validate", code] : null,
-    ([url, verificationCode]) =>
-      apiRequest<ResetPasswordValidationResponse>(url, {
-        method: "POST",
-        body: JSON.stringify({ code: verificationCode }),
-      }),
-    {
-      revalidateIfStale: false,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      shouldRetryOnError: false,
-    },
-  );
-
-  return {
-    isValid: data?.success ?? false,
-    error,
-    isLoading,
+    resetPassword: mutation.run,
+    isMutating: mutation.isMutating,
   };
 }

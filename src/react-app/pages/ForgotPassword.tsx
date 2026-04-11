@@ -9,7 +9,6 @@ export function ForgotPassword() {
   const emailId = useId();
   const [email, setEmail] = useState(() => searchParams.get("email") ?? "");
   const [message, setMessage] = useState<string | null>(null);
-  const [nextAction, setNextAction] = useState<"verify-email" | null>(null);
   const { forgotPassword, isMutating } = useForgotPasswordMutation();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -23,7 +22,6 @@ export function ForgotPassword() {
     try {
       const result = await forgotPassword(email);
       setMessage(result.message);
-      setNextAction(result.nextAction ?? null);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to send reset email");
     }
@@ -65,7 +63,7 @@ export function ForgotPassword() {
 
             {message && (
               <div className="alert alert-info">
-                <Icon icon={nextAction ? "mdi:email-check-outline" : "mdi:information-outline"} />
+                <Icon icon="mdi:information-outline" />
                 <span>{message}</span>
               </div>
             )}
