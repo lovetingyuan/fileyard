@@ -1,3 +1,9 @@
+const LOCAL_DEVELOPMENT_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
+
+export function shouldSkipContentSecurityPolicy(url: string): boolean {
+  return LOCAL_DEVELOPMENT_HOSTS.has(new URL(url).hostname);
+}
+
 export function applySecurityHeaders(
   headers: Headers,
   options?: { skipCSP?: boolean },

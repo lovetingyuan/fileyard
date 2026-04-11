@@ -7,7 +7,10 @@ import { authMiddleware, requireAuth } from "./middleware/auth";
 import type { AppContext } from "./context";
 import { applyCorsHeaders, isAllowedOrigin } from "./utils/appHelpers";
 import { jsonError } from "./utils/response";
-import { applySecurityHeaders } from "./utils/securityHeaders";
+import {
+  applySecurityHeaders,
+  shouldSkipContentSecurityPolicy,
+} from "./utils/securityHeaders";
 import authRoutes from "./routes/auth";
 import profileRoutes from "./routes/profile";
 import fileRoutes from "./routes/files";
@@ -22,7 +25,7 @@ app.get("/health", (c) => c.json({ status: "ok", time: new Date().toISOString() 
 app.use("*", async (c, next) => {
   await next();
   const headers = new Headers(c.res.headers);
-  const isDev = new URL(c.req.url).hostname === "localhost";
+  const isDev = shouldSkipContentSecurityPolicy(c.req.url);
   applySecurityHeaders(headers, { skipCSP: isDev });
   c.res = new Response(c.res.body, {
     headers,
