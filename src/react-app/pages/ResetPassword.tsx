@@ -100,7 +100,7 @@ export function ResetPassword() {
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isMutating}
                 required
-                minLength={8}
+                minLength={12}
                 maxLength={64}
               />
               {passwordErrors.length > 0 && (

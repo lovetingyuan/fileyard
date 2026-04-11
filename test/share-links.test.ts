@@ -14,7 +14,7 @@ function createEmailAddress(): string {
   return `share-user-${crypto.randomUUID()}@example.com`;
 }
 
-async function createVerifiedUser(email = createEmailAddress(), password = "Password1") {
+async function createVerifiedUser(email = createEmailAddress(), password = "Password123A") {
   const stub = env.USER_DO.getByName(email);
   const salt = generateSalt();
   const passwordHash = await hashPassword(password, salt);

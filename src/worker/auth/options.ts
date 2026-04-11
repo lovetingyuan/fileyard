@@ -141,7 +141,7 @@ export function createBetterAuthOptions(input: CreateBetterAuthOptionsInput): Be
     emailAndPassword: {
       enabled: true,
       autoSignIn: false,
-      minPasswordLength: 8,
+      minPasswordLength: 12,
       maxPasswordLength: 64,
       requireEmailVerification: true,
       resetPasswordTokenExpiresIn: 1800,

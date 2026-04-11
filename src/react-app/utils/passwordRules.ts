@@ -1,8 +1,8 @@
 export function getPasswordErrors(password: string): string[] {
   const errors: string[] = [];
 
-  if (password.length > 0 && password.length < 8) {
-    errors.push("At least 8 characters");
+  if (password.length > 0 && password.length < 12) {
+    errors.push("At least 12 characters");
   }
   if (password.length > 64) {
     errors.push("At most 64 characters");
@@ -21,4 +21,4 @@ export function getPasswordErrors(password: string): string[] {
 }
 
 export const PASSWORD_REQUIREMENTS_HINT =
-  "8-64 characters, must include uppercase, lowercase, and number";
+  "12-64 characters, must include uppercase, lowercase, and number";

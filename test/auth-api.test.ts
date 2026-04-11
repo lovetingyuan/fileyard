@@ -33,10 +33,10 @@ describe("auth api mutations", () => {
 
     const { resetPassword } = useResetPasswordMutation();
 
-    await expect(resetPassword("reset-code", "Password2")).resolves.toEqual(response);
+    await expect(resetPassword("reset-code", "Password123B")).resolves.toEqual(response);
     expect(mockTrigger).toHaveBeenCalledWith({
       code: "reset-code",
-      password: "Password2",
+      password: "Password123B",
     });
     expect(mockMutate).toHaveBeenCalledWith("/api/auth/me", null, { revalidate: false });
   });

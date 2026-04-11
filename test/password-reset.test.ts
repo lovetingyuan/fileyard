@@ -56,7 +56,7 @@ function createEmailAddress(): string {
 
 async function createUser(
   email = createEmailAddress(),
-  password = "Password1",
+  password = "Password123A",
   options?: { verified?: boolean },
 ) {
   const stub = env.USER_DO.getByName(email);
@@ -286,7 +286,7 @@ describe("password reset backend", () => {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ code, password: "Password2" }),
+      body: JSON.stringify({ code, password: "Password123B" }),
     });
 
     expect(response.status).toBe(400);
@@ -316,7 +316,7 @@ describe("password reset backend", () => {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ code, password: "Password2" }),
+      body: JSON.stringify({ code, password: "Password123B" }),
     });
 
     expect(response.status).toBe(400);
@@ -337,7 +337,7 @@ describe("password reset backend", () => {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ code, password: "Password2" }),
+      body: JSON.stringify({ code, password: "Password123B" }),
     });
 
     expect(resetResponse.status).toBe(200);
@@ -363,7 +363,7 @@ describe("password reset backend", () => {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ email, password: "Password2" }),
+      body: JSON.stringify({ email, password: "Password123B" }),
     });
     expect(newLoginResponse.status).toBe(200);
 
@@ -372,7 +372,7 @@ describe("password reset backend", () => {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ code, password: "Password3" }),
+      body: JSON.stringify({ code, password: "Password123C" }),
     });
     expect(reusedResponse.status).toBe(400);
   });
@@ -414,7 +414,7 @@ describe("password reset backend", () => {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ code: usedCode, password: "Password2" }),
+      body: JSON.stringify({ code: usedCode, password: "Password123B" }),
     });
     expect(resetResponse.status).toBe(200);
 
@@ -497,7 +497,7 @@ describe("password reset backend", () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ code: "invalid-code", password: "Password2" }),
+        body: JSON.stringify({ code: "invalid-code", password: "Password123B" }),
       },
       { ip: resetIp },
     );

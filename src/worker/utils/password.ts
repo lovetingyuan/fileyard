@@ -100,7 +100,7 @@ interface PasswordValidationResult {
 
 /**
  * Validate password requirements:
- * - 8-64 characters
+ * - 12-64 characters
  * - At least one uppercase letter
  * - At least one lowercase letter
  * - At least one number
@@ -108,8 +108,8 @@ interface PasswordValidationResult {
 export function validatePassword(password: string): PasswordValidationResult {
   const errors: string[] = [];
 
-  if (password.length < 8) {
-    errors.push("Password must be at least 8 characters long");
+  if (password.length < 12) {
+    errors.push("Password must be at least 12 characters long");
   }
 
   if (password.length > 64) {

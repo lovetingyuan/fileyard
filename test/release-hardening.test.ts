@@ -38,7 +38,7 @@ function createEmailAddress(): string {
 
 async function createUser(
   email = createEmailAddress(),
-  password = "Password1",
+  password = "Password123A",
   options?: { verified?: boolean },
 ) {
   const stub = env.USER_DO.getByName(email);
@@ -138,7 +138,7 @@ describe("release hardening backend", () => {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ email, password: "Password1" }),
+      body: JSON.stringify({ email, password: "Password123A" }),
     });
 
     expect(response.status).toBe(502);
@@ -178,7 +178,7 @@ describe("release hardening backend", () => {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ email, password: "WrongPassword1" }),
+          body: JSON.stringify({ email, password: "WrongPassword123A" }),
         },
         { ip: loginIp },
       );
@@ -321,6 +321,30 @@ describe("release hardening frontend markup", () => {
     expect(registerMarkup).toContain('autoComplete="email"');
     expect(registerMarkup).toContain('autoComplete="new-password"');
     expect(registerMarkup).toContain('name="confirmPassword"');
+    expect(registerMarkup).toContain('minLength="12"');
+    expect(registerMarkup).toContain(
+      "12-64 characters, must include uppercase, lowercase, and number",
+    );
+  });
+
+  it("renders the Google login button with the branded multicolor icon", () => {
+    const markup = renderWithRouter(
+      "/login",
+      createElement(
+        Routes,
+        null,
+        createElement(Route, {
+          path: "/login",
+          element: createElement(Login, { onSwitchToRegister: vi.fn() }),
+        }),
+      ),
+    );
+
+    expect(markup).toContain("Continue with Google");
+    expect(markup).toContain('fill="#4285F4"');
+    expect(markup).toContain('fill="#EA4335"');
+    expect(markup).toContain('fill="#FBBC05"');
+    expect(markup).toContain('fill="#34A853"');
   });
 
   it("renders file toolbar icon buttons with accessible labels", () => {

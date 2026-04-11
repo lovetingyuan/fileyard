@@ -93,7 +93,7 @@ export function Register({ onSwitchToLogin }: RegisterProps) {
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
                 required
-                minLength={8}
+                minLength={12}
                 maxLength={64}
               />
               {passwordErrors.length > 0 && (
