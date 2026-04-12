@@ -17,7 +17,7 @@ const cliDb = drizzle({
 
 export const auth = betterAuth({
   ...createBetterAuthOptions({
-    appName: "File Share",
+    appName: "Fileyard",
     baseURL: cliBaseUrl,
     secret: cliSecret,
     googleClientId: process.env.GOOGLE_CLIENT_ID || "google-client-id",

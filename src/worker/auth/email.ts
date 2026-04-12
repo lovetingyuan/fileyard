@@ -98,7 +98,7 @@ export function createVerificationEmailSender(env: AppBindings) {
       html: buildAuthEmailHtml({
         title: "Verify Your Email",
         description:
-          "Please confirm your email address to finish setting up your File Share account.",
+          "Please confirm your email address to finish setting up your Fileyard account.",
         actionLabel: "Verify Email",
         actionUrl: payload.url,
         footnote: "If you did not create this account, you can safely ignore this email.",

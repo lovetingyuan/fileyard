@@ -41,7 +41,7 @@ export function AppLayout() {
           <div className="mr-auto p-1">
             <Link to="/" className="flex items-center gap-2 text-xl">
               <img src="/favicon.svg" alt="logo" className="h-6 w-6" />
-              <span>File Share</span>
+              <span>Fileyard</span>
             </Link>
           </div>
           {user ? (

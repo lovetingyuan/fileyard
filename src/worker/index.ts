@@ -4,6 +4,7 @@ import { csrf } from "hono/csrf";
 import { RateLimitDO } from "./durable-objects/RateLimitDO";
 import { authMiddleware, requireAuth } from "./auth/middleware";
 import { getAuth } from "./auth";
+import { withRateLimitTableFallback } from "./auth/rate-limit-fallback";
 import type { AppContext } from "./context";
 import { applyCorsHeaders, isAllowedOrigin } from "./utils/appHelpers";
 import { jsonError } from "./utils/response";
@@ -80,7 +81,18 @@ app.use(
   }),
 );
 
-app.on(["GET", "POST"], "/api/auth/*", (c) => getAuth(c).handler(c.req.raw));
+app.on(["GET", "POST"], "/api/auth/*", (c) =>
+  withRateLimitTableFallback(
+    async () => getAuth(c).handler(c.req.raw),
+    async () => getAuth(c, { disableRateLimit: true }).handler(c.req.raw),
+    (error) => {
+      console.warn(
+        "Better Auth rate_limit table is missing. Retrying auth endpoint without database rate limiting.",
+        error,
+      );
+    },
+  ),
+);
 
 app.use("/api/profile", authMiddleware());
 app.use("/api/profile/*", authMiddleware());

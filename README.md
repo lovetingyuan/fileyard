@@ -1,4 +1,4 @@
-# File Share
+# Fileyard
 
 基于 React + Vite + Hono + Cloudflare Workers 的文件分享应用。前端和 API 同域部署在 Cloudflare Workers，文件存储使用 R2，用户与会话状态使用 Durable Objects。
 
@@ -71,7 +71,7 @@ npm run deploy     # 发布到 Cloudflare
 - `RATE_LIMITER`
 - `ASSETS`
 
-如果你的 R2 bucket 名称不是 `fileshare`，需要先修改 [wrangler.jsonc](/D:/lovetingyuan/files-share/wrangler.jsonc) 和 [wrangler.json](/D:/lovetingyuan/files-share/wrangler.json) 中的 bucket 配置。
+如果你的 R2 bucket 名称不是 `fileyard`，需要先修改 [wrangler.jsonc](/D:/lovetingyuan/files-share/wrangler.jsonc) 和 [wrangler.json](/D:/lovetingyuan/files-share/wrangler.json) 中的 bucket 配置。
 
 ## 环境变量与 Secrets
 
@@ -86,7 +86,7 @@ npm run deploy     # 发布到 Cloudflare
 - `MAX_UPLOAD_BYTES`
   - 单文件上传大小上限，默认 `104857600`，即 100 MB
 - `SENDER_EMAIL`
-  - Resend 已验证的发件人，例如 `File Share <noreply@example.com>`
+  - Resend 已验证的发件人，例如 `Fileyard <noreply@example.com>`
 
 ### 2. Wrangler secrets
 
@@ -127,7 +127,7 @@ npx wrangler secret put SHARE_LINK_SECRET
 如果目标 bucket 尚未创建：
 
 ```bash
-npx wrangler r2 bucket create fileshare
+npx wrangler r2 bucket create fileyard
 ```
 
 如果你要使用别的 bucket 名称，先改配置再创建。

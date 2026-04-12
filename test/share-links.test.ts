@@ -119,7 +119,7 @@ function getShareToken(shareUrl: string): string {
   return decodeURIComponent(token);
 }
 
-describe("file share links", () => {
+describe("fileyard share links", () => {
   it("requires authentication and validates allowed durations", async () => {
     const { email } = await createVerifiedUser();
     const cookie = await createSessionCookie(email);

@@ -5,7 +5,7 @@ import { getOrCreateAppProfileByDb } from "../auth/profile";
 import type { AuthUser } from "../auth";
 import {
   DEFAULT_MAX_UPLOAD_BYTES,
-  getFolderMarkerKey,
+  getFolderMarkerKeys,
   getFolderPrefix,
   parseMaxUploadBytes,
 } from "./fileManager";
@@ -80,10 +80,11 @@ export async function folderExists(
     return true;
   }
 
-  const markerKey = getFolderMarkerKey(rootDirId, folderPath);
-  const marker = await env.FILES_BUCKET.head(markerKey);
-  if (marker) {
-    return true;
+  for (const markerKey of getFolderMarkerKeys(rootDirId, folderPath)) {
+    const marker = await env.FILES_BUCKET.head(markerKey);
+    if (marker) {
+      return true;
+    }
   }
 
   const listing = await env.FILES_BUCKET.list({

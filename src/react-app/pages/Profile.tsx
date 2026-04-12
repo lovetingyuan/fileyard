@@ -148,7 +148,7 @@ export function Profile() {
         <div className="card-body gap-4">
           <h2 className="text-xl font-semibold">关于这个应用</h2>
           <p className="max-w-3xl leading-7 text-base-content/70">
-            File Share 是一个基于 Cloudflare Workers 与 R2
+            Fileyard 是一个基于 Cloudflare Workers 与 R2
             的轻量文件管理应用，用来集中存储、浏览、上传、下载和分享你的个人文件。
           </p>
         </div>

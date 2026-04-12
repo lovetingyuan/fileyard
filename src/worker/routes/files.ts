@@ -3,12 +3,13 @@ import type { AppContext } from "../context";
 import type { DirectoryStatsResponse, FileListResponse, FileMutationResponse } from "../../types";
 import {
   FilePathValidationError,
-  FOLDER_MARKER_NAME,
   SYSTEM_PROFILE_FOLDER_NAME,
   getBaseName,
   getFileKey,
   getFolderMarkerKey,
+  getFolderMarkerKeys,
   getFolderPrefix,
+  isFolderMarkerKey,
   isReservedSystemPath,
   joinRelativePath,
   normalizeName,
@@ -30,7 +31,14 @@ async function getFolderCreatedAt(
   rootDirId: string,
   folderPath: string,
 ): Promise<string> {
-  const marker = await bucket.head(getFolderMarkerKey(rootDirId, folderPath));
+  let marker: R2Object | null = null;
+  for (const markerKey of getFolderMarkerKeys(rootDirId, folderPath)) {
+    marker = await bucket.head(markerKey);
+    if (marker) {
+      break;
+    }
+  }
+
   const markerCreatedAt = marker?.customMetadata?.createdAt ?? marker?.uploaded.toISOString();
   if (markerCreatedAt) {
     return markerCreatedAt;
@@ -125,7 +133,7 @@ files.get("/api/files", async (c) => {
     });
 
     const fileItems = allObjects
-      .filter((object) => object.key !== `${prefix}${FOLDER_MARKER_NAME}`)
+      .filter((object) => !isFolderMarkerKey(object.key, prefix))
       .map((object) => {
         const name = object.key.slice(prefix.length);
         return {
@@ -187,7 +195,7 @@ files.get("/api/files/stats", async (c) => {
     do {
       const listing = await c.env.FILES_BUCKET.list({ prefix, cursor });
       for (const object of listing.objects) {
-        if (object.key === `${prefix}${FOLDER_MARKER_NAME}`) {
+        if (isFolderMarkerKey(object.key, prefix)) {
           continue;
         }
         if (systemPrefix && object.key.startsWith(systemPrefix)) {

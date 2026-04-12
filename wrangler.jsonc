@@ -4,7 +4,7 @@
  */
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "file-share",
+  "name": "fileyard",
   "main": "./src/worker/index.ts",
   "compatibility_date": "2025-10-08",
   "compatibility_flags": ["nodejs_compat"],
@@ -16,7 +16,7 @@
     // When empty, the app falls back to the request origin.
     "APP_URL": "",
     "MAX_UPLOAD_BYTES": "104857600",
-    "SENDER_EMAIL": "File Share <files-share@tingyuan.in>",
+    "SENDER_EMAIL": "Fileyard <fileyard@tingyuan.in>",
   },
   "secrets": {
     "required": [
@@ -37,13 +37,13 @@
   "r2_buckets": [
     {
       "binding": "FILES_BUCKET",
-      "bucket_name": "fileshare",
+      "bucket_name": "fileyard",
     },
   ],
   "d1_databases": [
     {
       "binding": "AUTH_DB",
-      "database_name": "fileshare-auth",
+      "database_name": "fileyard-auth",
       "database_id": "00000000-0000-0000-0000-000000000000",
       "migrations_dir": "./drizzle",
     },

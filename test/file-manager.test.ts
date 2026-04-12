@@ -109,9 +109,14 @@ describe("authenticated R2 file manager", () => {
     expect(updatedUser?.rootDirId).toMatch(/^[a-f0-9]{32}$/);
   });
 
-  it("creates folders and supports file upload, list, download, and delete", async () => {
-    const { email } = await createVerifiedUser();
+  it("creates folders with the fileyard marker and supports file upload, list, download, and delete", async () => {
+    const { email, user } = await createVerifiedUser();
     const cookie = await createSessionCookie(email);
+    const rootDirId = user?.rootDirId;
+
+    if (!rootDirId) {
+      throw new Error("Expected rootDirId to be set");
+    }
 
     const createFolderResponse = await apiFetch(
       "/api/files/folders",
@@ -129,6 +134,9 @@ describe("authenticated R2 file manager", () => {
     );
 
     expect(createFolderResponse.status).toBe(201);
+
+    const folderMarker = await env.FILES_BUCKET.head(`${rootDirId}/docs/.fileyard-folder`);
+    expect(folderMarker).toBeTruthy();
 
     const rootListResponse = await apiFetch("/api/files", {}, cookie);
     const rootList = (await rootListResponse.json()) as FileListResponse;
@@ -208,7 +216,7 @@ describe("authenticated R2 file manager", () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          name: ".fileshare-folder",
+          name: ".fileyard-folder",
           parentPath: "",
         }),
       },

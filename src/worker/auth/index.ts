@@ -9,6 +9,10 @@ import { createResetPasswordEmailSender, createVerificationEmailSender } from ".
 import { createBetterAuthOptions } from "./options";
 import { getOrCreateAppProfileByDb } from "./profile";
 
+type GetAuthOptions = {
+  disableRateLimit?: boolean;
+};
+
 export type AuthUser = {
   id: string;
   email: string;
@@ -62,7 +66,7 @@ function resolveTrustedOrigins(env: AppBindings, request?: Request): string[] {
   return [...origins];
 }
 
-export function getAuth(c: Context<AppContext>) {
+export function getAuth(c: Context<AppContext>, options: GetAuthOptions = {}) {
   const db = createDb(c.env);
   const isDev = isDevEnvironment(c.env, c.req.raw);
 
@@ -73,8 +77,9 @@ export function getAuth(c: Context<AppContext>) {
 
   return betterAuth({
     ...createBetterAuthOptions({
-      appName: "File Share",
+      appName: "Fileyard",
       baseURL: resolveBaseUrl(c.env, c.req.raw),
+      disableRateLimit: options.disableRateLimit,
       secret: secret || "better-auth-development-secret-not-for-production",
       googleClientId: c.env.GOOGLE_CLIENT_ID ?? "",
       googleClientSecret: c.env.GOOGLE_CLIENT_SECRET ?? "",

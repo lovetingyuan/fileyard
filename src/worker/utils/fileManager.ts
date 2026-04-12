@@ -1,7 +1,9 @@
-export const FOLDER_MARKER_NAME = ".fileshare-folder";
+export const FOLDER_MARKER_NAME = ".fileyard-folder";
+export const LEGACY_FOLDER_MARKER_NAMES = [".fileshare-folder"] as const;
 export const DEFAULT_MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
 export const SYSTEM_PROFILE_FOLDER_NAME = ".user";
 export const AVATAR_FILE_NAME = "avatar.png";
+const ALL_FOLDER_MARKER_NAMES = [FOLDER_MARKER_NAME, ...LEGACY_FOLDER_MARKER_NAMES] as const;
 
 function containsControlCharacters(value: string): boolean {
   for (const char of value) {
@@ -12,6 +14,10 @@ function containsControlCharacters(value: string): boolean {
   }
 
   return false;
+}
+
+export function isFolderMarkerName(value: string): boolean {
+  return ALL_FOLDER_MARKER_NAMES.includes(value as (typeof ALL_FOLDER_MARKER_NAMES)[number]);
 }
 
 export class FilePathValidationError extends Error {
@@ -43,7 +49,7 @@ function validateSegment(segment: string, label: string): string {
     throw new FilePathValidationError(`${label} cannot be "." or ".."`);
   }
 
-  if (value === FOLDER_MARKER_NAME) {
+  if (isFolderMarkerName(value)) {
     throw new FilePathValidationError(`${label} uses a reserved name`);
   }
 
@@ -127,6 +133,19 @@ export function getFolderMarkerKey(rootDirId: string, folderPath: string): strin
   }
 
   return `${getFolderPrefix(rootDirId, folderPath)}${FOLDER_MARKER_NAME}`;
+}
+
+export function getFolderMarkerKeys(rootDirId: string, folderPath: string): string[] {
+  if (!folderPath) {
+    throw new FilePathValidationError("Home folder does not use a marker", 500);
+  }
+
+  const prefix = getFolderPrefix(rootDirId, folderPath);
+  return ALL_FOLDER_MARKER_NAMES.map((markerName) => `${prefix}${markerName}`);
+}
+
+export function isFolderMarkerKey(key: string, prefix: string): boolean {
+  return ALL_FOLDER_MARKER_NAMES.some((markerName) => key === `${prefix}${markerName}`);
 }
 
 export function getBaseName(path: string): string {
