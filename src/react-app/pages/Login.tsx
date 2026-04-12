@@ -1,5 +1,5 @@
-import { useId, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useEffect, useId, useState } from "react";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import toast from "react-hot-toast";
 import { useAuth } from "../hooks/useAuth";
@@ -7,6 +7,14 @@ import { useAuth } from "../hooks/useAuth";
 interface LoginProps {
   onSwitchToRegister: () => void;
 }
+
+const shownAuthFeedbackKeys = new Set<string>();
+
+const AUTH_FEEDBACK_MESSAGES = {
+  registered: "Registration successful. Please check your email to verify your account.",
+  reset: "Password reset successful. Please log in with your new password.",
+  verified: "Email verified. You can now log in.",
+} as const;
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -37,6 +45,7 @@ function GoogleIcon({ className }: { className?: string }) {
 }
 
 export function Login({ onSwitchToRegister }: LoginProps) {
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const { login, loginWithGoogle, loading } = useAuth();
   const emailId = useId();
@@ -48,27 +57,24 @@ export function Login({ onSwitchToRegister }: LoginProps) {
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
-  const toastShownRef = useRef({ registered: false, reset: false, verified: false });
 
-  if (registered && !toastShownRef.current.registered) {
-    toastShownRef.current.registered = true;
-    // Schedule toast after render to avoid calling during render phase
-    Promise.resolve().then(() =>
-      toast.success("Registration successful. Please check your email to verify your account."),
-    );
-  }
+  useEffect(() => {
+    const feedbacks = [
+      registered ? ["registered", AUTH_FEEDBACK_MESSAGES.registered] : null,
+      reset ? ["reset", AUTH_FEEDBACK_MESSAGES.reset] : null,
+      verified ? ["verified", AUTH_FEEDBACK_MESSAGES.verified] : null,
+    ].filter((feedback): feedback is [keyof typeof AUTH_FEEDBACK_MESSAGES, string] => feedback !== null);
 
-  if (reset && !toastShownRef.current.reset) {
-    toastShownRef.current.reset = true;
-    Promise.resolve().then(() =>
-      toast.success("Password reset successful. Please log in with your new password."),
-    );
-  }
+    for (const [kind, message] of feedbacks) {
+      const feedbackKey = `${location.key}:${kind}`;
+      if (shownAuthFeedbackKeys.has(feedbackKey)) {
+        continue;
+      }
 
-  if (verified && !toastShownRef.current.verified) {
-    toastShownRef.current.verified = true;
-    Promise.resolve().then(() => toast.success("Email verified. You can now log in."));
-  }
+      shownAuthFeedbackKeys.add(feedbackKey);
+      toast.success(message, { id: `auth-feedback:${feedbackKey}` });
+    }
+  }, [location.key, registered, reset, verified]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
