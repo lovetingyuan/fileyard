@@ -26,12 +26,10 @@ export function authMiddleware() {
         async () =>
           (await getAuth(c).api.getSession({
             headers: c.req.raw.headers,
-            request: c.req.raw,
           })) as SessionResponse,
         async () =>
           (await getAuth(c, { disableRateLimit: true }).api.getSession({
             headers: c.req.raw.headers,
-            request: c.req.raw,
           })) as SessionResponse,
         (error) => {
           console.warn(
