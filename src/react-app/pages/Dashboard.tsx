@@ -554,7 +554,11 @@ export function Dashboard() {
                       ))}
                       {filteredFolders.length === 0 && filteredFiles.length === 0 && (
                         <>
-                          <tr className="sm:hidden">
+                          <tr
+                            className={
+                              searchInputValue ? "sm:hidden" : "bg-base-100 sm:hidden"
+                            }
+                          >
                             <td colSpan={2}>
                               <div className="flex flex-col items-center gap-2 py-15 text-base-content/60">
                                 <Icon
@@ -571,7 +575,13 @@ export function Dashboard() {
                               </div>
                             </td>
                           </tr>
-                          <tr className="hidden sm:table-row">
+                          <tr
+                            className={
+                              searchInputValue
+                                ? "hidden sm:table-row"
+                                : "hidden bg-base-100 sm:table-row"
+                            }
+                          >
                             <td colSpan={4}>
                               <div className="flex flex-col items-center gap-2 py-15 text-base-content/60">
                                 <Icon

@@ -7,6 +7,8 @@ import { jsonError } from "../utils/response";
 
 const AVATAR_MAX_UPLOAD_BYTES = 1024 * 1024;
 const AVATAR_CONTENT_TYPE = "image/png";
+const AUTH_AVATAR_CACHE_CONTROL = "private, max-age=3600";
+const AUTH_AVATAR_ALLOWED_HOST_SUFFIX = ".googleusercontent.com";
 const PNG_MAGIC_BYTES = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 
 function isPngFile(buffer: ArrayBuffer): boolean {
@@ -15,6 +17,32 @@ function isPngFile(buffer: ArrayBuffer): boolean {
   }
   const header = new Uint8Array(buffer, 0, PNG_MAGIC_BYTES.length);
   return PNG_MAGIC_BYTES.every((byte, i) => header[i] === byte);
+}
+
+function resolveAuthAvatarUrl(input: string | null | undefined): string | null {
+  if (!input) {
+    return null;
+  }
+
+  try {
+    const url = new URL(input);
+    const hostname = url.hostname.toLowerCase();
+
+    if (url.protocol !== "https:") {
+      return null;
+    }
+
+    if (
+      hostname !== "googleusercontent.com" &&
+      !hostname.endsWith(AUTH_AVATAR_ALLOWED_HOST_SUFFIX)
+    ) {
+      return null;
+    }
+
+    return url.toString();
+  } catch {
+    return null;
+  }
 }
 
 const profile = new Hono<AppContext>();
@@ -63,6 +91,57 @@ profile.get("/api/profile/avatar", async (c) => {
   } catch (error) {
     console.error("Failed to read avatar", error);
     return jsonError(c, "Failed to read avatar", 500);
+  }
+});
+
+profile.get("/api/profile/auth-avatar", async (c) => {
+  try {
+    const { user } = await getFileContext(c);
+    const authAvatarUrl = resolveAuthAvatarUrl(user.image);
+
+    if (!authAvatarUrl) {
+      return jsonError(c, "Auth avatar not found", 404);
+    }
+
+    const upstream = await fetch(authAvatarUrl, {
+      headers: {
+        Accept: "image/*",
+      },
+    });
+
+    if (!upstream.ok || !upstream.body) {
+      return jsonError(c, "Auth avatar not found", 404);
+    }
+
+    const headers = new Headers();
+    const contentType = upstream.headers.get("Content-Type");
+    const contentLength = upstream.headers.get("Content-Length");
+    const etag = upstream.headers.get("ETag");
+    const lastModified = upstream.headers.get("Last-Modified");
+
+    if (contentType) {
+      headers.set("Content-Type", contentType);
+    }
+    if (contentLength) {
+      headers.set("Content-Length", contentLength);
+    }
+    if (etag) {
+      headers.set("ETag", etag);
+    }
+    if (lastModified) {
+      headers.set("Last-Modified", lastModified);
+    }
+
+    headers.set("Cache-Control", AUTH_AVATAR_CACHE_CONTROL);
+    headers.set("X-Content-Type-Options", "nosniff");
+
+    return new Response(upstream.body, {
+      headers,
+      status: 200,
+    });
+  } catch (error) {
+    console.error("Failed to read auth avatar", error);
+    return jsonError(c, "Failed to read auth avatar", 500);
   }
 });
 

@@ -42,4 +42,6 @@ src/
 
 ## Debug
 
-- **use real browser**: local server is vite dev server, and the default user account is `test1@tingyuan.in` and password is `test1@tingyuan.inA`.
+- **use real browser**: local server is vite dev server(http://localhost:5173/), here are some accounts for test:
+  - `test1@tingyuan.in`, password is `test1@tingyuan.inA`.
+  - `test2@tingyuan.in`, password is `test2@tingyuan.inA`.

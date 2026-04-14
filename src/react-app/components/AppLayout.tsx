@@ -11,8 +11,17 @@ function AuthenticatedNavMenu() {
   return (
     <div className="flex-none flex items-center gap-2">
       <ThemeSwitcher />
-      <Link to="/profile" className="btn btn-ghost btn-circle avatar" aria-label="Go to profile">
-        <UserAvatar email={user?.email} avatarUrl={profile?.avatarUrl} />
+      <Link
+        to="/profile"
+        className="btn btn-ghost btn-circle avatar"
+        aria-label="Go to profile"
+        title={user?.email}
+      >
+        <UserAvatar
+          email={user?.email}
+          avatarUrl={profile?.avatarUrl}
+          authImage={user?.image}
+        />
       </Link>
     </div>
   );

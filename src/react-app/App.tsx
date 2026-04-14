@@ -1,41 +1,18 @@
 import {
   BrowserRouter,
   Routes,
-  Route,
-  Navigate,
-  Outlet,
   useLocation,
   useNavigate,
 } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
-import { AppLayout } from "./components/AppLayout";
 import { AuthProvider } from "./context/AuthContext";
 import { useAuth } from "./hooks/useAuth";
-import { ForgotPassword } from "./pages/ForgotPassword";
-import { Login } from "./pages/Login";
-import { Register } from "./pages/Register";
-import { ResetPassword } from "./pages/ResetPassword";
-import { Dashboard } from "./pages/Dashboard";
-import { Profile } from "./pages/Profile";
-import { ShareDownload } from "./pages/ShareDownload";
+import { buildAppRouteElements } from "./routes";
 import { allowsAuthenticatedEmailActionPath } from "./utils/authRouteAccess";
-
-function AuthGate() {
-  const { authLoading } = useAuth();
-
-  if (authLoading) {
-    return (
-      <div className="flex flex-1 items-center justify-center p-4">
-        <span className="loading loading-spinner loading-lg text-primary"></span>
-      </div>
-    );
-  }
-
-  return <Outlet />;
-}
+export { renderProtectedRoute } from "./routes";
 
 function AppContent() {
-  const { user } = useAuth();
+  const { authLoading, user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const allowAuthenticatedEmailAction = allowsAuthenticatedEmailActionPath(location.pathname);
@@ -51,59 +28,13 @@ function AppContent() {
 
   return (
     <Routes>
-      <Route element={<AppLayout />}>
-        <Route path="share/:token" element={<ShareDownload />} />
-        <Route element={<AuthGate />}>
-          <Route
-            path="login"
-            element={
-              user ? (
-                <Navigate to="/" replace />
-              ) : (
-                <Login onSwitchToRegister={handleSwitchToRegister} />
-              )
-            }
-          />
-          <Route
-            path="register"
-            element={
-              user ? (
-                <Navigate to="/" replace />
-              ) : (
-                <Register onSwitchToLogin={handleSwitchToLogin} />
-              )
-            }
-          />
-          <Route
-            path="forgot-password"
-            element={
-              user && !allowAuthenticatedEmailAction ? (
-                <Navigate to="/" replace />
-              ) : (
-                <ForgotPassword />
-              )
-            }
-          />
-          <Route
-            path="reset-password"
-            element={
-              user && !allowAuthenticatedEmailAction ? (
-                <Navigate to="/" replace />
-              ) : (
-                <ResetPassword />
-              )
-            }
-          />
-          <Route
-            path="profile"
-            element={user ? <Profile /> : <Login onSwitchToRegister={handleSwitchToRegister} />}
-          />
-          <Route
-            index
-            element={user ? <Dashboard /> : <Login onSwitchToRegister={handleSwitchToRegister} />}
-          />
-        </Route>
-      </Route>
+      {buildAppRouteElements({
+        user,
+        authLoading,
+        allowAuthenticatedEmailAction,
+        onSwitchToRegister: handleSwitchToRegister,
+        onSwitchToLogin: handleSwitchToLogin,
+      })}
     </Routes>
   );
 }

@@ -182,6 +182,7 @@ export function Profile() {
                   <UserAvatar
                     email={email}
                     avatarUrl={profile?.avatarUrl}
+                    authImage={user?.image}
                     className="h-full w-full"
                     textClassName="text-xl"
                   />
