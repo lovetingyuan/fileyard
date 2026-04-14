@@ -48,6 +48,17 @@ export function applyCorsHeaders(headers: Headers, origin: string): void {
   headers.set("Vary", appendVary(headers.get("Vary"), "Origin"));
 }
 
+export function applyCorsHeadersToResponse(response: Response, origin: string): Response {
+  const headers = new Headers(response.headers);
+  applyCorsHeaders(headers, origin);
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
 export function getUploadLimitBytes(env: AppBindings): number {
   return parseMaxUploadBytes(env.MAX_UPLOAD_BYTES) || DEFAULT_MAX_UPLOAD_BYTES;
 }

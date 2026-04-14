@@ -4,11 +4,13 @@ import { csrf } from "hono/csrf";
 import { RateLimitDO } from "./durable-objects/RateLimitDO";
 import { authMiddleware, requireAuth } from "./auth/middleware";
 import { getAuth } from "./auth";
+import { parseEmailSignInPayload, preflightEmailSignIn } from "./auth/signInEmail";
 import { withRateLimitTableFallback } from "./auth/rate-limit-fallback";
 import type { AppContext } from "./context";
-import { applyCorsHeaders, isAllowedOrigin } from "./utils/appHelpers";
+import { applyCorsHeaders, applyCorsHeadersToResponse, isAllowedOrigin } from "./utils/appHelpers";
+import { normalizeDevPostUnauthorizedResponse } from "./utils/devResponseWorkarounds";
 import { jsonError } from "./utils/response";
-import { applySecurityHeaders, shouldSkipContentSecurityPolicy } from "./utils/securityHeaders";
+import { applySecurityHeadersToResponse } from "./utils/securityHeaders";
 import profileRoutes from "./routes/profile";
 import fileRoutes from "./routes/files";
 import shareRoutes from "./routes/shares";
@@ -21,14 +23,8 @@ app.get("/health", (c) => c.json({ status: "ok", time: new Date().toISOString() 
 
 app.use("*", async (c, next) => {
   await next();
-  const headers = new Headers(c.res.headers);
-  const isDev = shouldSkipContentSecurityPolicy(c.req.url);
-  applySecurityHeaders(headers, { skipCSP: isDev });
-  c.res = new Response(c.res.body, {
-    headers,
-    status: c.res.status,
-    statusText: c.res.statusText,
-  });
+  c.res = normalizeDevPostUnauthorizedResponse(c.res, c.req.method, c.req.url);
+  c.res = applySecurityHeadersToResponse(c.res, c.req.url);
 });
 
 app.use("/api/*", async (c, next) => {
@@ -52,7 +48,7 @@ app.use("/api/*", async (c, next) => {
   await next();
 
   if (origin && isAllowedOrigin(c, origin)) {
-    applyCorsHeaders(c.res.headers, origin);
+    c.res = applyCorsHeadersToResponse(c.res, origin);
   }
 });
 
@@ -81,8 +77,22 @@ app.use(
   }),
 );
 
-app.on(["GET", "POST"], "/api/auth/*", (c) =>
-  withRateLimitTableFallback(
+app.post("/api/auth/sign-in/email", async (c) => {
+  const requestBody = await c.req.raw.arrayBuffer();
+  const payload = parseEmailSignInPayload(requestBody);
+  const { response } = await preflightEmailSignIn(c, payload);
+  if (response) {
+    return response;
+  }
+
+  const authRequest = new Request(c.req.raw, {
+    body: requestBody,
+  });
+  return getAuth(c, { disableRateLimit: true }).handler(authRequest);
+});
+
+app.on(["GET", "POST"], "/api/auth/*", async (c) => {
+  return withRateLimitTableFallback(
     async () => getAuth(c).handler(c.req.raw),
     async () => getAuth(c, { disableRateLimit: true }).handler(c.req.raw),
     (error) => {
@@ -91,8 +101,8 @@ app.on(["GET", "POST"], "/api/auth/*", (c) =>
         error,
       );
     },
-  ),
-);
+  );
+});
 
 app.use("/api/profile", authMiddleware());
 app.use("/api/profile/*", authMiddleware());

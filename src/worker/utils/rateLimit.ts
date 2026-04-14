@@ -8,13 +8,18 @@ type RateLimitPolicy = {
   windowMs: number;
 };
 
-type RateLimitedAction = "create-share-link";
+type RateLimitedAction = "create-share-link" | "sign-in-email";
 
 const RATE_LIMIT_POLICIES: Record<RateLimitedAction, RateLimitPolicy> = {
   "create-share-link": {
     perIp: 10,
     perIdentifier: 10,
     windowMs: 5 * 60 * 1000,
+  },
+  "sign-in-email": {
+    perIp: 3,
+    perIdentifier: 3,
+    windowMs: 10 * 1000,
   },
 };
 

@@ -4,6 +4,19 @@ export function shouldSkipContentSecurityPolicy(url: string): boolean {
   return LOCAL_DEVELOPMENT_HOSTS.has(new URL(url).hostname);
 }
 
+export function applySecurityHeadersToResponse(response: Response, url: string): Response {
+  const headers = new Headers(response.headers);
+  applySecurityHeaders(headers, {
+    skipCSP: shouldSkipContentSecurityPolicy(url),
+  });
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
 export function applySecurityHeaders(headers: Headers, options?: { skipCSP?: boolean }): void {
   if (!options?.skipCSP) {
     headers.set(
