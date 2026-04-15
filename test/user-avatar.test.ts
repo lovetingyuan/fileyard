@@ -26,9 +26,7 @@ describe("UserAvatar", () => {
       } as any),
     );
 
-    expect(markup).toContain(
-      `src="/api/profile/auth-avatar?v=${encodeURIComponent(authImage)}"`,
-    );
+    expect(markup).toContain(`src="/api/profile/auth-avatar?v=${encodeURIComponent(authImage)}"`);
   });
 
   it("falls back to the email initial when no image is available", () => {

@@ -7,17 +7,25 @@
   "name": "fileyard",
   "main": "./src/worker/index.ts",
   "compatibility_date": "2025-10-08",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
   "observability": {
     "enabled": true,
   },
   "vars": {
-    // Set to your production domain before deploying (e.g. "https://files.example.com").
-    // When empty, the app falls back to the request origin.
+    // Set to your production domain before deploying if you need a fixed origin.
+    // When empty, auth and share links fall back to the incoming request origin.
     "APP_URL": "",
     "MAX_UPLOAD_BYTES": "104857600",
     "SENDER_EMAIL": "Fileyard <fileyard@tingyuan.in>",
   },
+  "kv_namespaces": [
+    {
+      "binding": "FILE_YARD_KV",
+      "id": "",
+    },
+  ],
   "secrets": {
     "required": [
       "BETTER_AUTH_SECRET",
@@ -43,8 +51,8 @@
   "d1_databases": [
     {
       "binding": "AUTH_DB",
-      "database_name": "fileyard-auth",
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_name": "fileyard-db",
+      "database_id": "79ade83d-d79b-4270-98de-ba887af6b405",
       "migrations_dir": "./drizzle",
     },
   ],
@@ -59,7 +67,9 @@
   "migrations": [
     {
       "tag": "v1",
-      "new_sqlite_classes": ["RateLimitDO"],
+      "new_sqlite_classes": [
+        "RateLimitDO"
+      ],
     },
   ],
 }

@@ -1,5 +1,5 @@
-import { Icon } from '@iconify/react'
-import { Link } from 'react-router-dom'
+import { Icon } from "@iconify/react";
+import { Link } from "react-router-dom";
 
 export function NotFound() {
   return (
@@ -35,5 +35,5 @@ export function NotFound() {
         </div>
       </section>
     </main>
-  )
+  );
 }

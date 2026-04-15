@@ -35,13 +35,16 @@ export type AuthSession = {
 };
 
 function isDevEnvironment(env: AppBindings, request: Request): boolean {
-  const url = env.APP_URL || request.url;
-  try {
-    const hostname = new URL(url).hostname;
-    return hostname === "localhost" || hostname === "127.0.0.1";
-  } catch {
-    return false;
-  }
+  const urlsToCheck = [request.url, env.APP_URL].filter((value): value is string => Boolean(value));
+
+  return urlsToCheck.some((url) => {
+    try {
+      const hostname = new URL(url).hostname;
+      return hostname === "localhost" || hostname === "127.0.0.1";
+    } catch {
+      return false;
+    }
+  });
 }
 
 function resolveBaseUrl(env: AppBindings, request: Request): string {
@@ -66,8 +69,9 @@ function resolveTrustedOrigins(env: AppBindings, request?: Request): string[] {
   return [...origins];
 }
 
+const authCache = new Map<string, ReturnType<typeof betterAuth>>();
+
 export function getAuth(c: Context<AppContext>, options: GetAuthOptions = {}) {
-  const db = createDb(c.env);
   const isDev = isDevEnvironment(c.env, c.req.raw);
 
   const secret = c.env.BETTER_AUTH_SECRET;
@@ -75,12 +79,22 @@ export function getAuth(c: Context<AppContext>, options: GetAuthOptions = {}) {
     throw new Error("BETTER_AUTH_SECRET is required in production");
   }
 
-  return betterAuth({
+  const resolvedSecret = secret || "better-auth-development-secret-not-for-production";
+  const baseURL = resolveBaseUrl(c.env, c.req.raw);
+  const cacheKey = `${resolvedSecret}:${baseURL}:${options.disableRateLimit ?? false}`;
+
+  const cached = authCache.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  const db = createDb(c.env);
+  const instance = betterAuth({
     ...createBetterAuthOptions({
       appName: "Fileyard",
-      baseURL: resolveBaseUrl(c.env, c.req.raw),
+      baseURL,
       disableRateLimit: options.disableRateLimit,
-      secret: secret || "better-auth-development-secret-not-for-production",
+      secret: resolvedSecret,
       googleClientId: c.env.GOOGLE_CLIENT_ID ?? "",
       googleClientSecret: c.env.GOOGLE_CLIENT_SECRET ?? "",
       trustedOrigins: async (request) => resolveTrustedOrigins(c.env, request ?? c.req.raw),
@@ -89,15 +103,13 @@ export function getAuth(c: Context<AppContext>, options: GetAuthOptions = {}) {
       onUserCreated: async (user) => {
         await getOrCreateAppProfileByDb(db, user.id, user.email);
       },
-      backgroundTaskHandler: c.executionCtx?.waitUntil
-        ? (promise) => {
-            c.executionCtx.waitUntil(promise);
-          }
-        : undefined,
     }),
     database: drizzleAdapter(db, {
       provider: "sqlite",
       schema,
     }),
   });
+
+  authCache.set(cacheKey, instance);
+  return instance;
 }

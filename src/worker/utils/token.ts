@@ -15,42 +15,8 @@ function generateToken(length = 32): string {
 }
 
 /**
- * Generate a session token
- */
-export function generateSessionToken(): string {
-  return generateToken(32);
-}
-
-/**
- * Generate a verification token
- */
-export function generateVerificationToken(): string {
-  return generateToken(32);
-}
-
-/**
  * Generate a stable user root directory identifier for R2 object prefixes.
  */
 export function generateRootDirId(): string {
   return generateToken(16);
-}
-
-/**
- * Session duration constants
- */
-const SESSION_DURATION_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
-const VERIFICATION_TOKEN_DURATION_MS = 30 * 60 * 1000; // 30 minutes
-
-/**
- * Calculate session expiry time
- */
-export function getSessionExpiry(): number {
-  return Date.now() + SESSION_DURATION_MS;
-}
-
-/**
- * Calculate verification token expiry time
- */
-export function getVerificationTokenExpiry(): number {
-  return Date.now() + VERIFICATION_TOKEN_DURATION_MS;
 }

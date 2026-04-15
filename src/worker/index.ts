@@ -11,6 +11,7 @@ import { applyCorsHeaders, applyCorsHeadersToResponse, isAllowedOrigin } from ".
 import { normalizeDevPostUnauthorizedResponse } from "./utils/devResponseWorkarounds";
 import { jsonError } from "./utils/response";
 import { applySecurityHeadersToResponse } from "./utils/securityHeaders";
+import adminRoutes from "./routes/admin";
 import profileRoutes from "./routes/profile";
 import fileRoutes from "./routes/files";
 import shareRoutes from "./routes/shares";
@@ -76,6 +77,18 @@ app.use(
     origin: (origin, c) => isAllowedOrigin(c as Context<AppContext>, origin),
   }),
 );
+app.use(
+  "/api/admin",
+  csrf({
+    origin: (origin, c) => isAllowedOrigin(c as Context<AppContext>, origin),
+  }),
+);
+app.use(
+  "/api/admin/*",
+  csrf({
+    origin: (origin, c) => isAllowedOrigin(c as Context<AppContext>, origin),
+  }),
+);
 
 app.post("/api/auth/sign-in/email", async (c) => {
   const requestBody = await c.req.raw.arrayBuffer();
@@ -108,11 +121,16 @@ app.use("/api/profile", authMiddleware());
 app.use("/api/profile/*", authMiddleware());
 app.use("/api/files", authMiddleware());
 app.use("/api/files/*", authMiddleware());
+app.use("/api/admin", authMiddleware());
+app.use("/api/admin/*", authMiddleware());
 app.use("/api/profile", requireAuth());
 app.use("/api/profile/*", requireAuth());
 app.use("/api/files", requireAuth());
 app.use("/api/files/*", requireAuth());
+app.use("/api/admin", requireAuth());
+app.use("/api/admin/*", requireAuth());
 
+app.route("/", adminRoutes);
 app.route("/", profileRoutes);
 app.route("/", fileRoutes);
 app.route("/", shareRoutes);

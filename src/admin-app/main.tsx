@@ -1,10 +1,10 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { SWRConfig } from "swr";
-import App from "./App.tsx";
+import { AdminApp } from "./AdminApp";
+import { readAdminUsersSearchParams } from "./utils/adminUsers";
 import "../shared/styles/index.css";
 
-// Initialize theme before React renders to prevent flash
 function initTheme() {
   const stored = localStorage.getItem("theme-preference");
   const preference =
@@ -17,10 +17,12 @@ function initTheme() {
 
 initTheme();
 
+const { page, pageSize } = readAdminUsersSearchParams(window.location.search);
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <SWRConfig value={{ shouldRetryOnError: false }}>
-      <App />
+      <AdminApp page={page} pageSize={pageSize} />
     </SWRConfig>
   </StrictMode>,
 );

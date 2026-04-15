@@ -1,0 +1,20 @@
+@import "tailwindcss";
+@plugin "daisyui" {
+  themes:
+    emerald --default,
+    forest --prefersdark;
+}
+
+html body {
+  .form-control .label {
+    margin-bottom: 6px;
+  }
+  .input,
+  .select,
+  .textarea {
+    &:focus,
+    &:focus-within {
+      outline-offset: 0;
+    }
+  }
+}

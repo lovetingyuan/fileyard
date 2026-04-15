@@ -50,21 +50,13 @@ export function buildAppRouteElements({
           <Route
             path="login"
             element={
-              user ? (
-                <Navigate to="/" replace />
-              ) : (
-                <Login onSwitchToRegister={onSwitchToRegister} />
-              )
+              user ? <Navigate to="/" replace /> : <Login onSwitchToRegister={onSwitchToRegister} />
             }
           />
           <Route
             path="register"
             element={
-              user ? (
-                <Navigate to="/" replace />
-              ) : (
-                <Register onSwitchToLogin={onSwitchToLogin} />
-              )
+              user ? <Navigate to="/" replace /> : <Register onSwitchToLogin={onSwitchToLogin} />
             }
           />
           <Route

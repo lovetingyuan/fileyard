@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import toast from "react-hot-toast";
@@ -8,8 +8,6 @@ interface LoginProps {
   onSwitchToRegister: () => void;
 }
 
-const shownAuthFeedbackKeys = new Set<string>();
-
 const AUTH_FEEDBACK_MESSAGES = {
   registered: "Registration successful. Please check your email to verify your account.",
   reset: "Password reset successful. Please log in with your new password.",
@@ -18,12 +16,7 @@ const AUTH_FEEDBACK_MESSAGES = {
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
-    <svg
-      viewBox="0 0 48 48"
-      aria-hidden="true"
-      focusable="false"
-      className={className}
-    >
+    <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false" className={className}>
       <path
         fill="#FBBC05"
         d="M43.61 20.08H42V20H24v8h11.3A12 12 0 0 1 24 36c-6.63 0-12-5.37-12-12s5.37-12 12-12c3.06 0 5.84 1.15 7.96 3.04l5.66-5.66A19.9 19.9 0 0 0 24 4C12.95 4 4 12.95 4 24s8.95 20 20 20c10.05 0 19-7 19-20 0-1.34-.14-2.65-.39-3.92Z"
@@ -57,24 +50,14 @@ export function Login({ onSwitchToRegister }: LoginProps) {
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
+  const shownKeyRef = useRef<string | null>(null);
 
-  useEffect(() => {
-    const feedbacks = [
-      registered ? ["registered", AUTH_FEEDBACK_MESSAGES.registered] : null,
-      reset ? ["reset", AUTH_FEEDBACK_MESSAGES.reset] : null,
-      verified ? ["verified", AUTH_FEEDBACK_MESSAGES.verified] : null,
-    ].filter((feedback): feedback is [keyof typeof AUTH_FEEDBACK_MESSAGES, string] => feedback !== null);
-
-    for (const [kind, message] of feedbacks) {
-      const feedbackKey = `${location.key}:${kind}`;
-      if (shownAuthFeedbackKeys.has(feedbackKey)) {
-        continue;
-      }
-
-      shownAuthFeedbackKeys.add(feedbackKey);
-      toast.success(message, { id: `auth-feedback:${feedbackKey}` });
-    }
-  }, [location.key, registered, reset, verified]);
+  if (shownKeyRef.current !== location.key) {
+    shownKeyRef.current = location.key;
+    if (registered) toast.success(AUTH_FEEDBACK_MESSAGES.registered, { id: `auth-feedback:${location.key}:registered` });
+    if (reset) toast.success(AUTH_FEEDBACK_MESSAGES.reset, { id: `auth-feedback:${location.key}:reset` });
+    if (verified) toast.success(AUTH_FEEDBACK_MESSAGES.verified, { id: `auth-feedback:${location.key}:verified` });
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

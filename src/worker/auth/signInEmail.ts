@@ -51,10 +51,7 @@ async function getStoredCredentialPassword(
       password: account.password,
     })
     .from(user)
-    .innerJoin(
-      account,
-      and(eq(account.userId, user.id), eq(account.providerId, "credential")),
-    )
+    .innerJoin(account, and(eq(account.userId, user.id), eq(account.providerId, "credential")))
     .where(eq(user.email, email))
     .limit(1);
 

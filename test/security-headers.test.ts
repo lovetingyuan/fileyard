@@ -14,6 +14,14 @@ describe("applySecurityHeaders", () => {
     expect(headers.get("Content-Security-Policy")).toContain("default-src 'self'");
     expect(headers.get("Content-Security-Policy")).toContain("object-src 'none'");
   });
+
+  it("sets Strict-Transport-Security header", () => {
+    const headers = new Headers();
+
+    applySecurityHeaders(headers);
+
+    expect(headers.get("Strict-Transport-Security")).toBe("max-age=31536000; includeSubDomains");
+  });
 });
 
 describe("shouldSkipContentSecurityPolicy", () => {

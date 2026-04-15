@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { getPasswordErrors, PASSWORD_REQUIREMENTS_HINT } from "../src/react-app/utils/passwordRules";
+import {
+  getPasswordErrors,
+  PASSWORD_REQUIREMENTS_HINT,
+} from "../src/react-app/utils/passwordRules";
 import { validatePassword } from "../src/worker/utils/password";
 
 describe("password policy", () => {

@@ -34,7 +34,7 @@ const LARGE_FILE_UPLOAD_THRESHOLD_BYTES = 20 * 1024 * 1024;
 
 async function runWithLargeFileUploadToast<T>(file: File, action: () => Promise<T>) {
   const waitingToastId =
-    file.size >= LARGE_FILE_UPLOAD_THRESHOLD_BYTES ? toast.loading("文件较大，请等待") : undefined;
+    file.size >= LARGE_FILE_UPLOAD_THRESHOLD_BYTES ? toast.loading("Large file, please wait") : undefined;
 
   try {
     return await action();
@@ -427,7 +427,7 @@ export function Dashboard() {
               <div className="rounded-box border border-base-300 bg-base-200 p-10">
                 <div className="flex flex-col items-center gap-3 text-center text-base-content/60">
                   <Icon icon="mdi:alert-circle-outline" className="h-12 w-12 text-error" />
-                  <p className="text-sm">列表加载失败</p>
+                  <p className="text-sm">Failed to load files</p>
                 </div>
               </div>
             ) : isLoading ? (
@@ -554,11 +554,7 @@ export function Dashboard() {
                       ))}
                       {filteredFolders.length === 0 && filteredFiles.length === 0 && (
                         <>
-                          <tr
-                            className={
-                              searchInputValue ? "sm:hidden" : "bg-base-100 sm:hidden"
-                            }
-                          >
+                          <tr className={searchInputValue ? "sm:hidden" : "bg-base-100 sm:hidden"}>
                             <td colSpan={2}>
                               <div className="flex flex-col items-center gap-2 py-15 text-base-content/60">
                                 <Icon

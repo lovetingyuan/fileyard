@@ -55,9 +55,7 @@ describe("app route tree", () => {
   });
 
   it("renders a homepage call to action on the not found page", () => {
-    const markup = renderToStaticMarkup(
-      createElement(MemoryRouter, null, createElement(NotFound)),
-    );
+    const markup = renderToStaticMarkup(createElement(MemoryRouter, null, createElement(NotFound)));
 
     expect(markup).toContain("页面不存在");
     expect(markup).toContain("返回主页");

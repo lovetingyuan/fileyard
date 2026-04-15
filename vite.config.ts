@@ -4,6 +4,7 @@ import babelPlugin from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
 import { cloudflare } from "@cloudflare/vite-plugin";
 import babelPluginRelativePath from "./scripts/babel-plugin-relative-path.js";
+import { viteHtmlEntryPoints } from "./scripts/vite-entry-points";
 import { execSync } from "child_process";
 
 process.env.VITE_BUILD_TIME = new Date().toLocaleString();
@@ -11,6 +12,15 @@ process.env.VITE_BUILD_TIME = new Date().toLocaleString();
 process.env.VITE_GIT_HASH = execSync("git rev-parse --short HEAD").toString("utf8").trim();
 
 export default defineConfig(({ mode }) => ({
+  environments: {
+    client: {
+      build: {
+        rollupOptions: {
+          input: viteHtmlEntryPoints,
+        },
+      },
+    },
+  },
   plugins: [
     react(),
     babelPlugin({

@@ -44,12 +44,9 @@ describe("auth rate-limit fallback", () => {
     const error = new Error("boom");
 
     await expect(
-      withRateLimitTableFallback(
-        async () => {
-          throw error;
-        },
-        fallback,
-      ),
+      withRateLimitTableFallback(async () => {
+        throw error;
+      }, fallback),
     ).rejects.toThrow("boom");
 
     expect(fallback).not.toHaveBeenCalled();

@@ -45,10 +45,13 @@ describe("login auth feedback", () => {
     toastSuccess.mockReset();
   });
 
-  it("does not trigger registration success toast during render", async () => {
+  it("triggers registration success toast during render", async () => {
     renderLogin("/login?registered=1&email=test1%40tingyuan.in");
     await Promise.resolve();
 
-    expect(toastSuccess).not.toHaveBeenCalled();
+    expect(toastSuccess).toHaveBeenCalledWith(
+      expect.stringContaining("Registration successful"),
+      expect.objectContaining({ id: expect.stringContaining("registered") }),
+    );
   });
 });

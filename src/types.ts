@@ -12,6 +12,20 @@ export interface ProfileResponse {
   profile: Profile;
 }
 
+export interface AdminUserListItem {
+  email: string;
+  createdAt: string;
+  lastLoginAt: string | null;
+}
+
+export interface AdminUserListResponse {
+  success: true;
+  items: AdminUserListItem[];
+  page: number;
+  pageSize: number;
+  total: number;
+}
+
 export interface FolderEntry {
   name: string;
   path: string;

@@ -1,6 +1,7 @@
 import type { AuthVariables } from "./auth/middleware";
 
 export type AppBindings = Env & {
+  FILE_YARD_KV: KVNamespace;
   APP_URL?: string;
   BETTER_AUTH_SECRET?: string;
   GOOGLE_CLIENT_ID?: string;

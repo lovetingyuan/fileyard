@@ -119,6 +119,10 @@ profile.get("/api/profile/auth-avatar", async (c) => {
     const etag = upstream.headers.get("ETag");
     const lastModified = upstream.headers.get("Last-Modified");
 
+    if (!contentType || !contentType.startsWith("image/")) {
+      return jsonError(c, "Auth avatar not found", 404);
+    }
+
     if (contentType) {
       headers.set("Content-Type", contentType);
     }

@@ -17,11 +17,7 @@ function AuthenticatedNavMenu() {
         aria-label="Go to profile"
         title={user?.email}
       >
-        <UserAvatar
-          email={user?.email}
-          avatarUrl={profile?.avatarUrl}
-          authImage={user?.image}
-        />
+        <UserAvatar email={user?.email} avatarUrl={profile?.avatarUrl} authImage={user?.image} />
       </Link>
     </div>
   );
