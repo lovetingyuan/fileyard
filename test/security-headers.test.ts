@@ -10,9 +10,15 @@ describe("applySecurityHeaders", () => {
 
     applySecurityHeaders(headers);
 
+    const policy = headers.get("Content-Security-Policy");
+
     expect(headers.has("Content-Security-Policy")).toBe(true);
-    expect(headers.get("Content-Security-Policy")).toContain("default-src 'self'");
-    expect(headers.get("Content-Security-Policy")).toContain("object-src 'none'");
+    expect(policy).toContain("default-src 'self'");
+    expect(policy).toContain("script-src 'self' https://static.cloudflareinsights.com");
+    expect(policy).toContain(
+      "connect-src 'self' https://api.iconify.design https://api.unisvg.com https://api.simplesvg.com https://cloudflareinsights.com",
+    );
+    expect(policy).toContain("object-src 'none'");
   });
 
   it("sets Strict-Transport-Security header", () => {

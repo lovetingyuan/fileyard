@@ -23,7 +23,8 @@
   "kv_namespaces": [
     {
       "binding": "FILE_YARD_KV",
-      "id": "",
+      "id": "d27e0ee9d2574d0a9929024ffd5118a3",
+      "remote": true,
     },
   ],
   "secrets": {
@@ -56,18 +57,16 @@
       "migrations_dir": "./drizzle",
     },
   ],
-  "durable_objects": {
-    "bindings": [
-      {
-        "name": "RATE_LIMITER",
-        "class_name": "RateLimitDO",
-      },
-    ],
-  },
   "migrations": [
     {
       "tag": "v1",
       "new_sqlite_classes": [
+        "RateLimitDO"
+      ],
+    },
+    {
+      "tag": "v2",
+      "deleted_classes": [
         "RateLimitDO"
       ],
     },

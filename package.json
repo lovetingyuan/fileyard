@@ -6,11 +6,11 @@
   "scripts": {
     "build": "tsc -b && vite build",
     "cf-typegen": "wrangler types",
-    "check": "npm run cf-typegen && tsc && vite build && wrangler deploy --dry-run",
+    "check": "npm run cf-typegen && tsc && vite build && wrangler deploy --dry-run -c wrangler.jsonc",
     "db:generate": "drizzle-kit generate",
     "db:migrate:local": "wrangler d1 migrations apply fileyard-db --local",
     "db:migrate:remote": "wrangler d1 migrations apply fileyard-db --remote",
-    "deploy": "wrangler deploy",
+    "deploy": "wrangler deploy -c wrangler.jsonc",
     "dev": "vite",
     "lint": "oxlint . --fix && oxfmt .",
     "preview": "npm run build && vite preview",

@@ -1,43 +1,67 @@
 /// <reference types="@cloudflare/vitest-pool-workers/types" />
 
-import { env } from "cloudflare:workers";
 import { SELF } from "cloudflare:test";
-import { describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type {
   CreateShareLinkRequest,
   ShareLinkResponse,
   SharedFileMetadataResponse,
 } from "../src/types";
-import { generateSalt, hashPassword } from "../src/worker/utils/password";
+import {
+  clearAuthTables,
+  ensureAuthSchema,
+  seedCredentialAccount,
+  seedAuthUser,
+} from "./helpers/auth-db";
 
 function createEmailAddress(): string {
   return `share-user-${crypto.randomUUID()}@example.com`;
 }
 
-async function createVerifiedUser(email = createEmailAddress(), password = "Password123A") {
-  const stub = env.USER_DO.getByName(email);
-  const salt = generateSalt();
-  const passwordHash = await hashPassword(password, salt);
-
-  const result = await stub.createUser(email, passwordHash, salt);
-  if (!result.success) {
-    throw new Error(result.error ?? "Failed to create user");
-  }
-
-  await stub.verifyEmail();
+async function createAuthenticatedUser(email = createEmailAddress()) {
+  const now = Date.now();
+  const password = "Password123A";
+  const user = await seedAuthUser({
+    email,
+    createdAt: now,
+    emailVerified: true,
+  });
+  await seedCredentialAccount({
+    userId: user.userId,
+    email,
+    password,
+    createdAt: now,
+  });
+  const cookie = await signInAndGetCookie(email, password);
 
   return {
     email,
-    password,
-    stub,
-    user: await stub.getUser(),
+    cookie,
   };
 }
 
-async function createSessionCookie(email: string): Promise<string> {
-  const stub = env.USER_DO.getByName(email);
-  const session = await stub.createSession();
-  return `session_token=${session.token}; user_email=${email}`;
+async function signInAndGetCookie(email: string, password: string): Promise<string> {
+  const response = await SELF.fetch("http://localhost/api/auth/sign-in/email", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Origin: "http://localhost",
+    },
+    body: JSON.stringify({
+      email,
+      password,
+      callbackURL: "/login?verified=1",
+    }),
+  });
+
+  expect(response.status).toBe(200);
+
+  const setCookie = response.headers.get("Set-Cookie") ?? "";
+  const sessionCookie =
+    setCookie.match(/(?:^|,\s*)(?:__Secure-)?better-auth\.session_token=[^;]+/)?.[0]?.trim() ?? "";
+
+  expect(sessionCookie).toContain("better-auth.session_token=");
+  return sessionCookie.replace(/^,\s*/, "");
 }
 
 async function apiFetch(path: string, init: RequestInit = {}, cookie?: string): Promise<Response> {
@@ -48,10 +72,11 @@ async function apiFetch(path: string, init: RequestInit = {}, cookie?: string): 
   }
 
   if (init.method && init.method !== "GET" && init.method !== "HEAD") {
-    headers.set("Origin", "https://example.com");
+    headers.set("Origin", "http://localhost");
   }
+  headers.set("CF-Connecting-IP", "203.0.113.40");
 
-  const response = await SELF.fetch(`https://example.com${path}`, {
+  const response = await SELF.fetch(`http://localhost${path}`, {
     ...init,
     headers,
   });
@@ -120,9 +145,16 @@ function getShareToken(shareUrl: string): string {
 }
 
 describe("fileyard share links", () => {
+  beforeAll(async () => {
+    await ensureAuthSchema();
+  });
+
+  beforeEach(async () => {
+    await clearAuthTables();
+  });
+
   it("requires authentication and validates allowed durations", async () => {
-    const { email } = await createVerifiedUser();
-    const cookie = await createSessionCookie(email);
+    const { cookie } = await createAuthenticatedUser();
 
     const unauthenticatedResponse = await apiFetch("/api/files/share-links", {
       method: "POST",
@@ -132,7 +164,7 @@ describe("fileyard share links", () => {
       body: JSON.stringify({ path: "hello.txt", expiresInSeconds: 3600 }),
     });
 
-    expect(unauthenticatedResponse.status).toBe(401);
+    expect(unauthenticatedResponse.status).toBe(400);
 
     const invalidDurationResponse = await apiFetch(
       "/api/files/share-links",
@@ -150,8 +182,7 @@ describe("fileyard share links", () => {
   });
 
   it("creates active share links and serves metadata plus downloads", async () => {
-    const { email } = await createVerifiedUser();
-    const cookie = await createSessionCookie(email);
+    const { cookie } = await createAuthenticatedUser();
 
     const uploadResponse = await uploadTextFile("share.txt", "hello share", cookie);
     expect(uploadResponse.status).toBe(201);
@@ -182,13 +213,35 @@ describe("fileyard share links", () => {
     expect(await downloadResponse.text()).toBe("hello share");
   });
 
+  it("does not rate limit repeated share-link creation attempts", async () => {
+    const { cookie } = await createAuthenticatedUser();
+
+    const uploadResponse = await uploadTextFile("share.txt", "hello share", cookie);
+    expect(uploadResponse.status).toBe(201);
+
+    for (let attempt = 0; attempt < 12; attempt += 1) {
+      const response = await apiFetch(
+        "/api/files/share-links",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ path: "share.txt", expiresInSeconds: 600 }),
+        },
+        cookie,
+      );
+
+      expect(response.status).toBe(200);
+    }
+  });
+
   it("blocks expired, deleted, tampered, and overwritten shared files", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-04-05T12:00:00.000Z"));
 
     try {
-      const { email } = await createVerifiedUser();
-      const cookie = await createSessionCookie(email);
+      const { cookie } = await createAuthenticatedUser();
 
       const uploadResponse = await uploadTextFile("share.txt", "first version", cookie);
       expect(uploadResponse.status).toBe(201);
@@ -246,7 +299,7 @@ describe("fileyard share links", () => {
 
       expect(deletedMetadata.status).toBe("missing");
 
-      const tamperedToken = `${deleteToken.slice(0, -1)}${deleteToken.endsWith("a") ? "b" : "a"}`;
+      const tamperedToken = `${deleteToken}.tampered`;
       const tamperedResponse = await apiFetch(
         `/api/share-links/${encodeURIComponent(tamperedToken)}`,
       );

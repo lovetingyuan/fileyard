@@ -1,6 +1,6 @@
 # Fileyard
 
-基于 React + Vite + Hono + Cloudflare Workers 的文件分享应用。前端和 API 同域部署在 Cloudflare Workers，文件存储使用 R2，用户与会话状态使用 Durable Objects。
+基于 React + Vite + Hono + Cloudflare Workers 的文件分享应用。前端和 API 同域部署在 Cloudflare Workers，文件存储使用 R2，用户与会话状态使用 Better Auth + D1。
 
 ## 当前发布定位
 
@@ -12,7 +12,7 @@
 - 目录规模变大后，Worker 时延、内存占用和请求成本都会明显上升。
 - 如果要做公开生产发布，应补充独立的文件元数据索引层，并把列表、统计、排序、删除改为分页和增量处理。
 
-如果你的目标是小范围团队内测或受控用户群，这个版本已经具备更完整的安全收尾能力，包括安全 cookie、认证限流、统一安全头、邮件失败闭环和更合理的下载路径。
+如果你的目标是小范围团队内测或受控用户群，这个版本已经具备更完整的安全收尾能力，包括安全 cookie、基于 D1 的认证限流、统一安全头、邮件失败闭环和更合理的下载路径。
 
 ## 本地开发
 
@@ -60,15 +60,14 @@ npm run deploy     # 发布到 Cloudflare
 
 - 1 个 Worker
 - 1 个 R2 Bucket，用于存储上传文件
-- 2 个 Durable Object class
 - 1 个自定义域名
 - 1 个 Resend 发信账号
 
 当前 `wrangler.jsonc` 中已经声明了以下绑定：
 
+- `AUTH_DB`
 - `FILES_BUCKET`
-- `USER_DO`
-- `RATE_LIMITER`
+- `FILE_YARD_KV`
 - `ASSETS`
 
 如果你的 R2 bucket 名称不是 `fileyard`，需要先修改 [wrangler.jsonc](/D:/lovetingyuan/files-share/wrangler.jsonc) 和 [wrangler.json](/D:/lovetingyuan/files-share/wrangler.json) 中的 bucket 配置。
@@ -186,7 +185,7 @@ npm run deploy
 - 登录后 cookie 为 `HttpOnly`、`SameSite=Lax`、HTTPS 下带 `Secure`
 - 上传文件、创建分享链接、打开分享页、直接下载文件
 - 分享下载为浏览器原生下载，不再先整文件拉入内存
-- 登录、注册、重发验证、分享创建都存在限流保护
+- 登录、注册、重发验证等 Better Auth 路径存在数据库限流保护
 - 首页、登录页、注册页、分享页响应头包含安全头
 
 ## 运行与排障
@@ -204,7 +203,7 @@ npx wrangler tail
 - 收不到邮件：检查 `RESEND_API_KEY`、`SENDER_EMAIL` 和域名验证状态
 - 登录失败：检查 `APP_URL`、HTTPS、自定义域名以及浏览器 cookie 策略
 - 上传失败：检查 `MAX_UPLOAD_BYTES`、R2 bucket 绑定和对象权限
-- 限流误杀：检查 `CF-Connecting-IP`、反向代理链路和请求重试行为
+- 认证接口限流误杀：检查 `CF-Connecting-IP`、反向代理链路和请求重试行为
 
 ## 回滚建议
 
@@ -217,7 +216,6 @@ npx wrangler tail
 
 如果本次上线涉及：
 
-- Durable Object 行为变更
 - 分享令牌规则变更
 - 邮件模板或域名变更
 
@@ -227,7 +225,7 @@ npx wrangler tail
 
 这一版已经补上的生产基础项包括：
 
-- 认证链路限流
+- Better Auth 的 D1 数据库限流
 - 验证邮件发送失败闭环
 - HTTPS 下强制安全 cookie
 - 统一安全响应头
@@ -255,5 +253,4 @@ src/
 - [Cloudflare Workers](https://developers.cloudflare.com/workers/)
 - [Wrangler](https://developers.cloudflare.com/workers/wrangler/)
 - [Cloudflare R2](https://developers.cloudflare.com/r2/)
-- [Durable Objects](https://developers.cloudflare.com/durable-objects/)
 - [Resend](https://resend.com/docs)

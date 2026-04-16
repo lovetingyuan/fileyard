@@ -251,7 +251,12 @@ describe("release hardening backend", () => {
     const htmlResponse = await apiFetch("/login");
     expect(htmlResponse.status).toBe(200);
     expect(htmlResponse.headers.has("Content-Security-Policy")).toBe(true);
-    expect(htmlResponse.headers.get("Content-Security-Policy")).toContain("default-src 'self'");
+    const htmlPolicy = htmlResponse.headers.get("Content-Security-Policy");
+    expect(htmlPolicy).toContain("default-src 'self'");
+    expect(htmlPolicy).toContain("script-src 'self' https://static.cloudflareinsights.com");
+    expect(htmlPolicy).toContain(
+      "connect-src 'self' https://api.iconify.design https://api.unisvg.com https://api.simplesvg.com https://cloudflareinsights.com",
+    );
     expect(htmlResponse.headers.get("Referrer-Policy")).toBe("strict-origin-when-cross-origin");
     expect(htmlResponse.headers.get("Permissions-Policy")).toContain("camera=()");
 

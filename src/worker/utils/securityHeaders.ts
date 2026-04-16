@@ -23,11 +23,11 @@ export function applySecurityHeaders(headers: Headers, options?: { skipCSP?: boo
       "Content-Security-Policy",
       [
         "default-src 'self'",
-        "script-src 'self'",
+        "script-src 'self' https://static.cloudflareinsights.com",
         "style-src 'self' 'unsafe-inline'",
         "img-src 'self' blob: data:",
         "media-src 'self' blob:",
-        "connect-src 'self' https://api.iconify.dev",
+        "connect-src 'self' https://api.iconify.design https://api.unisvg.com https://api.simplesvg.com https://cloudflareinsights.com",
         "frame-src 'self' blob:",
         "object-src 'none'",
         "base-uri 'self'",

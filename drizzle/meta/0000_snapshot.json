@@ -2,7 +2,7 @@
   "version": "6",
   "dialect": "sqlite",
   "id": "ac951e62-5a48-4748-bb2b-7216b99f6d11",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "prevId": "79ade83d-d79b-4270-98de-ba887af6b405",
   "tables": {
     "account": {
       "name": "account",
@@ -103,7 +103,9 @@
       "indexes": {
         "account_userId_idx": {
           "name": "account_userId_idx",
-          "columns": ["user_id"],
+          "columns": [
+            "user_id"
+          ],
           "isUnique": false
         }
       },
@@ -112,8 +114,12 @@
           "name": "account_user_id_user_id_fk",
           "tableFrom": "account",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -157,7 +163,9 @@
       "indexes": {
         "app_user_profile_root_dir_id_unique": {
           "name": "app_user_profile_root_dir_id_unique",
-          "columns": ["root_dir_id"],
+          "columns": [
+            "root_dir_id"
+          ],
           "isUnique": true
         }
       },
@@ -166,8 +174,12 @@
           "name": "app_user_profile_user_id_user_id_fk",
           "tableFrom": "app_user_profile",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -211,7 +223,9 @@
       "indexes": {
         "rate_limit_key_unique": {
           "name": "rate_limit_key_unique",
-          "columns": ["key"],
+          "columns": [
+            "key"
+          ],
           "isUnique": true
         }
       },
@@ -284,12 +298,16 @@
       "indexes": {
         "session_token_unique": {
           "name": "session_token_unique",
-          "columns": ["token"],
+          "columns": [
+            "token"
+          ],
           "isUnique": true
         },
         "session_userId_idx": {
           "name": "session_userId_idx",
-          "columns": ["user_id"],
+          "columns": [
+            "user_id"
+          ],
           "isUnique": false
         }
       },
@@ -298,8 +316,12 @@
           "name": "session_user_id_user_id_fk",
           "tableFrom": "session",
           "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -367,7 +389,9 @@
       "indexes": {
         "user_email_unique": {
           "name": "user_email_unique",
-          "columns": ["email"],
+          "columns": [
+            "email"
+          ],
           "isUnique": true
         }
       },
@@ -427,7 +451,9 @@
       "indexes": {
         "verification_identifier_idx": {
           "name": "verification_identifier_idx",
-          "columns": ["identifier"],
+          "columns": [
+            "identifier"
+          ],
           "isUnique": false
         }
       },

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mockGetAuth, mockGetSession, mockWithRateLimitTableFallback } = vi.hoisted(() => {
+const { mockGetAuth, mockGetSession } = vi.hoisted(() => {
   const getSession = vi.fn();
   return {
     mockGetSession: getSession,
@@ -9,16 +9,11 @@ const { mockGetAuth, mockGetSession, mockWithRateLimitTableFallback } = vi.hoist
         getSession,
       },
     })),
-    mockWithRateLimitTableFallback: vi.fn(async (primary: () => Promise<unknown>) => primary()),
   };
 });
 
 vi.mock("../src/worker/auth", () => ({
   getAuth: mockGetAuth,
-}));
-
-vi.mock("../src/worker/auth/rate-limit-fallback", () => ({
-  withRateLimitTableFallback: mockWithRateLimitTableFallback,
 }));
 
 import { authMiddleware } from "../src/worker/auth/middleware";
@@ -57,7 +52,6 @@ describe("authMiddleware", () => {
   beforeEach(() => {
     mockGetSession.mockReset();
     mockGetAuth.mockClear();
-    mockWithRateLimitTableFallback.mockClear();
   });
 
   it("resolves Better Auth sessions from request headers without switching to Response mode", async () => {
@@ -84,6 +78,7 @@ describe("authMiddleware", () => {
     expect(mockGetSession).toHaveBeenCalledWith({
       headers: context.req.raw.headers,
     });
+    expect(mockGetAuth).toHaveBeenCalledTimes(1);
     expect(context.get("session")).toEqual(sessionResult.session);
     expect(context.get("user")).toEqual(sessionResult.user);
     expect(next).toHaveBeenCalledOnce();

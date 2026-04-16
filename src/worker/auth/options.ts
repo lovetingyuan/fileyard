@@ -15,7 +15,6 @@ type AuthEmailPayload = {
 type CreateBetterAuthOptionsInput = {
   appName: string;
   baseURL: string;
-  disableRateLimit?: boolean;
   secret: string;
   googleClientId: string;
   googleClientSecret: string;
@@ -55,14 +54,10 @@ export function createBetterAuthOptions(input: CreateBetterAuthOptionsInput): Be
           }
         : {}),
     },
-    rateLimit: input.disableRateLimit
-      ? {
-          enabled: false,
-        }
-      : {
-          enabled: true,
-          storage: "database" as const,
-        },
+    rateLimit: {
+      enabled: true,
+      storage: "database" as const,
+    },
     hooks: {
       before: createAuthMiddleware(async (ctx) => {
         if (ctx.path === "/sign-up/email") {

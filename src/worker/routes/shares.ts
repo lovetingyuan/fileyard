@@ -15,7 +15,6 @@ import {
   toContentDisposition,
 } from "../utils/fileManager";
 import { handlePathValidationError, jsonError } from "../utils/response";
-import { enforceRateLimit } from "../utils/rateLimit";
 import {
   buildShareDownloadUrl,
   buildSharePageUrl,
@@ -66,11 +65,7 @@ shares.post("/api/files/share-links", async (c) => {
       return jsonError(c, "Invalid share duration", 400);
     }
 
-    const { rootDirId, user } = await getFileContext(c);
-    const rateLimitResponse = await enforceRateLimit(c, "create-share-link", user.email);
-    if (rateLimitResponse) {
-      return rateLimitResponse;
-    }
+    const { rootDirId } = await getFileContext(c);
 
     const object = await c.env.FILES_BUCKET.head(getFileKey(rootDirId, path));
     if (!object) {

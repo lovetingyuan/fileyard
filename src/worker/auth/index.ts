@@ -9,10 +9,6 @@ import { createResetPasswordEmailSender, createVerificationEmailSender } from ".
 import { createBetterAuthOptions } from "./options";
 import { getOrCreateAppProfileByDb } from "./profile";
 
-type GetAuthOptions = {
-  disableRateLimit?: boolean;
-};
-
 export type AuthUser = {
   id: string;
   email: string;
@@ -71,7 +67,7 @@ function resolveTrustedOrigins(env: AppBindings, request?: Request): string[] {
 
 const authCache = new Map<string, ReturnType<typeof betterAuth>>();
 
-export function getAuth(c: Context<AppContext>, options: GetAuthOptions = {}) {
+export function getAuth(c: Context<AppContext>) {
   const isDev = isDevEnvironment(c.env, c.req.raw);
 
   const secret = c.env.BETTER_AUTH_SECRET;
@@ -81,7 +77,7 @@ export function getAuth(c: Context<AppContext>, options: GetAuthOptions = {}) {
 
   const resolvedSecret = secret || "better-auth-development-secret-not-for-production";
   const baseURL = resolveBaseUrl(c.env, c.req.raw);
-  const cacheKey = `${resolvedSecret}:${baseURL}:${options.disableRateLimit ?? false}`;
+  const cacheKey = `${resolvedSecret}:${baseURL}`;
 
   const cached = authCache.get(cacheKey);
   if (cached) {
@@ -93,7 +89,6 @@ export function getAuth(c: Context<AppContext>, options: GetAuthOptions = {}) {
     ...createBetterAuthOptions({
       appName: "Fileyard",
       baseURL,
-      disableRateLimit: options.disableRateLimit,
       secret: resolvedSecret,
       googleClientId: c.env.GOOGLE_CLIENT_ID ?? "",
       googleClientSecret: c.env.GOOGLE_CLIENT_SECRET ?? "",
@@ -110,6 +105,6 @@ export function getAuth(c: Context<AppContext>, options: GetAuthOptions = {}) {
     }),
   });
 
-  authCache.set(cacheKey, instance);
+  authCache.set(cacheKey, instance as ReturnType<typeof betterAuth>);
   return instance;
 }

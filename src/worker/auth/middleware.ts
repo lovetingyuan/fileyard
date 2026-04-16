@@ -2,7 +2,6 @@ import type { Context, Next } from "hono";
 import type { AppContext } from "../context";
 import type { AppProfile } from "./profile";
 import { getAuth, type AuthSession, type AuthUser } from "./index";
-import { withRateLimitTableFallback } from "./rate-limit-fallback";
 
 export type AuthVariables = {
   appProfile: AppProfile | null;
@@ -22,22 +21,9 @@ export function authMiddleware() {
     c.set("user", null);
 
     try {
-      const session = await withRateLimitTableFallback(
-        async () =>
-          (await getAuth(c).api.getSession({
-            headers: c.req.raw.headers,
-          })) as SessionResponse,
-        async () =>
-          (await getAuth(c, { disableRateLimit: true }).api.getSession({
-            headers: c.req.raw.headers,
-          })) as SessionResponse,
-        (error) => {
-          console.warn(
-            "Better Auth rate_limit table is missing. Retrying session lookup without database rate limiting.",
-            error,
-          );
-        },
-      );
+      const session = (await getAuth(c).api.getSession({
+        headers: c.req.raw.headers,
+      })) as SessionResponse;
 
       if (session?.session && session.user) {
         c.set("session", session.session);

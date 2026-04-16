@@ -1,11 +1,8 @@
 import { Hono } from "hono";
 import type { Context } from "hono";
 import { csrf } from "hono/csrf";
-import { RateLimitDO } from "./durable-objects/RateLimitDO";
 import { authMiddleware, requireAuth } from "./auth/middleware";
 import { getAuth } from "./auth";
-import { parseEmailSignInPayload, preflightEmailSignIn } from "./auth/signInEmail";
-import { withRateLimitTableFallback } from "./auth/rate-limit-fallback";
 import type { AppContext } from "./context";
 import { applyCorsHeaders, applyCorsHeadersToResponse, isAllowedOrigin } from "./utils/appHelpers";
 import { normalizeDevPostUnauthorizedResponse } from "./utils/devResponseWorkarounds";
@@ -15,8 +12,6 @@ import adminRoutes from "./routes/admin";
 import profileRoutes from "./routes/profile";
 import fileRoutes from "./routes/files";
 import shareRoutes from "./routes/shares";
-
-export { RateLimitDO };
 
 const app = new Hono<AppContext>();
 
@@ -90,31 +85,8 @@ app.use(
   }),
 );
 
-app.post("/api/auth/sign-in/email", async (c) => {
-  const requestBody = await c.req.raw.arrayBuffer();
-  const payload = parseEmailSignInPayload(requestBody);
-  const { response } = await preflightEmailSignIn(c, payload);
-  if (response) {
-    return response;
-  }
-
-  const authRequest = new Request(c.req.raw, {
-    body: requestBody,
-  });
-  return getAuth(c, { disableRateLimit: true }).handler(authRequest);
-});
-
 app.on(["GET", "POST"], "/api/auth/*", async (c) => {
-  return withRateLimitTableFallback(
-    async () => getAuth(c).handler(c.req.raw),
-    async () => getAuth(c, { disableRateLimit: true }).handler(c.req.raw),
-    (error) => {
-      console.warn(
-        "Better Auth rate_limit table is missing. Retrying auth endpoint without database rate limiting.",
-        error,
-      );
-    },
-  );
+  return getAuth(c).handler(c.req.raw);
 });
 
 app.use("/api/profile", authMiddleware());
