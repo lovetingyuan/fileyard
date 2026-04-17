@@ -12,6 +12,7 @@ import adminRoutes from "./routes/admin";
 import profileRoutes from "./routes/profile";
 import fileRoutes from "./routes/files";
 import shareRoutes from "./routes/shares";
+import topBannerRoutes from "./routes/topBanner";
 
 const app = new Hono<AppContext>();
 
@@ -106,6 +107,7 @@ app.route("/", adminRoutes);
 app.route("/", profileRoutes);
 app.route("/", fileRoutes);
 app.route("/", shareRoutes);
+app.route("/", topBannerRoutes);
 app.all("/api/*", (c) => jsonError(c, "Not found", 404));
 app.all("*", async (c) => c.env.ASSETS.fetch(c.req.raw));
 

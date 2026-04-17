@@ -4,6 +4,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { useAuth } from "./hooks/useAuth";
 import { buildAppRouteElements } from "./routes";
 import { allowsAuthenticatedEmailActionPath } from "./utils/authRouteAccess";
+import { TopBanner } from "./components/TopBanner";
 export { renderProtectedRoute } from "./routes";
 
 function AppContent() {
@@ -42,11 +43,20 @@ function AppRoutes() {
   );
 }
 
+export function AppShell() {
+  return (
+    <>
+      <Toaster position="top-center" toastOptions={{ duration: 5000 }} />
+      <TopBanner />
+      <AppRoutes />
+    </>
+  );
+}
+
 function App() {
   return (
     <BrowserRouter>
-      <Toaster position="top-center" toastOptions={{ duration: 5000 }} />
-      <AppRoutes />
+      <AppShell />
     </BrowserRouter>
   );
 }

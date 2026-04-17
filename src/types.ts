@@ -26,6 +26,16 @@ export interface AdminUserListResponse {
   total: number;
 }
 
+export interface TopBannerMessage {
+  date: string;
+  contentHtml: string;
+}
+
+export interface TopBannerResponse {
+  success: true;
+  banner: TopBannerMessage | null;
+}
+
 export interface FolderEntry {
   name: string;
   path: string;
