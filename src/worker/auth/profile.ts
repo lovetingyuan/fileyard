@@ -47,7 +47,10 @@ export async function getOrCreateAppProfileByDb(
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      if (message.includes("UNIQUE constraint failed") || message.includes("app_user_profile.root_dir_id")) {
+      if (
+        message.includes("UNIQUE constraint failed") ||
+        message.includes("app_user_profile.root_dir_id")
+      ) {
         continue;
       }
       throw error;

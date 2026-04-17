@@ -7,9 +7,7 @@
   "name": "fileyard",
   "main": "./src/worker/index.ts",
   "compatibility_date": "2025-10-08",
-  "compatibility_flags": [
-    "nodejs_compat"
-  ],
+  "compatibility_flags": ["nodejs_compat"],
   "observability": {
     "enabled": true,
   },
@@ -60,15 +58,11 @@
   "migrations": [
     {
       "tag": "v1",
-      "new_sqlite_classes": [
-        "RateLimitDO"
-      ],
+      "new_sqlite_classes": ["RateLimitDO"],
     },
     {
       "tag": "v2",
-      "deleted_classes": [
-        "RateLimitDO"
-      ],
+      "deleted_classes": ["RateLimitDO"],
     },
   ],
 }

@@ -23,6 +23,7 @@
 ## Task 1: 登录 Cloudflare 账号
 
 **Files:**
+
 - 无文件修改，纯命令操作
 
 - [ ] **Step 1: 执行登录命令**
@@ -40,6 +41,7 @@ npx wrangler whoami
 ```
 
 预期输出：显示你的 Cloudflare 账号邮箱和账号 ID，例如：
+
 ```
  ⛅️ wrangler 4.x.x
 You are logged in with an OAuth Token, associated with the email 'your@email.com'!
@@ -50,6 +52,7 @@ You are logged in with an OAuth Token, associated with the email 'your@email.com
 ## Task 2: 创建 D1 数据库
 
 **Files:**
+
 - Modify: `wrangler.jsonc`（更新 database_id）
 
 - [ ] **Step 1: 创建 D1 数据库**
@@ -59,6 +62,7 @@ npx wrangler d1 create fileyard-db
 ```
 
 预期输出类似：
+
 ```
 ✅ Successfully created DB 'fileyard-db' in region APAC
 Created your new D1 database.
@@ -93,6 +97,7 @@ npx wrangler d1 migrations apply fileyard-db --remote
 ```
 
 预期输出：
+
 ```
 ✅ Applied 2 migrations to fileyard-db (remote)
 ```
@@ -110,6 +115,7 @@ npx wrangler d1 execute fileyard-db --remote --command "SELECT name FROM sqlite_
 ## Task 3: 创建 R2 存储桶
 
 **Files:**
+
 - 无文件修改
 
 - [ ] **Step 1: 创建 R2 存储桶**
@@ -119,6 +125,7 @@ npx wrangler r2 bucket create fileyard
 ```
 
 预期输出：
+
 ```
 ✅ Created bucket 'fileyard' with default storage class of Standard.
 ```
@@ -138,6 +145,7 @@ npx wrangler r2 bucket list
 ## Task 4: 创建 KV 命名空间
 
 **Files:**
+
 - Modify: `wrangler.jsonc`（更新 KV id）
 
 - [ ] **Step 1: 创建 KV 命名空间**
@@ -147,6 +155,7 @@ npx wrangler kv namespace create FILE_YARD_KV
 ```
 
 预期输出类似：
+
 ```
 ✅ Successfully created KV namespace with ID 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
 Add the following to your configuration file in your kv_namespaces array:
@@ -174,6 +183,7 @@ Add the following to your configuration file in your kv_namespaces array:
 ## Task 5: 配置 Google OAuth
 
 **Files:**
+
 - 无文件修改，在 Google Cloud Console 操作
 
 - [ ] **Step 1: 打开 Google Cloud Console**
@@ -203,6 +213,7 @@ Add the following to your configuration file in your kv_namespaces array:
 - [ ] **Step 5: 记录凭据**
 
 创建后会显示：
+
 - Client ID（形如 `xxxx.apps.googleusercontent.com`）
 - Client Secret
 
@@ -213,6 +224,7 @@ Add the following to your configuration file in your kv_namespaces array:
 ## Task 6: 获取 Resend API Key
 
 **Files:**
+
 - 无文件修改
 
 - [ ] **Step 1: 注册/登录 Resend**
@@ -236,6 +248,7 @@ Add the following to your configuration file in your kv_namespaces array:
 ## Task 7: 配置所有 Secrets
 
 **Files:**
+
 - 无文件修改，通过 wrangler 命令设置
 
 所有 secrets 必须逐一设置。每条命令执行后会提示你输入值（不会显示在终端）。
@@ -247,6 +260,7 @@ npx wrangler secret put BETTER_AUTH_SECRET
 ```
 
 输入一个随机的强密钥（至少 32 位随机字符串）。可以用以下命令生成：
+
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
@@ -290,6 +304,7 @@ npx wrangler secret list
 ```
 
 预期输出包含所有 5 个 secret 名称：
+
 ```
 BETTER_AUTH_SECRET
 GOOGLE_CLIENT_ID
@@ -303,6 +318,7 @@ SHARE_LINK_SECRET
 ## Task 8: 配置 APP_URL（可选）
 
 **Files:**
+
 - Modify: `wrangler.jsonc`
 
 - [ ] **Step 1: 确认 Worker 域名**
@@ -330,6 +346,7 @@ SHARE_LINK_SECRET
 ## Task 9: 构建并部署
 
 **Files:**
+
 - 无文件修改
 
 - [ ] **Step 1: 安装依赖（如未安装）**
@@ -355,9 +372,11 @@ npm run build
 ```
 
 预期输出：
+
 ```
 ✓ built in Xs
 ```
+
 并在 `dist/client/` 目录生成静态资源。
 
 - [ ] **Step 4: 部署到 Cloudflare**
@@ -369,6 +388,7 @@ npm run deploy
 等价于 `npx wrangler deploy`。
 
 预期输出：
+
 ```
 ✅ Uploaded fileyard (Xs)
 ✅ Deployed fileyard triggers (Xs)
@@ -382,6 +402,7 @@ npm run deploy
 ## Task 10: 验证部署
 
 **Files:**
+
 - 无文件修改
 
 - [ ] **Step 1: 访问应用**
@@ -416,14 +437,14 @@ npx wrangler tail
 
 ## 常见问题排查
 
-| 问题 | 可能原因 | 解决方法 |
-|------|---------|---------|
-| 部署报错 "Missing binding" | wrangler.jsonc 中资源 ID 未更新 | 检查 D1 database_id 和 KV id 是否正确 |
-| Google 登录失败 | redirect URI 不匹配 | 在 Google Console 添加正确的 Worker URL |
-| 邮件发送失败 | RESEND_API_KEY 错误或域名未验证 | 检查 Resend Dashboard |
-| 文件上传失败 | R2 桶不存在或名称不匹配 | 确认 R2 桶名为 `fileyard` |
-| 数据库错误 | 迁移未执行 | 重新运行 `wrangler d1 migrations apply fileyard-db --remote` |
-| Secret 未找到 | Secret 未设置 | 运行 `wrangler secret list` 检查 |
+| 问题                       | 可能原因                        | 解决方法                                                     |
+| -------------------------- | ------------------------------- | ------------------------------------------------------------ |
+| 部署报错 "Missing binding" | wrangler.jsonc 中资源 ID 未更新 | 检查 D1 database_id 和 KV id 是否正确                        |
+| Google 登录失败            | redirect URI 不匹配             | 在 Google Console 添加正确的 Worker URL                      |
+| 邮件发送失败               | RESEND_API_KEY 错误或域名未验证 | 检查 Resend Dashboard                                        |
+| 文件上传失败               | R2 桶不存在或名称不匹配         | 确认 R2 桶名为 `fileyard`                                    |
+| 数据库错误                 | 迁移未执行                      | 重新运行 `wrangler d1 migrations apply fileyard-db --remote` |
+| Secret 未找到              | Secret 未设置                   | 运行 `wrangler secret list` 检查                             |
 
 ---
 

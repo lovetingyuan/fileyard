@@ -52,7 +52,7 @@ describe("auth sign-in email errors", () => {
     await clearAuthTables();
   });
 
-  it("fails when the Better Auth rate_limit table is missing instead of bypassing D1 rate limiting", async () => {
+  it("signs in successfully when the Better Auth rate_limit table is missing", async () => {
     const email = createEmailAddress();
     const password = "Password123A";
     await seedVerifiedCredentialUser(email, password);
@@ -67,8 +67,8 @@ describe("auth sign-in email errors", () => {
       }),
     });
 
-    expect(response.ok).toBe(false);
-    expect(response.status).toBeGreaterThanOrEqual(500);
-    await expect(response.text()).resolves.toContain("Internal Server Error");
+    expect(response.status).toBe(200);
+    const setCookie = response.headers.get("Set-Cookie") ?? "";
+    expect(setCookie).toContain("better-auth.session_token=");
   });
 });

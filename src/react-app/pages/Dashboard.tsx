@@ -34,7 +34,9 @@ const LARGE_FILE_UPLOAD_THRESHOLD_BYTES = 20 * 1024 * 1024;
 
 async function runWithLargeFileUploadToast<T>(file: File, action: () => Promise<T>) {
   const waitingToastId =
-    file.size >= LARGE_FILE_UPLOAD_THRESHOLD_BYTES ? toast.loading("Large file, please wait") : undefined;
+    file.size >= LARGE_FILE_UPLOAD_THRESHOLD_BYTES
+      ? toast.loading("Large file, please wait")
+      : undefined;
 
   try {
     return await action();

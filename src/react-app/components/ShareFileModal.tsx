@@ -3,6 +3,7 @@ import QRCodeImport from "react-qr-code";
 import toast from "react-hot-toast";
 import type { FileEntry, ShareLinkResponse, ShareDurationOption } from "../../types";
 import { Dialog } from "./Dialog";
+import { ShareLinkCopyButton } from "./ShareLinkCopyButton";
 import { useCreateShareLinkMutation } from "../hooks/useFilesApi";
 import {
   formatShareDuration,
@@ -46,14 +47,31 @@ export function ShareFileModal({ file, onClose }: ShareFileModalProps) {
   const [expiresInSeconds, setExpiresInSeconds] =
     useState<ShareDurationOption>(DEFAULT_SHARE_DURATION);
   const [shareLink, setShareLink] = useState<ShareLinkResponse | null>(null);
+  const [isLinkCopied, setIsLinkCopied] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const requestIdRef = useRef(0);
   const initialFetchDoneRef = useRef(false);
+  const copyFeedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { createShareLink, isMutating } = useCreateShareLinkMutation();
+
+  const clearCopyFeedbackTimeout = () => {
+    if (copyFeedbackTimeoutRef.current === null) {
+      return;
+    }
+
+    clearTimeout(copyFeedbackTimeoutRef.current);
+    copyFeedbackTimeoutRef.current = null;
+  };
+
+  const resetCopyFeedback = () => {
+    clearCopyFeedbackTimeout();
+    setIsLinkCopied(false);
+  };
 
   const fetchShareLink = (filePath: string, duration: ShareDurationOption) => {
     const currentRequestId = requestIdRef.current + 1;
     requestIdRef.current = currentRequestId;
+    resetCopyFeedback();
     setLoadError(null);
     setShareLink(null);
 
@@ -82,6 +100,11 @@ export function ShareFileModal({ file, onClose }: ShareFileModalProps) {
     return null;
   }
 
+  const handleClose = () => {
+    resetCopyFeedback();
+    onClose();
+  };
+
   const isLoading = isMutating || shareLink === null;
   const shareDurationLabel = formatShareDuration(expiresInSeconds);
   const shareText = shareLink ? buildShareMessage(shareLink, shareDurationLabel) : "";
@@ -93,7 +116,12 @@ export function ShareFileModal({ file, onClose }: ShareFileModalProps) {
 
     try {
       await copyToClipboard(shareLink.shareUrl);
-      toast.success("下载链接已复制");
+      clearCopyFeedbackTimeout();
+      setIsLinkCopied(true);
+      copyFeedbackTimeoutRef.current = setTimeout(() => {
+        copyFeedbackTimeoutRef.current = null;
+        setIsLinkCopied(false);
+      }, 1600);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to copy share link");
     }
@@ -134,7 +162,7 @@ export function ShareFileModal({ file, onClose }: ShareFileModalProps) {
     <Dialog
       isOpen
       title={<h3 className="text-lg font-semibold text-base-content">文件分享</h3>}
-      onClose={onClose}
+      onClose={handleClose}
       onConfirm={handleShare}
       confirmText="分享"
       confirmLoadingText="生成中"
@@ -172,7 +200,7 @@ export function ShareFileModal({ file, onClose }: ShareFileModalProps) {
           <div className="min-w-0 space-y-3.5">
             <div className="space-y-1">
               <div className="text-sm text-base-content/50">文件名</div>
-              <div className="truncate font-mono font-medium tracking-tight text-base-content">
+              <div className="overflow-hidden font-mono text-sm font-medium leading-5 tracking-tight text-base-content [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
                 {file.name}
               </div>
             </div>
@@ -213,13 +241,10 @@ export function ShareFileModal({ file, onClose }: ShareFileModalProps) {
                   >
                     {shareLink.shareUrl}
                   </a>
-                  <button
-                    type="button"
-                    className="btn btn-ghost btn-sm shrink-0"
-                    onClick={handleCopyLink}
-                  >
-                    复制
-                  </button>
+                  <ShareLinkCopyButton
+                    isCopied={isLinkCopied}
+                    onClick={() => void handleCopyLink()}
+                  />
                 </div>
               ) : (
                 <div className="text-base text-base-content/50">正在生成链接...</div>

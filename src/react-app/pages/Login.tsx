@@ -54,9 +54,19 @@ export function Login({ onSwitchToRegister }: LoginProps) {
 
   if (shownKeyRef.current !== location.key) {
     shownKeyRef.current = location.key;
-    if (registered) toast.success(AUTH_FEEDBACK_MESSAGES.registered, { id: `auth-feedback:${location.key}:registered` });
-    if (reset) toast.success(AUTH_FEEDBACK_MESSAGES.reset, { id: `auth-feedback:${location.key}:reset` });
-    if (verified) toast.success(AUTH_FEEDBACK_MESSAGES.verified, { id: `auth-feedback:${location.key}:verified` });
+    if (registered) {
+      toast.success(AUTH_FEEDBACK_MESSAGES.registered, {
+        id: `auth-feedback:${location.key}:registered`,
+      });
+    }
+    if (reset) {
+      toast.success(AUTH_FEEDBACK_MESSAGES.reset, { id: `auth-feedback:${location.key}:reset` });
+    }
+    if (verified) {
+      toast.success(AUTH_FEEDBACK_MESSAGES.verified, {
+        id: `auth-feedback:${location.key}:verified`,
+      });
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
