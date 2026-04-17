@@ -12,6 +12,7 @@ import {
   useUploadFileMutation,
   useUpdateFileMutation,
 } from "../hooks/useFilesApi";
+import { useUploadUnloadProtection } from "../hooks/useUploadUnloadProtection";
 import { FileToolbar } from "../components/FileToolbar";
 import { DeleteConfirmModal } from "../components/DeleteConfirmModal";
 import { DirectoryStatsModal } from "../components/DirectoryStatsModal";
@@ -86,6 +87,7 @@ export function Dashboard() {
   const { updateFile } = useUpdateFileMutation();
   const { deleteFile, isMutating: isDeletingFile } = useDeleteFileMutation();
   const { deleteFolder, isMutating: isDeletingFolder } = useDeleteFolderMutation();
+  useUploadUnloadProtection(isUploadingFile);
 
   const busy =
     isCreatingFolder ||
