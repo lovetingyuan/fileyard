@@ -26,26 +26,3 @@ export function createBetterAuthLogWriter(options: BetterAuthLogWriterOptions) {
     options.write(nextLevel, message, ...args);
   };
 }
-
-function writeToConsole(level: BetterAuthLogLevel, message: string, ...args: unknown[]) {
-  const logger =
-    level === "debug"
-      ? console.debug
-      : level === "info"
-        ? console.info
-        : level === "warn"
-          ? console.warn
-          : console.error;
-
-  logger(`[Better Auth] ${message}`, ...args);
-}
-
-export function createBetterAuthLogger(isDevelopment: boolean) {
-  return {
-    level: "warn" as const,
-    log: createBetterAuthLogWriter({
-      isDevelopment,
-      write: writeToConsole,
-    }),
-  };
-}

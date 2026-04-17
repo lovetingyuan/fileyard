@@ -1,5 +1,3 @@
-import { validatePassword } from "../utils/password";
-
 const DEFAULT_NAME = "User";
 const MAX_AUTH_NAME_LENGTH = 64;
 
@@ -17,11 +15,4 @@ export function deriveAuthNameFromEmail(email: string): string {
   }
 
   return sanitized.slice(0, MAX_AUTH_NAME_LENGTH);
-}
-
-export function assertPasswordMeetsPolicy(password: string): void {
-  const result = validatePassword(password);
-  if (!result.valid) {
-    throw new Error(result.errors.join(", "));
-  }
 }

@@ -142,10 +142,6 @@ export async function seedAuthSession(input: {
   return { token };
 }
 
-export function createAuthSessionCookie(token: string): string {
-  return `better-auth.session_token=${token}`;
-}
-
 export async function seedCredentialAccount(input: {
   createdAt: number;
   email: string;

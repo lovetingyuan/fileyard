@@ -4,7 +4,7 @@ function normalizeEmail(value: string): string {
   return value.trim().toLowerCase();
 }
 
-export function parseAdminUserEmails(value: string | undefined): Set<string> {
+function parseAdminUserEmails(value: string | undefined): Set<string> {
   return new Set(
     (value ?? "")
       .split(/[,\n;]/)

@@ -70,27 +70,6 @@ async function derivePasswordHash(password: string, salt: string): Promise<strin
 }
 
 /**
- * Verify a password against a hash (supports both versioned "v1:..." and legacy unversioned hashes).
- */
-export async function verifyPassword(
-  password: string,
-  salt: string,
-  hash: string,
-): Promise<boolean> {
-  // Strip version prefix if present; legacy hashes have no prefix
-  const rawHash = hash.startsWith(HASH_VERSION_PREFIX)
-    ? hash.slice(HASH_VERSION_PREFIX.length)
-    : hash;
-  const computedHash = await derivePasswordHash(password, salt);
-  const a = hexToBuffer(computedHash);
-  const b = hexToBuffer(rawHash);
-  if (a.byteLength !== b.byteLength) {
-    return false;
-  }
-  return crypto.subtle.timingSafeEqual(a, b);
-}
-
-/**
  * Password validation result
  */
 interface PasswordValidationResult {
@@ -132,12 +111,4 @@ export function validatePassword(password: string): PasswordValidationResult {
     valid: errors.length === 0,
     errors,
   };
-}
-
-/**
- * Validate email format
- */
-export function validateEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
 }

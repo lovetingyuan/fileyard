@@ -2,7 +2,7 @@ import type { FileEntry } from "../../types";
 
 export type PreviewKind = "image" | "video" | "audio" | "pdf" | "text" | "unsupported";
 
-export interface PreviewInfo {
+interface PreviewInfo {
   kind: PreviewKind;
   reason?: string;
 }

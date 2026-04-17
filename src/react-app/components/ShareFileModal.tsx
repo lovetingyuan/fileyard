@@ -177,8 +177,7 @@ export function ShareFileModal({ file, onClose }: ShareFileModalProps) {
         <div className="flex flex-col gap-4 sm:grid sm:grid-cols-[1.15fr_0.85fr] sm:items-start">
           <div className="order-last sm:order-first">
             <div className="flex w-full flex-col items-center gap-1">
-              <div className="text-sm text-base-content/50">扫码下载</div>
-              <div className="flex w-full justify-center   bg-white p-2 ">
+              <div className="flex w-full justify-center  bg-white p-2">
                 {shareLink ? (
                   <QRCode
                     value={shareLink.shareUrl}

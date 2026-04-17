@@ -4,7 +4,6 @@ import { env } from "cloudflare:workers";
 import { runInDurableObject, SELF } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
 import type { FileListResponse, ProfileResponse } from "../src/types";
-import type { User } from "../src/worker/types";
 import { generateSalt, hashPassword } from "../src/worker/utils/password";
 
 const TINY_PNG_BYTES = new Uint8Array([
@@ -12,6 +11,10 @@ const TINY_PNG_BYTES = new Uint8Array([
   0, 31, 21, 196, 137, 0, 0, 0, 13, 73, 68, 65, 84, 120, 156, 99, 248, 207, 192, 240, 31, 0, 5, 0,
   1, 255, 137, 153, 61, 29, 0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130,
 ]);
+
+type StoredUser = {
+  rootDirId?: string;
+};
 
 function createEmailAddress(): string {
   return `user-${crypto.randomUUID()}@example.com`;
@@ -90,7 +93,7 @@ describe("authenticated R2 file manager", () => {
     const { email, stub } = await createVerifiedUser();
 
     await runInDurableObject(stub, async (_instance, state) => {
-      const storedUser = await state.storage.get<User>("user");
+      const storedUser = await state.storage.get<StoredUser>("user");
       if (!storedUser) {
         throw new Error("Expected user to exist");
       }

@@ -10,13 +10,23 @@ import { ForgotPassword } from "../src/react-app/pages/ForgotPassword";
 import { Login } from "../src/react-app/pages/Login";
 import { ResetPassword } from "../src/react-app/pages/ResetPassword";
 import { allowsAuthenticatedEmailActionPath } from "../src/react-app/utils/authRouteAccess";
-import type { VerificationToken } from "../src/worker/types";
-import { encodeVerificationCode } from "../src/worker/utils/email";
 import { generateSalt, hashPassword } from "../src/worker/utils/password";
 
 const mockToastError = vi.fn();
 const mockToastSuccess = vi.fn();
 const mockResetPasswordTokenValidation = vi.fn();
+
+type VerificationToken = {
+  token: string;
+  type: "email" | "password";
+  createdAt: number;
+  expiresAt: number;
+};
+
+function encodeVerificationCode(email: string, token: string): string {
+  const raw = `${email}:${token}`;
+  return btoa(raw).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/u, "");
+}
 
 vi.mock("react-hot-toast", () => ({
   default: {

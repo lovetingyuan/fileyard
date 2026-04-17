@@ -5,7 +5,7 @@ import { getDialogBoxClassName, type DialogWidthMode } from "./previewModalLayou
 
 type DialogAction = () => void | Promise<void>;
 
-export interface DialogRenderState {
+interface DialogRenderState {
   isConfirming: boolean;
   isInteractionDisabled: boolean;
   requestClose: () => void;

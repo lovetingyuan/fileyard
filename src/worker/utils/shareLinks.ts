@@ -5,7 +5,7 @@ const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
 const SHARE_TOKEN_VERSION = 1;
 
-export type ShareTokenPayload = {
+type ShareTokenPayload = {
   v: number;
   rootDirId: string;
   path: string;
@@ -28,11 +28,11 @@ function base64ToBytes(value: string): Uint8Array {
   return Uint8Array.from(binary, (char) => char.charCodeAt(0));
 }
 
-export function encodeBase64Url(bytes: Uint8Array): string {
+function encodeBase64Url(bytes: Uint8Array): string {
   return bytesToBase64(bytes).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/u, "");
 }
 
-export function decodeBase64Url(value: string): Uint8Array {
+function decodeBase64Url(value: string): Uint8Array {
   const padding = value.length % 4 === 0 ? "" : "=".repeat(4 - (value.length % 4));
   const normalized = value.replace(/-/g, "+").replace(/_/g, "/") + padding;
   return base64ToBytes(normalized);
