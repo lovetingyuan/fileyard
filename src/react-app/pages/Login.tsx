@@ -14,6 +14,10 @@ const AUTH_FEEDBACK_MESSAGES = {
   verified: "Email verified. You can now log in.",
 } as const;
 
+export function getGoogleLoginButtonText(isPending: boolean) {
+  return isPending ? "Please wait..." : "Continue with Google";
+}
+
 function GoogleIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false" className={className}>
@@ -37,6 +41,15 @@ function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
+export function GoogleLoginButtonContent({ isPending }: { isPending: boolean }) {
+  return (
+    <>
+      <GoogleIcon className="h-5 w-5 shrink-0" />
+      {getGoogleLoginButtonText(isPending)}
+    </>
+  );
+}
+
 export function Login({ onSwitchToRegister }: LoginProps) {
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -49,6 +62,7 @@ export function Login({ onSwitchToRegister }: LoginProps) {
   const initialEmail = searchParams.get("email") ?? "";
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
+  const [isGoogleLoginPending, setIsGoogleLoginPending] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const shownKeyRef = useRef<string | null>(null);
 
@@ -86,9 +100,16 @@ export function Login({ onSwitchToRegister }: LoginProps) {
   };
 
   const handleGoogleLogin = async () => {
+    if (isGoogleLoginPending) {
+      return;
+    }
+
     setFormError(null);
+    setIsGoogleLoginPending(true);
+
     const result = await loginWithGoogle();
     if (!result.success) {
+      setIsGoogleLoginPending(false);
       setFormError(result.error || "Google login failed");
       toast.error(result.error || "Google login failed");
     }
@@ -181,10 +202,9 @@ export function Login({ onSwitchToRegister }: LoginProps) {
             type="button"
             className="btn btn-outline gap-2"
             onClick={handleGoogleLogin}
-            disabled={loading}
+            disabled={loading || isGoogleLoginPending}
           >
-            <GoogleIcon className="h-5 w-5 shrink-0" />
-            Continue with Google
+            <GoogleLoginButtonContent isPending={isGoogleLoginPending} />
           </button>
 
           <div className="divider">OR</div>

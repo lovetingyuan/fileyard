@@ -14,7 +14,7 @@
     "dev": "npm run db:migrate:local && vite",
     "postinstall": "node scripts/patch-oxc-parser.mjs",
     "knip": "knip",
-    "lint": "oxlint . --fix && oxfmt .",
+    "lint": "npm run cf-typegen && oxlint . --fix && oxfmt .",
     "preview": "npm run build && vite preview",
     "test": "vitest run"
   },

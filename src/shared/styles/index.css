@@ -9,6 +9,18 @@ html body {
   .form-control .label {
     margin-bottom: 6px;
   }
+
+  .btn.loading {
+    font-size: 0;
+    text-shadow: none;
+
+    > svg,
+    > .iconify,
+    > .iconify-inline {
+      visibility: hidden;
+    }
+  }
+
   .input,
   .select,
   .textarea {
