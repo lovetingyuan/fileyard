@@ -1,4 +1,5 @@
-import { Icon } from "@iconify/react";
+import MdiArrowLeft from "~icons/mdi/arrow-left";
+import MdiCompassOffOutline from "~icons/mdi/compass-off-outline";
 import { Link } from "react-router-dom";
 
 export function NotFound() {
@@ -19,7 +20,7 @@ export function NotFound() {
 
       <section className="relative w-full max-w-xl overflow-hidden rounded-[2rem] border border-base-content/10 bg-base-100/92 p-8 text-center shadow-2xl shadow-base-content/5 backdrop-blur sm:p-10">
         <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/12 text-primary">
-          <Icon icon="mdi:compass-off-outline" className="h-8 w-8" />
+          <MdiCompassOffOutline className="h-8 w-8" />
         </div>
         <p className="text-3xl font-semibold uppercase tracking-[0.4em] text-primary/70">404</p>
         <h1 className="mt-3 text-2xl font-semibold tracking-tight text-base-content">页面不存在</h1>
@@ -29,7 +30,7 @@ export function NotFound() {
 
         <div className="mt-8 flex justify-center">
           <Link to="/" className="btn btn-primary gap-2 px-6">
-            <Icon icon="mdi:arrow-left" className="h-5 w-5" />
+            <MdiArrowLeft className="h-5 w-5" />
             返回主页
           </Link>
         </div>

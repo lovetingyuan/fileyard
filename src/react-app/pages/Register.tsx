@@ -1,5 +1,9 @@
 import { useId, useState } from "react";
-import { Icon } from "@iconify/react";
+import MdiAccountPlus from "~icons/mdi/account-plus";
+import MdiEmailOutline from "~icons/mdi/email-outline";
+import MdiLockCheckOutline from "~icons/mdi/lock-check-outline";
+import MdiLockOutline from "~icons/mdi/lock-outline";
+import MdiLogin from "~icons/mdi/login";
 import toast from "react-hot-toast";
 import { useAuth } from "../hooks/useAuth";
 import { getPasswordErrors, PASSWORD_REQUIREMENTS_HINT } from "../utils/passwordRules";
@@ -56,7 +60,7 @@ export function Register({ onSwitchToLogin }: RegisterProps) {
             <div className="form-control">
               <label className="label" htmlFor={emailId}>
                 <span className="label-text flex items-center gap-1">
-                  <Icon icon="mdi:email-outline" className="w-4 h-4" />
+                  <MdiEmailOutline className="w-4 h-4" />
                   Email
                 </span>
               </label>
@@ -78,7 +82,7 @@ export function Register({ onSwitchToLogin }: RegisterProps) {
             <div className="form-control">
               <label className="label" htmlFor={passwordId}>
                 <span className="label-text flex items-center gap-1">
-                  <Icon icon="mdi:lock-outline" className="w-4 h-4" />
+                  <MdiLockOutline className="w-4 h-4" />
                   Password
                 </span>
               </label>
@@ -115,7 +119,7 @@ export function Register({ onSwitchToLogin }: RegisterProps) {
             <div className="form-control">
               <label className="label" htmlFor={confirmPasswordId}>
                 <span className="label-text flex items-center gap-1">
-                  <Icon icon="mdi:lock-check-outline" className="w-4 h-4" />
+                  <MdiLockCheckOutline className="w-4 h-4" />
                   Confirm Password
                 </span>
               </label>
@@ -144,7 +148,7 @@ export function Register({ onSwitchToLogin }: RegisterProps) {
                 className={`btn btn-primary gap-2 ${loading ? "loading" : ""}`}
                 disabled={loading}
               >
-                <Icon icon="mdi:account-plus" className="w-5 h-5" />
+                <MdiAccountPlus className="w-5 h-5" />
                 {loading ? "Creating account..." : "Register"}
               </button>
             </div>
@@ -158,7 +162,7 @@ export function Register({ onSwitchToLogin }: RegisterProps) {
             onClick={() => onSwitchToLogin()}
             disabled={loading}
           >
-            <Icon icon="mdi:login" className="w-5 h-5" />
+            <MdiLogin className="w-5 h-5" />
             Already have an account? Login
           </button>
         </div>

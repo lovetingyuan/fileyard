@@ -19,7 +19,6 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@iconify/react": "^6.0.2",
     "@tailwindcss/vite": "^4.2.2",
     "better-auth": "^1.6.2",
     "drizzle-orm": "^0.45.2",
@@ -37,7 +36,10 @@
     "@better-auth/cli": "^1.4.21",
     "@cloudflare/vite-plugin": "^1.30.2",
     "@cloudflare/vitest-pool-workers": "^0.14.0",
+    "@iconify/json": "^2.2.463",
     "@rolldown/plugin-babel": "^0.2.2",
+    "@svgr/core": "^8.1.0",
+    "@svgr/plugin-jsx": "^8.1.0",
     "@types/node": "^24.10.1",
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
@@ -50,6 +52,7 @@
     "oxfmt": "^0.42.0",
     "oxlint": "^1.57.0",
     "typescript": "5.8.3",
+    "unplugin-icons": "^23.0.1",
     "vite": "^8.0.3",
     "vitest": "^4.1.2",
     "wrangler": "^4.83.0"

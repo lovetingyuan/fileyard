@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Icon } from '@iconify/react'
+import MdiArrowLeft from '~icons/mdi/arrow-left'
+import MdiGithub from '~icons/mdi/github'
+import MdiLogout from '~icons/mdi/logout'
 import toast from 'react-hot-toast'
 import { UserAvatar } from '../components/UserAvatar'
 import { useAuth } from '../hooks/useAuth'
@@ -140,7 +142,7 @@ export function Profile() {
     <main className="mx-auto flex w-[96%] max-w-300 flex-1 flex-col gap-6 pt-6 md:w-[90%] md:p-8">
       <div className="flex items-center gap-3">
         <button type="button" className="btn btn-ghost gap-2" onClick={() => navigate('/')}>
-          <Icon icon="mdi:arrow-left" className="h-5 w-5" />
+          <MdiArrowLeft className="h-5 w-5" />
           返回文件列表
         </button>
       </div>
@@ -156,7 +158,7 @@ export function Profile() {
               className="btn btn-ghost btn-circle btn-sm"
               aria-label="打开 GitHub 仓库"
             >
-              <Icon icon="mdi:github" className="h-5 w-5" />
+              <MdiGithub className="h-5 w-5" />
             </a>
           </div>
           <p className="leading-7 text-base-content/70">
@@ -214,7 +216,7 @@ export function Profile() {
                 className={`btn btn-ghost btn-sm gap-2 ${isAuthMutating ? 'loading' : ''}`}
                 disabled={isAuthMutating}
               >
-                {!isAuthMutating && <Icon icon="mdi:logout" className="h-4 w-4" />}
+                {!isAuthMutating && <MdiLogout className="h-4 w-4" />}
                 退出登录
               </button>
               <ul

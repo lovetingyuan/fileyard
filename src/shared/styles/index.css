@@ -14,9 +14,7 @@ html body {
     font-size: 0;
     text-shadow: none;
 
-    > svg,
-    > .iconify,
-    > .iconify-inline {
+    > svg {
       visibility: hidden;
     }
   }

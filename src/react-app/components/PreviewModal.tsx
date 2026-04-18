@@ -1,5 +1,9 @@
-import { Icon } from "@iconify/react";
 import { useEffect, useState } from "react";
+import MdiContentCopy from "~icons/mdi/content-copy";
+import MdiFileAlertOutline from "~icons/mdi/file-alert-outline";
+import MdiFullscreen from "~icons/mdi/fullscreen";
+import MdiFullscreenExit from "~icons/mdi/fullscreen-exit";
+import MdiPencil from "~icons/mdi/pencil";
 import toast from "react-hot-toast";
 import useSWR from "swr";
 import type { FileEntry } from "../../types";
@@ -108,7 +112,7 @@ function TextPreview({
 function UnsupportedMessage({ reason }: { reason: string }) {
   return (
     <div className="flex flex-col items-center gap-3 py-12 text-base-content/60">
-      <Icon icon="mdi:file-alert-outline" className="w-12 h-12" />
+      <MdiFileAlertOutline className="w-12 h-12" />
       <p className="text-sm text-center">{reason}</p>
     </div>
   );
@@ -268,6 +272,7 @@ export function PreviewModal({ file, onClose, onSave }: PreviewModalProps) {
   const bodyClassName = isFullscreen
     ? "flex-1 min-h-0 overflow-auto p-3 sm:p-4"
     : "flex-1 min-h-0 overflow-auto p-1";
+  const FullscreenIcon = isFullscreen ? MdiFullscreenExit : MdiFullscreen;
 
   return (
     <Dialog
@@ -287,10 +292,7 @@ export function PreviewModal({ file, onClose, onSave }: PreviewModalProps) {
             onClick={() => setIsFullscreen((value) => !value)}
             title={isFullscreen ? "退出全屏预览" : "全屏预览"}
           >
-            <Icon
-              icon={isFullscreen ? "mdi:fullscreen-exit" : "mdi:fullscreen"}
-              className="w-5 h-5"
-            />
+            <FullscreenIcon className="w-5 h-5" />
           </button>
         ) : undefined
       }
@@ -324,7 +326,7 @@ export function PreviewModal({ file, onClose, onSave }: PreviewModalProps) {
                     onClick={() => void handleCopyText()}
                     disabled={loadedText === null}
                   >
-                    <Icon icon="mdi:content-copy" className="w-4 h-4" />
+                    <MdiContentCopy className="w-4 h-4" />
                     复制文本
                   </button>
                   {canEditTextFile ? (
@@ -333,7 +335,7 @@ export function PreviewModal({ file, onClose, onSave }: PreviewModalProps) {
                       className="btn btn-sm btn-primary"
                       onClick={handleStartEdit}
                     >
-                      <Icon icon="mdi:pencil" className="w-4 h-4" />
+                      <MdiPencil className="w-4 h-4" />
                       编辑
                     </button>
                   ) : null}

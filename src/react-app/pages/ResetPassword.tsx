@@ -1,6 +1,10 @@
 import { useId, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Icon } from "@iconify/react";
+import MdiCloseCircle from "~icons/mdi/close-circle";
+import MdiLockCheckOutline from "~icons/mdi/lock-check-outline";
+import MdiLockOutline from "~icons/mdi/lock-outline";
+import MdiLockReset from "~icons/mdi/lock-reset";
+import MdiLogin from "~icons/mdi/login";
 import toast from "react-hot-toast";
 import { useResetPasswordMutation } from "../hooks/useAuthApi";
 import { getPasswordErrors, PASSWORD_REQUIREMENTS_HINT } from "../utils/passwordRules";
@@ -55,13 +59,13 @@ export function ResetPassword() {
       <main className="flex flex-1 items-center justify-center p-4">
         <div className="card w-full max-w-md bg-base-100 shadow-xl">
           <div className="card-body text-center">
-            <Icon icon="mdi:close-circle" className="mx-auto mb-4 text-6xl text-error" width={72} />
+            <MdiCloseCircle className="mx-auto mb-4 text-6xl text-error" width={72} />
             <h2 className="card-title justify-center text-2xl font-bold">Invalid reset link</h2>
             <p className="mt-2 text-error">
               {invalidMessage ?? "Please request a new password reset email."}
             </p>
             <Link to="/forgot-password" className="btn btn-primary mt-4 gap-2">
-              <Icon icon="mdi:lock-reset" className="h-5 w-5" />
+              <MdiLockReset className="h-5 w-5" />
               Request a new link
             </Link>
           </div>
@@ -85,7 +89,7 @@ export function ResetPassword() {
             <div className="form-control">
               <label className="label" htmlFor={passwordId}>
                 <span className="label-text flex items-center gap-1">
-                  <Icon icon="mdi:lock-outline" className="h-4 w-4" />
+                  <MdiLockOutline className="h-4 w-4" />
                   New Password
                 </span>
               </label>
@@ -122,7 +126,7 @@ export function ResetPassword() {
             <div className="form-control">
               <label className="label" htmlFor={confirmPasswordId}>
                 <span className="label-text flex items-center gap-1">
-                  <Icon icon="mdi:lock-check-outline" className="h-4 w-4" />
+                  <MdiLockCheckOutline className="h-4 w-4" />
                   Confirm Password
                 </span>
               </label>
@@ -151,7 +155,7 @@ export function ResetPassword() {
                 className={`btn btn-primary gap-2 ${isMutating ? "loading" : ""}`}
                 disabled={isMutating}
               >
-                {!isMutating && <Icon icon="mdi:lock-reset" className="h-5 w-5" />}
+                {!isMutating && <MdiLockReset className="h-5 w-5" />}
                 {isMutating ? "Resetting password..." : "Reset password"}
               </button>
             </div>
@@ -160,7 +164,7 @@ export function ResetPassword() {
           <div className="divider">OR</div>
 
           <Link to="/login" className="btn btn-outline gap-2">
-            <Icon icon="mdi:login" className="h-5 w-5" />
+            <MdiLogin className="h-5 w-5" />
             Back to login
           </Link>
         </div>

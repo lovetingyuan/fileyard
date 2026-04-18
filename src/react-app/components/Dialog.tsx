@@ -1,4 +1,4 @@
-import { Icon } from "@iconify/react";
+import MdiClose from "~icons/mdi/close";
 import { type ReactNode, useEffect, useState } from "react";
 import { useNativeDialog } from "../hooks/useNativeDialog";
 import { getDialogBoxClassName, type DialogWidthMode } from "./previewModalLayout";
@@ -173,7 +173,7 @@ export function Dialog({
                   disabled={isInteractionDisabled}
                   aria-label={closeButtonAriaLabel}
                 >
-                  <Icon icon="mdi:close" className="h-5 w-5" />
+                  <MdiClose className="h-5 w-5" />
                 </button>
               )}
             </div>

@@ -1,11 +1,20 @@
-import { Icon } from "@iconify/react";
+import type { ComponentType, SVGProps } from "react";
+import MdiDeleteOutline from "~icons/mdi/delete-outline";
+import MdiDotsHorizontal from "~icons/mdi/dots-horizontal";
+import MdiDownload from "~icons/mdi/download";
+import MdiFolder from "~icons/mdi/folder";
+import MdiFolderSync from "~icons/mdi/folder-sync";
+import MdiInformationOutline from "~icons/mdi/information-outline";
+import MdiShareVariantOutline from "~icons/mdi/share-variant-outline";
 import type { FolderEntry, FileEntry } from "../../types";
 import { formatBytes, formatDate, formatDetailedDate } from "../utils/fileFormatters";
 import { getFileIcon } from "../constants/fileIcons";
 
+type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
+
 type RowActionItem = {
   label: string;
-  icon: string;
+  Icon: IconComponent;
   tone?: "default" | "danger";
   onClick: () => void;
 };
@@ -22,7 +31,7 @@ export function NewFolderRow({ defaultName, inputRef, onBlur, onKeyDown }: NewFo
     <tr>
       <td className="min-w-0">
         <span className="inline-flex w-full min-w-0 items-center gap-1">
-          <Icon icon="mdi:folder" className="h-5 w-5 shrink-0 text-warning" />
+          <MdiFolder className="h-5 w-5 shrink-0 text-warning" />
           <input
             ref={inputRef}
             type="text"
@@ -58,7 +67,7 @@ function RowActionsMenu({
         disabled={busy}
         aria-label="更多操作"
       >
-        {!isLoading && <Icon icon="mdi:dots-horizontal" className="h-4 w-4" />}
+        {!isLoading && <MdiDotsHorizontal className="h-4 w-4" />}
       </button>
       <ul
         tabIndex={0}
@@ -74,7 +83,7 @@ function RowActionsMenu({
                 item.onClick();
               }}
             >
-              <Icon icon={item.icon} className="h-4 w-4" />
+              <item.Icon className="h-4 w-4" />
               {item.label}
             </button>
           </li>
@@ -102,14 +111,12 @@ export function FolderRow({
   onRequestDelete,
 }: FolderRowProps) {
   const isOptimistic = "isOptimistic" in folder;
+  const FolderIcon = isOptimistic ? MdiFolderSync : MdiFolder;
   return (
     <tr className={isOptimistic ? "opacity-60" : ""}>
       <td className="min-w-0">
         <span className="flex w-full min-w-0 items-center gap-1 sm:gap-2 align-middle">
-          <Icon
-            icon={isOptimistic ? "mdi:folder-sync" : "mdi:folder"}
-            className="h-5 w-5 shrink-0 text-warning"
-          />
+          <FolderIcon className="h-5 w-5 shrink-0 text-warning" />
           {isOptimistic && <span className="loading loading-spinner loading-xs shrink-0"></span>}
           <button
             type="button"
@@ -132,13 +139,13 @@ export function FolderRow({
             items={[
               {
                 label: "删除",
-                icon: "mdi:delete-outline",
+                Icon: MdiDeleteOutline,
                 tone: "danger",
                 onClick: () => onRequestDelete(folder.path, folder.name),
               },
               {
                 label: "查看详情",
-                icon: "mdi:information-outline",
+                Icon: MdiInformationOutline,
                 onClick: () => onShowDetails(folder.path),
               },
             ]}
@@ -178,7 +185,7 @@ export function FileRow({
     <tr>
       <td className="min-w-0 font-medium">
         <span className="flex w-full min-w-0 items-start gap-1 sm:gap-2 align-middle">
-          <Icon icon={fileIcon.icon} className={`h-5 w-5 shrink-0 ${fileIcon.color}`} />
+          <fileIcon.Icon className={`h-5 w-5 shrink-0 ${fileIcon.color}`} />
           <button
             type="button"
             className="min-w-0 truncate text-left link link-hover"
@@ -205,23 +212,23 @@ export function FileRow({
           items={[
             {
               label: "下载",
-              icon: "mdi:download",
+              Icon: MdiDownload,
               onClick: () => onDownload(file.path, file.name),
             },
             {
               label: "分享",
-              icon: "mdi:share-variant-outline",
+              Icon: MdiShareVariantOutline,
               onClick: () => onShare(file),
             },
             {
               label: "删除",
-              icon: "mdi:delete-outline",
+              Icon: MdiDeleteOutline,
               tone: "danger",
               onClick: () => onRequestDelete(file.path, file.name),
             },
             {
               label: "查看详情",
-              icon: "mdi:information-outline",
+              Icon: MdiInformationOutline,
               onClick: () => onShowDetails(file),
             },
           ]}

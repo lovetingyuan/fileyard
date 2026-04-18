@@ -1,4 +1,4 @@
-import { Icon } from "@iconify/react";
+import MdiClose from "~icons/mdi/close";
 import { useState } from "react";
 import type { TopBannerMessage } from "../../types";
 import { useTopBanner } from "../hooks/useTopBanner";
@@ -69,7 +69,7 @@ export function TopBannerView({ date, messageHtml, onDismiss }: TopBannerViewPro
           className="btn btn-ghost btn-xs btn-circle shrink-0 text-info-content hover:bg-info-content/10"
           onClick={onDismiss}
         >
-          <Icon icon="mdi:close" className="h-4 w-4" />
+          <MdiClose className="h-4 w-4" />
         </button>
       </div>
     </div>

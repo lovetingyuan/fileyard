@@ -1,4 +1,6 @@
-import { Icon } from "@iconify/react";
+import MdiBrightnessAuto from "~icons/mdi/brightness-auto";
+import MdiMoonWaningCrescent from "~icons/mdi/moon-waning-crescent";
+import MdiWhiteBalanceSunny from "~icons/mdi/white-balance-sunny";
 import { useTheme } from "../hooks/useTheme";
 
 export function ThemeSwitcher() {
@@ -14,9 +16,9 @@ export function ThemeSwitcher() {
   };
 
   const icons = {
-    light: "mdi:white-balance-sunny",
-    dark: "mdi:moon-waning-crescent",
-    system: "mdi:brightness-auto",
+    light: MdiWhiteBalanceSunny,
+    dark: MdiMoonWaningCrescent,
+    system: MdiBrightnessAuto,
   };
 
   const labels = {
@@ -24,6 +26,8 @@ export function ThemeSwitcher() {
     dark: "暗色",
     system: "系统",
   };
+
+  const ThemeIcon = icons[theme];
 
   return (
     <button
@@ -33,7 +37,7 @@ export function ThemeSwitcher() {
       aria-label={`当前主题: ${labels[theme]}`}
       title={`切换主题 (当前: ${labels[theme]})`}
     >
-      <Icon icon={icons[theme]} className="w-5 h-5" />
+      <ThemeIcon className="w-5 h-5" />
     </button>
   );
 }

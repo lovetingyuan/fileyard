@@ -1,5 +1,10 @@
 import { useRef } from "react";
-import { Icon } from "@iconify/react";
+import MdiFilePlus from "~icons/mdi/file-plus";
+import MdiFolderPlus from "~icons/mdi/folder-plus";
+import MdiHomeOutline from "~icons/mdi/home-outline";
+import MdiMagnify from "~icons/mdi/magnify";
+import MdiRefresh from "~icons/mdi/refresh";
+import MdiUpload from "~icons/mdi/upload";
 import { formatBytes } from "../utils/fileFormatters";
 
 interface FileToolbarProps {
@@ -59,7 +64,7 @@ export function FileToolbar({
               className="link link-hover inline-flex items-center gap-1"
               onClick={() => onSetPath("")}
             >
-              <Icon icon="mdi:home-outline" className="w-5 h-5" />
+              <MdiHomeOutline className="w-5 h-5" />
               Home
             </button>
           </li>
@@ -92,7 +97,7 @@ export function FileToolbar({
             onClick={onUploadClick}
             aria-label="上传文件"
           >
-            {!isUploadingFile && <Icon icon="mdi:upload" className="w-5 h-5" />}
+            {!isUploadingFile && <MdiUpload className="w-5 h-5" />}
           </button>
         </div>
         <div className="tooltip" data-tip="New Text File">
@@ -103,7 +108,7 @@ export function FileToolbar({
             onClick={onCreateTextFile}
             aria-label="新建文本文件"
           >
-            <Icon icon="mdi:file-plus" className="w-5 h-5" />
+            <MdiFilePlus className="w-5 h-5" />
           </button>
         </div>
         <div className="tooltip" data-tip={isCreatingFolder ? "Creating..." : "New Folder"}>
@@ -114,7 +119,7 @@ export function FileToolbar({
             onClick={onCreateFolder}
             aria-label="新建文件夹"
           >
-            {!isCreatingFolder && <Icon icon="mdi:folder-plus" className="w-5 h-5" />}
+            {!isCreatingFolder && <MdiFolderPlus className="w-5 h-5" />}
           </button>
         </div>
         <div
@@ -153,7 +158,7 @@ export function FileToolbar({
               onClick={focusSearchInput}
               aria-label="搜索文件"
             >
-              <Icon icon="mdi:magnify" className="w-5 h-5" />
+              <MdiMagnify className="w-5 h-5" />
             </button>
           </div>
           {isSearchExpanded && (
@@ -161,7 +166,7 @@ export function FileToolbar({
               {isSearchPending ? (
                 <span className="loading loading-spinner loading-xs" />
               ) : (
-                <Icon icon="mdi:magnify" className="h-4 w-4" />
+                <MdiMagnify className="h-4 w-4" />
               )}
             </div>
           )}
@@ -174,7 +179,7 @@ export function FileToolbar({
             onClick={onRefresh}
             aria-label="刷新文件列表"
           >
-            {!isRefreshing && <Icon icon="mdi:refresh" className="w-5 h-5" />}
+            {!isRefreshing && <MdiRefresh className="w-5 h-5" />}
           </button>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { Icon } from "@iconify/react";
+import MdiAlertCircleOutline from "~icons/mdi/alert-circle-outline";
 import { Dialog } from "./Dialog";
 
 type DeleteTarget = {
@@ -37,7 +37,7 @@ export function DeleteConfirmModal({ target, onClose, onConfirm }: DeleteConfirm
     >
       <div className="flex items-start gap-3">
         <span className="mt-0.5 shrink-0 inline-flex h-10 w-10 items-center justify-center rounded-full bg-error/12 text-error">
-          <Icon icon="mdi:alert-circle-outline" className="h-5 w-5" />
+          <MdiAlertCircleOutline className="h-5 w-5" />
         </span>
         <p className="text-sm leading-6 text-base-content/70">{description}</p>
       </div>

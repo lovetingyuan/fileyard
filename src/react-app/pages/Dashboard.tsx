@@ -1,6 +1,11 @@
 import { startTransition, useCallback, useDeferredValue, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Icon } from "@iconify/react";
+import MdiAlertCircleOutline from "~icons/mdi/alert-circle-outline";
+import MdiArrowDown from "~icons/mdi/arrow-down";
+import MdiArrowUp from "~icons/mdi/arrow-up";
+import MdiFolderOpenOutline from "~icons/mdi/folder-open-outline";
+import MdiMagnifyRemoveOutline from "~icons/mdi/magnify-remove-outline";
+import MdiSwapVertical from "~icons/mdi/swap-vertical";
 import toast from "react-hot-toast";
 import {
   buildDownloadUrl,
@@ -120,6 +125,12 @@ export function Dashboard() {
   const isDeleteConfirmBusy =
     (pendingDeleteTarget?.type === "file" && isDeletingFile) ||
     (pendingDeleteTarget?.type === "folder" && isDeletingFolder);
+  const getSortIcon = (key: SortKey) =>
+    sort === key ? (order === "asc" ? MdiArrowUp : MdiArrowDown) : MdiSwapVertical;
+  const NameSortIcon = getSortIcon("name");
+  const SizeSortIcon = getSortIcon("size");
+  const UpdatedSortIcon = getSortIcon("uploadedAt");
+  const EmptyStateIcon = searchInputValue ? MdiMagnifyRemoveOutline : MdiFolderOpenOutline;
 
   const handleHeaderSort = (key: SortKey) => {
     if (sort === key) {
@@ -430,7 +441,7 @@ export function Dashboard() {
             {error ? (
               <div className="rounded-box border border-base-300 bg-base-200 p-10">
                 <div className="flex flex-col items-center gap-3 text-center text-base-content/60">
-                  <Icon icon="mdi:alert-circle-outline" className="h-12 w-12 text-error" />
+                  <MdiAlertCircleOutline className="h-12 w-12 text-error" />
                   <p className="text-sm">Failed to load files</p>
                 </div>
               </div>
@@ -453,14 +464,7 @@ export function Dashboard() {
                                 className="btn btn-ghost btn-xs btn-square"
                                 onClick={() => handleHeaderSort("name")}
                               >
-                                <Icon
-                                  icon={
-                                    sort === "name"
-                                      ? order === "asc"
-                                        ? "mdi:arrow-up"
-                                        : "mdi:arrow-down"
-                                      : "mdi:swap-vertical"
-                                  }
+                                <NameSortIcon
                                   className={`w-3.5 h-3.5 ${sort === "name" ? "text-primary" : "opacity-60"}`}
                                 />
                               </button>
@@ -476,14 +480,7 @@ export function Dashboard() {
                                 className="btn btn-ghost btn-xs btn-square"
                                 onClick={() => handleHeaderSort("size")}
                               >
-                                <Icon
-                                  icon={
-                                    sort === "size"
-                                      ? order === "asc"
-                                        ? "mdi:arrow-up"
-                                        : "mdi:arrow-down"
-                                      : "mdi:swap-vertical"
-                                  }
+                                <SizeSortIcon
                                   className={`w-3.5 h-3.5 ${sort === "size" ? "text-primary" : "opacity-60"}`}
                                 />
                               </button>
@@ -499,14 +496,7 @@ export function Dashboard() {
                                 className="btn btn-ghost btn-xs btn-square"
                                 onClick={() => handleHeaderSort("uploadedAt")}
                               >
-                                <Icon
-                                  icon={
-                                    sort === "uploadedAt"
-                                      ? order === "asc"
-                                        ? "mdi:arrow-up"
-                                        : "mdi:arrow-down"
-                                      : "mdi:swap-vertical"
-                                  }
+                                <UpdatedSortIcon
                                   className={`w-3.5 h-3.5 ${sort === "uploadedAt" ? "text-primary" : "opacity-60"}`}
                                 />
                               </button>
@@ -561,14 +551,7 @@ export function Dashboard() {
                           <tr className={searchInputValue ? "sm:hidden" : "bg-base-100 sm:hidden"}>
                             <td colSpan={2}>
                               <div className="flex flex-col items-center gap-2 py-15 text-base-content/60">
-                                <Icon
-                                  icon={
-                                    searchInputValue
-                                      ? "mdi:magnify-remove-outline"
-                                      : "mdi:folder-open-outline"
-                                  }
-                                  className="w-12 h-12"
-                                />
+                                <EmptyStateIcon className="w-12 h-12" />
                                 {searchInputValue
                                   ? `No results for "${searchInputValue}"`
                                   : "This folder is empty."}
@@ -584,14 +567,7 @@ export function Dashboard() {
                           >
                             <td colSpan={4}>
                               <div className="flex flex-col items-center gap-2 py-15 text-base-content/60">
-                                <Icon
-                                  icon={
-                                    searchInputValue
-                                      ? "mdi:magnify-remove-outline"
-                                      : "mdi:folder-open-outline"
-                                  }
-                                  className="w-12 h-12"
-                                />
+                                <EmptyStateIcon className="w-12 h-12" />
                                 {searchInputValue
                                   ? `No results for "${searchInputValue}"`
                                   : "This folder is empty."}

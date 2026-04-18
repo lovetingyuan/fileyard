@@ -1,6 +1,9 @@
 import { useId, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Icon } from "@iconify/react";
+import MdiEmailOutline from "~icons/mdi/email-outline";
+import MdiInformationOutline from "~icons/mdi/information-outline";
+import MdiLockReset from "~icons/mdi/lock-reset";
+import MdiLogin from "~icons/mdi/login";
 import toast from "react-hot-toast";
 import { useForgotPasswordMutation } from "../hooks/useAuthApi";
 
@@ -42,7 +45,7 @@ export function ForgotPassword() {
             <div className="form-control">
               <label className="label" htmlFor={emailId}>
                 <span className="label-text flex items-center gap-1">
-                  <Icon icon="mdi:email-outline" className="h-4 w-4" />
+                  <MdiEmailOutline className="h-4 w-4" />
                   Email
                 </span>
               </label>
@@ -63,7 +66,7 @@ export function ForgotPassword() {
 
             {message && (
               <div className="alert alert-info">
-                <Icon icon="mdi:information-outline" />
+                <MdiInformationOutline />
                 <span>{message}</span>
               </div>
             )}
@@ -74,7 +77,7 @@ export function ForgotPassword() {
                 className={`btn btn-primary gap-2 ${isMutating ? "loading" : ""}`}
                 disabled={isMutating}
               >
-                {!isMutating && <Icon icon="mdi:lock-reset" className="h-5 w-5" />}
+                {!isMutating && <MdiLockReset className="h-5 w-5" />}
                 {isMutating ? "Sending reset link..." : "Reset password"}
               </button>
             </div>
@@ -86,7 +89,7 @@ export function ForgotPassword() {
             to={`/login${email ? `?email=${encodeURIComponent(email)}` : ""}`}
             className="btn btn-outline gap-2"
           >
-            <Icon icon="mdi:login" className="h-5 w-5" />
+            <MdiLogin className="h-5 w-5" />
             Back to login
           </Link>
         </div>

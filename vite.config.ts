@@ -3,6 +3,7 @@ import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import babelPlugin from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
 import { cloudflare } from "@cloudflare/vite-plugin";
+import Icons from "unplugin-icons/vite";
 import babelPluginRelativePath from "./scripts/babel-plugin-relative-path.js";
 import { viteHtmlEntryPoints } from "./scripts/vite-entry-points";
 import { execSync } from "child_process";
@@ -23,6 +24,7 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
+    Icons({ compiler: "jsx", jsx: "react" }),
     babelPlugin({
       presets: [reactCompilerPreset()],
       plugins: mode === "development" ? [babelPluginRelativePath] : [],

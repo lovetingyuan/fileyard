@@ -1,6 +1,10 @@
 import { useId, useRef, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
-import { Icon } from "@iconify/react";
+import MdiAccountPlusOutline from "~icons/mdi/account-plus-outline";
+import MdiAlertCircleOutline from "~icons/mdi/alert-circle-outline";
+import MdiEmailOutline from "~icons/mdi/email-outline";
+import MdiLockOutline from "~icons/mdi/lock-outline";
+import MdiLogin from "~icons/mdi/login";
 import toast from "react-hot-toast";
 import { useAuth } from "../hooks/useAuth";
 
@@ -124,7 +128,7 @@ export function Login({ onSwitchToRegister }: LoginProps) {
           <form onSubmit={handleSubmit} className="space-y-4">
             {formError && (
               <div className="alert alert-error">
-                <Icon icon="mdi:alert-circle-outline" className="h-5 w-5" />
+                <MdiAlertCircleOutline className="h-5 w-5" />
                 <span>{formError}</span>
               </div>
             )}
@@ -132,7 +136,7 @@ export function Login({ onSwitchToRegister }: LoginProps) {
             <div className="form-control">
               <label className="label" htmlFor={emailId}>
                 <span className="label-text flex items-center gap-1">
-                  <Icon icon="mdi:email-outline" className="w-4 h-4" />
+                  <MdiEmailOutline className="w-4 h-4" />
                   Email
                 </span>
               </label>
@@ -154,7 +158,7 @@ export function Login({ onSwitchToRegister }: LoginProps) {
             <div className="form-control">
               <label className="label" htmlFor={passwordId}>
                 <span className="label-text flex items-center gap-1">
-                  <Icon icon="mdi:lock-outline" className="w-4 h-4" />
+                  <MdiLockOutline className="w-4 h-4" />
                   Password
                 </span>
               </label>
@@ -182,7 +186,7 @@ export function Login({ onSwitchToRegister }: LoginProps) {
                   "Logging in..."
                 ) : (
                   <>
-                    <Icon icon="mdi:login" className="w-5 h-5" />
+                    <MdiLogin className="w-5 h-5" />
                     Login
                   </>
                 )}
@@ -215,7 +219,7 @@ export function Login({ onSwitchToRegister }: LoginProps) {
             onClick={onSwitchToRegister}
             disabled={loading}
           >
-            <Icon icon="mdi:account-plus-outline" className="w-5 h-5" />
+            <MdiAccountPlusOutline className="w-5 h-5" />
             Create an account
           </button>
         </div>
