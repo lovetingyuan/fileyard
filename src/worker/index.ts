@@ -49,59 +49,34 @@ app.use("/api/*", async (c, next) => {
   }
 });
 
-app.use(
+const csrfProtection = csrf({
+  origin: (origin, c) => isAllowedOrigin(c as Context<AppContext>, origin),
+});
+
+const protectedPrefixes = [
   "/api/profile",
-  csrf({
-    origin: (origin, c) => isAllowedOrigin(c as Context<AppContext>, origin),
-  }),
-);
-app.use(
   "/api/profile/*",
-  csrf({
-    origin: (origin, c) => isAllowedOrigin(c as Context<AppContext>, origin),
-  }),
-);
-app.use(
   "/api/files",
-  csrf({
-    origin: (origin, c) => isAllowedOrigin(c as Context<AppContext>, origin),
-  }),
-);
-app.use(
   "/api/files/*",
-  csrf({
-    origin: (origin, c) => isAllowedOrigin(c as Context<AppContext>, origin),
-  }),
-);
-app.use(
   "/api/admin",
-  csrf({
-    origin: (origin, c) => isAllowedOrigin(c as Context<AppContext>, origin),
-  }),
-);
-app.use(
   "/api/admin/*",
-  csrf({
-    origin: (origin, c) => isAllowedOrigin(c as Context<AppContext>, origin),
-  }),
-);
+] as const;
+
+for (const prefix of protectedPrefixes) {
+  app.use(prefix, csrfProtection);
+}
 
 app.on(["GET", "POST"], "/api/auth/*", async (c) => {
   return getAuth(c).handler(c.req.raw);
 });
 
-app.use("/api/profile", authMiddleware());
-app.use("/api/profile/*", authMiddleware());
-app.use("/api/files", authMiddleware());
-app.use("/api/files/*", authMiddleware());
-app.use("/api/admin", authMiddleware());
-app.use("/api/admin/*", authMiddleware());
-app.use("/api/profile", requireAuth());
-app.use("/api/profile/*", requireAuth());
-app.use("/api/files", requireAuth());
-app.use("/api/files/*", requireAuth());
-app.use("/api/admin", requireAuth());
-app.use("/api/admin/*", requireAuth());
+const authMw = authMiddleware();
+const requireAuthMw = requireAuth();
+
+for (const prefix of protectedPrefixes) {
+  app.use(prefix, authMw);
+  app.use(prefix, requireAuthMw);
+}
 
 app.route("/", adminRoutes);
 app.route("/", profileRoutes);

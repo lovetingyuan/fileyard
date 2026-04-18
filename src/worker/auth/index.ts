@@ -6,6 +6,7 @@ import { resolveAppOrigin } from "../utils/shareLinks";
 import { createDb } from "../db/client";
 import * as schema from "../db/schema";
 import { createResetPasswordEmailSender, createVerificationEmailSender } from "./email";
+import { createBetterAuthLogger } from "./logger";
 import { createBetterAuthOptions } from "./options";
 import { getOrCreateAppProfileByDb } from "./profile";
 
@@ -92,9 +93,10 @@ export function getAuth(c: Context<AppContext>) {
       secret: resolvedSecret,
       googleClientId: c.env.GOOGLE_CLIENT_ID ?? "",
       googleClientSecret: c.env.GOOGLE_CLIENT_SECRET ?? "",
-      trustedOrigins: async (request) => resolveTrustedOrigins(c.env, request ?? c.req.raw),
+      trustedOrigins: async (request) => resolveTrustedOrigins(c.env, request),
       sendVerificationEmail: createVerificationEmailSender(c.env),
       sendResetPassword: createResetPasswordEmailSender(c.env),
+      backgroundTaskHandler: (promise) => c.executionCtx.waitUntil(promise),
       onUserCreated: async (user) => {
         await getOrCreateAppProfileByDb(db, user.id, user.email);
       },
@@ -103,6 +105,7 @@ export function getAuth(c: Context<AppContext>) {
       provider: "sqlite",
       schema,
     }),
+    logger: createBetterAuthLogger(isDev),
   });
 
   authCache.set(cacheKey, instance as ReturnType<typeof betterAuth>);

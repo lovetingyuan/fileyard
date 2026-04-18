@@ -4,9 +4,7 @@ interface ShareLinkCopyButtonProps {
 }
 
 export function ShareLinkCopyButton({ isCopied, onClick }: ShareLinkCopyButtonProps) {
-  const buttonClassName = isCopied
-    ? "btn btn-success btn-sm shrink-0 transition-colors duration-200"
-    : "btn btn-ghost btn-sm shrink-0 transition-colors duration-200";
+  const buttonClassName = "btn btn-ghost btn-sm shrink-0 transition-colors duration-200";
 
   return (
     <button
@@ -14,9 +12,26 @@ export function ShareLinkCopyButton({ isCopied, onClick }: ShareLinkCopyButtonPr
       className={buttonClassName}
       onClick={onClick}
       data-copy-state={isCopied ? "copied" : "idle"}
+      aria-label={isCopied ? "已复制" : undefined}
       aria-live="polite"
     >
-      {isCopied ? "已复制" : "复制"}
+      {isCopied ? (
+        <svg
+          aria-hidden="true"
+          className="h-4 w-4 text-success"
+          data-testid="copy-success-icon"
+          fill="none"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2.5"
+          viewBox="0 0 24 24"
+        >
+          <path d="m5 12 4 4L19 6" />
+        </svg>
+      ) : (
+        "复制"
+      )}
     </button>
   );
 }

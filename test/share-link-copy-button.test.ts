@@ -22,11 +22,15 @@ describe("share link copy button", () => {
     expect(markup).toContain('aria-live="polite"');
   });
 
-  it("renders the copied feedback state with a highlighted style", () => {
+  it("renders the copied feedback state as a success icon without changing background", () => {
     const markup = renderButton(true);
 
-    expect(markup).toContain(">已复制<");
-    expect(markup).toContain("btn-success");
+    expect(markup).not.toContain(">已复制<");
+    expect(markup).toContain("btn-ghost");
+    expect(markup).not.toContain("btn-success");
+    expect(markup).toContain('aria-label="已复制"');
+    expect(markup).toContain("text-success");
+    expect(markup).toContain("data-testid=\"copy-success-icon\"");
     expect(markup).toContain('data-copy-state="copied"');
   });
 });

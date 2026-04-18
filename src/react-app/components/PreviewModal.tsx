@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { SyntheticEvent } from "react";
 import MdiContentCopy from "~icons/mdi/content-copy";
 import MdiFileAlertOutline from "~icons/mdi/file-alert-outline";
 import MdiFullscreen from "~icons/mdi/fullscreen";
@@ -28,6 +29,71 @@ const PREVIEW_SIZE_LIMITS = {
   VIDEO: 200 * 1024 * 1024, // 200MB
   AUDIO: 100 * 1024 * 1024, // 100MB
 } as const;
+
+const PREVIEW_MEDIA_VOLUME_STORAGE_KEY = "fileyard:preview-media:volume";
+
+function getBrowserLocalStorage(): Storage | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+function readStoredPreviewMediaVolume(): number | null {
+  const storage = getBrowserLocalStorage();
+  if (!storage) {
+    return null;
+  }
+
+  let storedVolume: string | null;
+  try {
+    storedVolume = storage.getItem(PREVIEW_MEDIA_VOLUME_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+
+  if (storedVolume === null) {
+    return null;
+  }
+
+  const volume = Number(storedVolume);
+  return Number.isFinite(volume) && volume >= 0 && volume <= 1 ? volume : null;
+}
+
+function writeStoredPreviewMediaVolume(volume: number): void {
+  const storage = getBrowserLocalStorage();
+  if (!storage || !Number.isFinite(volume)) {
+    return;
+  }
+
+  const normalizedVolume = Math.min(1, Math.max(0, volume));
+
+  try {
+    storage.setItem(PREVIEW_MEDIA_VOLUME_STORAGE_KEY, String(normalizedVolume));
+  } catch {
+    // Ignore storage failures so private browsing or quota errors do not break preview playback.
+  }
+}
+
+function restoreStoredPreviewMediaVolume(element: HTMLMediaElement | null): void {
+  if (!element) {
+    return;
+  }
+
+  const storedVolume = readStoredPreviewMediaVolume();
+  if (storedVolume !== null) {
+    element.volume = storedVolume;
+  }
+}
+
+function handlePreviewMediaVolumeChange(event: SyntheticEvent<HTMLMediaElement>): void {
+  writeStoredPreviewMediaVolume(event.currentTarget.volume);
+}
 
 async function copyToClipboard(value: string): Promise<void> {
   await navigator.clipboard.writeText(value);
@@ -372,8 +438,10 @@ export function PreviewModal({ file, onClose, onSave }: PreviewModalProps) {
               )}
               {effectiveInfo.kind === "video" && (
                 <video
+                  ref={restoreStoredPreviewMediaVolume}
                   src={previewUrl}
                   controls
+                  onVolumeChange={handlePreviewMediaVolumeChange}
                   className={
                     isFullscreen ? "max-h-full max-w-full rounded" : getStandardVideoClassName()
                   }
@@ -387,7 +455,13 @@ export function PreviewModal({ file, onClose, onSave }: PreviewModalProps) {
                       : "flex justify-center py-8"
                   }
                 >
-                  <audio src={previewUrl} controls className={getStandardAudioClassName()} />
+                  <audio
+                    ref={restoreStoredPreviewMediaVolume}
+                    src={previewUrl}
+                    controls
+                    onVolumeChange={handlePreviewMediaVolumeChange}
+                    className={getStandardAudioClassName()}
+                  />
                 </div>
               )}
               {effectiveInfo.kind === "pdf" && (
