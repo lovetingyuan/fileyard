@@ -9,4 +9,4 @@ interface ImportMeta {
   readonly env: ImportMetaEnv
 }
 
-declare var _buildDate: string
+declare var _buildTime: string

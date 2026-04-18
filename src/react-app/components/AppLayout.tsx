@@ -63,7 +63,7 @@ export function AppLayout() {
         </div>
 
         <footer className="bg-base-200 py-2 text-center text-xs text-base-content/60">
-          Built at {_buildTime}
+          Built at {window._buildDate ?? 'N/A'}
         </footer>
       </div>
     </div>

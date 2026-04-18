@@ -9,17 +9,11 @@
       content="Fileyard — 安全、快速的云端文件管理平台，支持上传、下载和文件夹管理。"
     />
     <title>Fileyard · 云端文件管理</title>
-    <script>
-      window._buildTime = '%VITE_BUILD_TIME%'
-      console.log(
-        `%c Build: ${_buildTime} %VITE_GIT_HASH% `,
-        'background-color: #4DBA87; color: #fff; padding: 2px; border-radius: 2px;',
-      )
-    </script>
   </head>
 
   <body>
     <div id="root"></div>
+    <script src="/build-info.js?time=%VITE_BUILD_TIME%&hash=%VITE_GIT_HASH%"></script>
     <script type="module" src="/src/react-app/main.tsx"></script>
   </body>
 </html>
