@@ -4,10 +4,6 @@ import type { SharedFileMetadataResponse } from "../../types";
 import { ApiError, apiRequest } from "../utils/apiRequest";
 import { formatShareDuration } from "../utils/shareDurations";
 
-function buildSharedFileMetadataUrl(token: string): string {
-  return `/api/share-links/${encodeURIComponent(token)}`;
-}
-
 type SharePageStatus = "active" | "expired" | "missing" | "invalid" | "error";
 
 function getSharePageStatus(
@@ -48,7 +44,7 @@ function getUnavailableReason(status: SharePageStatus, error?: ApiError): string
 export function ShareDownload() {
   const { token } = useParams<{ token: string }>();
   const { data, error, isLoading } = useSWR<SharedFileMetadataResponse, ApiError>(
-    token ? buildSharedFileMetadataUrl(token) : null,
+    token ? `/api/share-links/${encodeURIComponent(token)}` : null,
     (url: string) => apiRequest<SharedFileMetadataResponse>(url, { credentials: "same-origin" }),
   );
 

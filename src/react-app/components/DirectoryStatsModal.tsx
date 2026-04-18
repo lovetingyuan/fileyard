@@ -12,19 +12,6 @@ interface DirectoryStatsModalProps {
   onClose: () => void;
 }
 
-function getDisplayPath(path: string): string {
-  return path ? `/${path}` : "/";
-}
-
-function getFolderName(path: string): string {
-  if (!path) {
-    return "根目录";
-  }
-
-  const segments = path.split("/").filter(Boolean);
-  return segments[segments.length - 1] ?? path;
-}
-
 export function DirectoryStatsModal({
   isOpen,
   path,
@@ -33,14 +20,17 @@ export function DirectoryStatsModal({
   isLoading,
   onClose,
 }: DirectoryStatsModalProps) {
+  const pathSegments = path.split("/").filter(Boolean);
+  const folderName = path ? (pathSegments[pathSegments.length - 1] ?? path) : "根目录";
+  const displayPath = path ? `/${path}` : "/";
   const detailItems = [
     {
       label: "名称",
-      value: getFolderName(path),
+      value: folderName,
     },
     {
       label: "路径",
-      value: getDisplayPath(path),
+      value: displayPath,
       valueClassName: "break-all font-mono text-xs sm:text-sm",
     },
     ...(isLoading

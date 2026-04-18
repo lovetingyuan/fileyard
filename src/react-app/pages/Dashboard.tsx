@@ -125,11 +125,10 @@ export function Dashboard() {
   const isDeleteConfirmBusy =
     (pendingDeleteTarget?.type === "file" && isDeletingFile) ||
     (pendingDeleteTarget?.type === "folder" && isDeletingFolder);
-  const getSortIcon = (key: SortKey) =>
-    sort === key ? (order === "asc" ? MdiArrowUp : MdiArrowDown) : MdiSwapVertical;
-  const NameSortIcon = getSortIcon("name");
-  const SizeSortIcon = getSortIcon("size");
-  const UpdatedSortIcon = getSortIcon("uploadedAt");
+  const ActiveSortIcon = order === "asc" ? MdiArrowUp : MdiArrowDown;
+  const NameSortIcon = sort === "name" ? ActiveSortIcon : MdiSwapVertical;
+  const SizeSortIcon = sort === "size" ? ActiveSortIcon : MdiSwapVertical;
+  const UpdatedSortIcon = sort === "uploadedAt" ? ActiveSortIcon : MdiSwapVertical;
   const EmptyStateIcon = searchInputValue ? MdiMagnifyRemoveOutline : MdiFolderOpenOutline;
 
   const handleHeaderSort = (key: SortKey) => {

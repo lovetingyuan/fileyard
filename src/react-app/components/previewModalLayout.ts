@@ -53,18 +53,8 @@ export function getPreviewContentWrapperClassName(
   return "mx-auto w-fit max-w-full";
 }
 
-export function getStandardVideoClassName(): string {
-  return "max-h-[65vh] max-w-full rounded";
-}
-
-export function getStandardAudioClassName(): string {
-  return "max-w-full";
-}
-
-export function getStandardPdfClassName(): string {
-  return "w-full rounded border-0 h-[70vh]";
-}
-
-export function getStandardTextClassName(): string {
-  return "w-full overflow-auto text-sm bg-base-200 rounded-box p-4 whitespace-pre max-h-[60vh]";
-}
+export const STANDARD_VIDEO_CLASS_NAME = "max-h-[65vh] max-w-full rounded";
+export const STANDARD_AUDIO_CLASS_NAME = "max-w-full";
+export const STANDARD_PDF_CLASS_NAME = "w-full rounded border-0 h-[70vh]";
+export const STANDARD_TEXT_CLASS_NAME =
+  "w-full overflow-auto text-sm bg-base-200 rounded-box p-4 whitespace-pre max-h-[60vh]";

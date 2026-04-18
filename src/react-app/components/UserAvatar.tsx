@@ -6,14 +6,6 @@ type UserAvatarProps = {
   textClassName?: string;
 };
 
-function buildAuthAvatarUrl(authImage: string | null | undefined): string | null {
-  if (!authImage) {
-    return null;
-  }
-
-  return `/api/profile/auth-avatar?v=${encodeURIComponent(authImage)}`;
-}
-
 export function UserAvatar({
   email,
   avatarUrl,
@@ -22,7 +14,10 @@ export function UserAvatar({
   textClassName = "text-lg",
 }: UserAvatarProps) {
   const fallback = email?.charAt(0).toUpperCase() ?? "?";
-  const effectiveAvatarUrl = avatarUrl ?? buildAuthAvatarUrl(authImage);
+  const authAvatarUrl = authImage
+    ? `/api/profile/auth-avatar?v=${encodeURIComponent(authImage)}`
+    : null;
+  const effectiveAvatarUrl = avatarUrl ?? authAvatarUrl;
 
   if (effectiveAvatarUrl) {
     return (

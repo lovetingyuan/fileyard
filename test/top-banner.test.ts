@@ -87,21 +87,19 @@ describe("TopBanner", () => {
   });
 
   it("hides the banner after dismissing the current message", async () => {
-    const { shouldShowTopBanner, getDismissedTopBannerDate } = await import(
-      "../src/react-app/components/TopBanner"
-    );
+    const { shouldShowTopBanner } = await import("../src/react-app/components/TopBanner");
 
     expect(shouldShowTopBanner({ date: "20260418", contentHtml: "Notice" }, null)).toBe(true);
     expect(
       shouldShowTopBanner(
         { date: "20260418", contentHtml: "Notice" },
-        getDismissedTopBannerDate("20260418"),
+        "20260418",
       ),
     ).toBe(false);
     expect(
       shouldShowTopBanner(
         { date: "20260419", contentHtml: "Updated notice" },
-        getDismissedTopBannerDate("20260418"),
+        "20260418",
       ),
     ).toBe(
       true,

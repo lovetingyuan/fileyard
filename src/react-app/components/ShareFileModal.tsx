@@ -30,19 +30,6 @@ const QRCode = ((QRCodeImport as unknown as { QRCode?: unknown; default?: unknow
   (QRCodeImport as unknown as { default?: unknown }).default ??
   QRCodeImport) as ComponentType<QRCodeComponentProps>;
 
-async function copyToClipboard(value: string): Promise<void> {
-  await navigator.clipboard.writeText(value);
-}
-
-function buildShareMessage(shareLink: ShareLinkResponse, shareDurationLabel: string): string {
-  return [
-    `文件名：${shareLink.fileName}`,
-    `过期时间：${formatShareExpiry(shareLink.expiresAt)}`,
-    `有效时长：${shareDurationLabel}`,
-    `下载链接：${shareLink.shareUrl}`,
-  ].join("\n");
-}
-
 export function ShareFileModal({ file, onClose }: ShareFileModalProps) {
   const [expiresInSeconds, setExpiresInSeconds] =
     useState<ShareDurationOption>(DEFAULT_SHARE_DURATION);
@@ -107,7 +94,14 @@ export function ShareFileModal({ file, onClose }: ShareFileModalProps) {
 
   const isLoading = isMutating || shareLink === null;
   const shareDurationLabel = formatShareDuration(expiresInSeconds);
-  const shareText = shareLink ? buildShareMessage(shareLink, shareDurationLabel) : "";
+  const shareText = shareLink
+    ? [
+        `文件名：${shareLink.fileName}`,
+        `过期时间：${formatShareExpiry(shareLink.expiresAt)}`,
+        `有效时长：${shareDurationLabel}`,
+        `下载链接：${shareLink.shareUrl}`,
+      ].join("\n")
+    : "";
 
   const handleCopyLink = async () => {
     if (!shareLink) {
@@ -115,7 +109,7 @@ export function ShareFileModal({ file, onClose }: ShareFileModalProps) {
     }
 
     try {
-      await copyToClipboard(shareLink.shareUrl);
+      await navigator.clipboard.writeText(shareLink.shareUrl);
       clearCopyFeedbackTimeout();
       setIsLinkCopied(true);
       copyFeedbackTimeoutRef.current = setTimeout(() => {
@@ -142,7 +136,7 @@ export function ShareFileModal({ file, onClose }: ShareFileModalProps) {
         return;
       }
 
-      await copyToClipboard(shareText);
+      await navigator.clipboard.writeText(shareText);
       toast.success("浏览器不支持系统分享，已复制分享内容");
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {

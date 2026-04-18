@@ -5,10 +5,6 @@ import { useTopBanner } from "../hooks/useTopBanner";
 
 const DISMISSED_TOP_BANNER_DATE_KEY = "fileyard:top-banner:dismissed-date";
 
-function createTrustedMarkup(messageHtml: string) {
-  return { __html: messageHtml };
-}
-
 function getBrowserStorage(): Storage | null {
   return typeof window === "undefined" ? null : window.localStorage;
 }
@@ -32,15 +28,9 @@ export function writeDismissedTopBannerDate(
   }
 }
 
-export function getDismissedTopBannerDate(date: string) {
-  return date;
-}
-
 export function shouldShowTopBanner(banner: TopBannerMessage | null, dismissedDate: string | null) {
   return Boolean(
-    banner?.date &&
-      banner.contentHtml.trim() &&
-      dismissedDate !== getDismissedTopBannerDate(banner.date),
+    banner?.date && banner.contentHtml.trim() && dismissedDate !== banner.date,
   );
 }
 
@@ -61,7 +51,7 @@ export function TopBannerView({ date, messageHtml, onDismiss }: TopBannerViewPro
       <div className="mx-auto flex max-w-7xl items-start justify-between gap-3 px-4 py-2 text-left text-sm leading-6 sm:px-6">
         <div
           className="min-w-0 flex-1 [&_a]:font-semibold [&_a]:underline [&_a]:underline-offset-4 [&_a:hover]:opacity-80 [&_p]:m-0 [&_strong]:font-semibold"
-          dangerouslySetInnerHTML={createTrustedMarkup(messageHtml)}
+          dangerouslySetInnerHTML={{ __html: messageHtml }}
         />
         <button
           type="button"
@@ -93,9 +83,8 @@ export function TopBanner() {
       date={banner.date}
       messageHtml={contentHtml}
       onDismiss={() => {
-        const dismissedBannerDate = getDismissedTopBannerDate(banner.date);
-        writeDismissedTopBannerDate(getBrowserStorage(), dismissedBannerDate);
-        setDismissedDate(dismissedBannerDate);
+        writeDismissedTopBannerDate(getBrowserStorage(), banner.date);
+        setDismissedDate(banner.date);
       }}
     />
   );

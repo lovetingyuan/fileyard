@@ -35,20 +35,14 @@ function AppContent() {
   );
 }
 
-function AppRoutes() {
-  return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
-  );
-}
-
 export function AppShell() {
   return (
     <>
       <Toaster position="top-center" toastOptions={{ duration: 5000 }} />
       <TopBanner />
-      <AppRoutes />
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
     </>
   );
 }

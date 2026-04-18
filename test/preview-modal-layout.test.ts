@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  STANDARD_AUDIO_CLASS_NAME,
+  STANDARD_PDF_CLASS_NAME,
+  STANDARD_TEXT_CLASS_NAME,
+  STANDARD_VIDEO_CLASS_NAME,
   getDialogBoxClassName,
   getPreviewContentWrapperClassName,
   getPreviewModalBoxClassName,
-  getStandardAudioClassName,
-  getStandardPdfClassName,
-  getStandardTextClassName,
-  getStandardVideoClassName,
 } from "../src/react-app/components/previewModalLayout";
 
 describe("preview modal layout helpers", () => {
@@ -55,19 +55,19 @@ describe("preview modal layout helpers", () => {
   });
 
   it("does not force standard video previews to full width", () => {
-    expect(getStandardVideoClassName()).toBe("max-h-[65vh] max-w-full rounded");
+    expect(STANDARD_VIDEO_CLASS_NAME).toBe("max-h-[65vh] max-w-full rounded");
   });
 
   it("does not force standard audio previews to full width", () => {
-    expect(getStandardAudioClassName()).toBe("max-w-full");
+    expect(STANDARD_AUDIO_CLASS_NAME).toBe("max-w-full");
   });
 
   it("lets standard pdf previews fill the document viewport", () => {
-    expect(getStandardPdfClassName()).toBe("w-full rounded border-0 h-[70vh]");
+    expect(STANDARD_PDF_CLASS_NAME).toBe("w-full rounded border-0 h-[70vh]");
   });
 
   it("lets standard text previews fill the document viewport", () => {
-    expect(getStandardTextClassName()).toBe(
+    expect(STANDARD_TEXT_CLASS_NAME).toBe(
       "w-full overflow-auto text-sm bg-base-200 rounded-box p-4 whitespace-pre max-h-[60vh]",
     );
   });

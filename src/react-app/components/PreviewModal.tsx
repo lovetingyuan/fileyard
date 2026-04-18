@@ -13,10 +13,10 @@ import { buildPreviewUrl } from "../hooks/useFilesApi";
 import {
   getPreviewContentWrapperClassName,
   getPreviewModalBoxClassName,
-  getStandardAudioClassName,
-  getStandardPdfClassName,
-  getStandardTextClassName,
-  getStandardVideoClassName,
+  STANDARD_AUDIO_CLASS_NAME,
+  STANDARD_PDF_CLASS_NAME,
+  STANDARD_TEXT_CLASS_NAME,
+  STANDARD_VIDEO_CLASS_NAME,
 } from "./previewModalLayout";
 import { getPreviewInfo } from "../utils/previewInfo";
 
@@ -95,10 +95,6 @@ function handlePreviewMediaVolumeChange(event: SyntheticEvent<HTMLMediaElement>)
   writeStoredPreviewMediaVolume(event.currentTarget.volume);
 }
 
-async function copyToClipboard(value: string): Promise<void> {
-  await navigator.clipboard.writeText(value);
-}
-
 // --- Sub-components ---
 
 function TextPreview({
@@ -167,7 +163,7 @@ function TextPreview({
       className={
         isFullscreen
           ? "overflow-auto text-sm bg-base-200 rounded-box p-4 whitespace-pre h-full"
-          : getStandardTextClassName()
+          : STANDARD_TEXT_CLASS_NAME
       }
     >
       {data}
@@ -243,7 +239,7 @@ function PdfPreview({
     <iframe
       src={blobUrl}
       title="PDF Preview"
-      className={isFullscreen ? "w-full rounded border-0 h-full" : getStandardPdfClassName()}
+      className={isFullscreen ? "w-full rounded border-0 h-full" : STANDARD_PDF_CLASS_NAME}
     />
   );
 }
@@ -314,7 +310,7 @@ export function PreviewModal({ file, onClose, onSave }: PreviewModalProps) {
     }
 
     try {
-      await copyToClipboard(loadedText);
+      await navigator.clipboard.writeText(loadedText);
       toast.success("文本已复制");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "复制文本失败");
@@ -443,7 +439,7 @@ export function PreviewModal({ file, onClose, onSave }: PreviewModalProps) {
                   controls
                   onVolumeChange={handlePreviewMediaVolumeChange}
                   className={
-                    isFullscreen ? "max-h-full max-w-full rounded" : getStandardVideoClassName()
+                    isFullscreen ? "max-h-full max-w-full rounded" : STANDARD_VIDEO_CLASS_NAME
                   }
                 />
               )}
@@ -460,7 +456,7 @@ export function PreviewModal({ file, onClose, onSave }: PreviewModalProps) {
                     src={previewUrl}
                     controls
                     onVolumeChange={handlePreviewMediaVolumeChange}
-                    className={getStandardAudioClassName()}
+                    className={STANDARD_AUDIO_CLASS_NAME}
                   />
                 </div>
               )}
