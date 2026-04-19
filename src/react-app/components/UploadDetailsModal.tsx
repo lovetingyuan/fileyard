@@ -1,0 +1,168 @@
+import MdiCloseCircleOutline from "~icons/mdi/close-circle-outline";
+import MdiRefresh from "~icons/mdi/refresh";
+import type { UploadQueueItem, UploadQueueStatus } from "../../types";
+import { formatBytes } from "../utils/fileFormatters";
+import { countUploadQueueStats } from "../hooks/useUploadQueue";
+import { Dialog } from "./Dialog";
+
+interface UploadDetailsModalProps {
+  isOpen: boolean;
+  items: UploadQueueItem[];
+  onClose: () => void;
+  onCancel: (id: string) => void;
+  onRetry: (id: string) => void;
+  onCancelRemaining: () => void;
+}
+
+const STATUS_LABELS: Record<UploadQueueStatus, string> = {
+  queued: "等待中",
+  preparing: "准备中",
+  uploading: "上传中",
+  success: "已完成",
+  failed: "上传失败",
+  canceled: "已取消",
+  oversized: "文件过大",
+  duplicate: "名称重复",
+};
+
+function canCancel(status: UploadQueueStatus): boolean {
+  return (
+    status === "queued" ||
+    status === "preparing" ||
+    status === "uploading" ||
+    status === "oversized" ||
+    status === "duplicate"
+  );
+}
+
+function getProgressValue(item: UploadQueueItem): number {
+  if (item.status === "success") {
+    return 100;
+  }
+  if (item.status === "queued" || item.status === "preparing") {
+    return 0;
+  }
+  return item.progress;
+}
+
+function getStatusClassName(status: UploadQueueStatus): string {
+  if (status === "success") {
+    return "badge-success";
+  }
+  if (status === "failed" || status === "oversized" || status === "duplicate") {
+    return "badge-error";
+  }
+  if (status === "canceled") {
+    return "badge-neutral";
+  }
+  return "badge-info";
+}
+
+function UploadItemRow({
+  item,
+  onCancel,
+  onRetry,
+}: {
+  item: UploadQueueItem;
+  onCancel: (id: string) => void;
+  onRetry: (id: string) => void;
+}) {
+  const progress = getProgressValue(item);
+  const statusMessage = item.errorMessage ?? STATUS_LABELS[item.status];
+
+  return (
+    <li className="rounded-box border border-base-300 bg-base-100 p-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium" title={item.displayPath}>
+            {item.displayPath}
+          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-base-content/60">
+            <span>{formatBytes(item.size)}</span>
+            <span className={`badge badge-xs ${getStatusClassName(item.status)}`}>
+              {STATUS_LABELS[item.status]}
+            </span>
+            {item.errorMessage ? <span className="text-error">{statusMessage}</span> : null}
+          </div>
+        </div>
+
+        <div className="grid min-w-0 grid-cols-[1fr_auto] items-center gap-2 sm:w-48">
+          <progress
+            className="progress progress-primary h-2"
+            value={progress}
+            max="100"
+            aria-label={`${item.displayPath} 上传进度`}
+          />
+          <span className="w-10 text-right text-xs tabular-nums">{progress}%</span>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-2">
+          {item.status === "failed" ? (
+            <button type="button" className="btn btn-ghost btn-xs" onClick={() => onRetry(item.id)}>
+              <MdiRefresh className="h-4 w-4" />
+              重试
+            </button>
+          ) : null}
+          {canCancel(item.status) ? (
+            <button
+              type="button"
+              className="btn btn-ghost btn-xs text-error"
+              onClick={() => onCancel(item.id)}
+            >
+              <MdiCloseCircleOutline className="h-4 w-4" />
+              取消
+            </button>
+          ) : null}
+        </div>
+      </div>
+    </li>
+  );
+}
+
+export function UploadDetailsModal({
+  isOpen,
+  items,
+  onClose,
+  onCancel,
+  onRetry,
+  onCancelRemaining,
+}: UploadDetailsModalProps) {
+  const stats = countUploadQueueStats(items);
+
+  return (
+    <Dialog
+      isOpen={isOpen}
+      title="上传详情"
+      onClose={onClose}
+      showCancelButton={false}
+      showConfirmButton={false}
+      widthMode="content"
+      boxClassName="w-[min(52rem,95vw)]"
+      bodyClassName="max-h-[70vh] overflow-y-auto"
+    >
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3 rounded-box bg-base-200 p-3 sm:flex-row sm:items-center">
+          <div className="flex flex-1 flex-wrap gap-3 text-sm">
+            <span>共 {stats.total} 个文件</span>
+            <span>剩余 {stats.remaining}</span>
+            <span>失败 {stats.failed}</span>
+          </div>
+          <button
+            type="button"
+            className="btn btn-outline btn-error btn-sm"
+            onClick={onCancelRemaining}
+            disabled={stats.remaining === 0}
+          >
+            取消全部剩余上传
+          </button>
+        </div>
+
+        <ul className="grid gap-2">
+          {items.map((item) => (
+            <UploadItemRow key={item.id} item={item} onCancel={onCancel} onRetry={onRetry} />
+          ))}
+        </ul>
+      </div>
+    </Dialog>
+  );
+}

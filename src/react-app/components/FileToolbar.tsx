@@ -1,6 +1,9 @@
 import { useRef } from "react";
+import MdiChevronDown from "~icons/mdi/chevron-down";
+import MdiFileUpload from "~icons/mdi/file-upload";
 import MdiFilePlus from "~icons/mdi/file-plus";
 import MdiFolderPlus from "~icons/mdi/folder-plus";
+import MdiFolderUpload from "~icons/mdi/folder-upload";
 import MdiHomeOutline from "~icons/mdi/home-outline";
 import MdiMagnify from "~icons/mdi/magnify";
 import MdiRefresh from "~icons/mdi/refresh";
@@ -20,11 +23,14 @@ interface FileToolbarProps {
   isSearchPending: boolean;
   onSetPath: (path: string) => void;
   onUploadClick: () => void;
+  onUploadFolderClick: () => void;
   onCreateFolder: () => void;
   onCreateTextFile: () => void;
   onRefresh: () => void;
   onSearchChange: (q: string) => void;
   onShowDirectoryStats: () => void;
+  uploadStatusText: string | null;
+  onShowUploadDetails: () => void;
 }
 
 export function FileToolbar({
@@ -40,11 +46,14 @@ export function FileToolbar({
   isSearchPending,
   onSetPath,
   onUploadClick,
+  onUploadFolderClick,
   onCreateFolder,
   onCreateTextFile,
   onRefresh,
   onSearchChange,
   onShowDirectoryStats,
+  uploadStatusText,
+  onShowUploadDetails,
 }: FileToolbarProps) {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const isSearchExpanded = searchQuery.length > 0;
@@ -89,16 +98,60 @@ export function FileToolbar({
         >
           {fileCount} files, {formatBytes(totalBytes)}
         </button>
-        <div className="tooltip" data-tip={isUploadingFile ? "Uploading..." : "Upload File"}>
-          <button
-            type="button"
-            className={`btn btn-primary btn-square btn-sm ${isUploadingFile ? "loading" : ""}`}
-            disabled={busy}
-            onClick={onUploadClick}
-            aria-label="上传文件"
-          >
-            {!isUploadingFile && <MdiUpload className="w-5 h-5" />}
-          </button>
+        <div className="flex items-center gap-2">
+          <div className="dropdown dropdown-end">
+            <div className="join">
+              <div className="tooltip" data-tip={isUploadingFile ? "Uploading..." : "Upload File"}>
+                <button
+                  type="button"
+                  className={`btn btn-primary btn-square btn-sm join-item ${
+                    isUploadingFile ? "loading" : ""
+                  }`}
+                  disabled={busy}
+                  onClick={onUploadClick}
+                  aria-label="上传文件"
+                >
+                  {!isUploadingFile && <MdiUpload className="w-5 h-5" />}
+                </button>
+              </div>
+              <button
+                type="button"
+                tabIndex={busy ? -1 : 0}
+                className="btn btn-primary btn-square btn-sm join-item"
+                disabled={busy}
+                aria-label="选择上传类型"
+              >
+                <MdiChevronDown className="h-4 w-4" />
+              </button>
+            </div>
+            <ul
+              tabIndex={0}
+              className="menu dropdown-content z-20 mt-2 w-40 rounded-box border border-base-300 bg-base-100 p-2 text-sm shadow"
+            >
+              <li>
+                <button type="button" disabled={busy} onClick={onUploadClick}>
+                  <MdiFileUpload className="h-4 w-4" />
+                  上传文件
+                </button>
+              </li>
+              <li>
+                <button type="button" disabled={busy} onClick={onUploadFolderClick}>
+                  <MdiFolderUpload className="h-4 w-4" />
+                  上传文件夹
+                </button>
+              </li>
+            </ul>
+          </div>
+          {uploadStatusText ? (
+            <button
+              type="button"
+              className="link link-hover max-w-36 truncate text-left text-xs text-primary sm:max-w-none"
+              onClick={onShowUploadDetails}
+              title={uploadStatusText}
+            >
+              {uploadStatusText}
+            </button>
+          ) : null}
         </div>
         <div className="tooltip" data-tip="New Text File">
           <button
