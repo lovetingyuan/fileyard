@@ -54,6 +54,9 @@ export function createBetterAuthOptions(input: CreateBetterAuthOptionsInput): Be
           }
         : {}),
     },
+    rateLimit: {
+      storage: "database",
+    },
     hooks: {
       before: createAuthMiddleware(async (ctx) => {
         if (ctx.path === "/sign-up/email") {

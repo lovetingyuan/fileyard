@@ -1,6 +1,5 @@
 /// <reference types="@cloudflare/vitest-pool-workers/types" />
 
-import { env } from "cloudflare:workers";
 import { SELF } from "cloudflare:test";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import {
@@ -15,7 +14,6 @@ function createEmailAddress(): string {
 }
 
 async function seedVerifiedCredentialUser(email: string, password: string): Promise<void> {
-  const accountId = crypto.randomUUID();
   const now = Date.now();
   const user = await seedAuthUser({
     email,
@@ -52,11 +50,10 @@ describe("auth sign-in email errors", () => {
     await clearAuthTables();
   });
 
-  it("signs in successfully when the Better Auth rate_limit table is missing", async () => {
+  it("signs in successfully with the Better Auth rate limit schema", async () => {
     const email = createEmailAddress();
     const password = "Password123A";
     await seedVerifiedCredentialUser(email, password);
-    await env.AUTH_DB.prepare(`DROP TABLE IF EXISTS "rate_limit"`).run();
 
     const response = await apiFetch("/api/auth/sign-in/email", {
       method: "POST",

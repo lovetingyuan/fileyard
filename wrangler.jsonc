@@ -55,14 +55,4 @@
       "migrations_dir": "./drizzle",
     },
   ],
-  "migrations": [
-    {
-      "tag": "v1",
-      "new_sqlite_classes": ["RateLimitDO"],
-    },
-    {
-      "tag": "v2",
-      "deleted_classes": ["RateLimitDO"],
-    },
-  ],
 }
