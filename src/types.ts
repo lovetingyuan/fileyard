@@ -100,6 +100,7 @@ export interface UploadQueueItem {
 export interface CreateFolderRequest {
   parentPath: string;
   name: string;
+  ensure?: boolean;
 }
 
 export interface FileMutationResponse {

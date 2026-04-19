@@ -71,29 +71,21 @@ function UploadItemRow({
   const statusMessage = item.errorMessage ?? STATUS_LABELS[item.status];
 
   return (
-    <li className="rounded-box border border-base-300 bg-base-100 p-3">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium" title={item.displayPath}>
+    <li className="py-3 first:pt-0 last:pb-0">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-2">
+          <p
+            className="min-w-0 flex-[1_1_14rem] break-all text-sm font-medium leading-5"
+            title={item.displayPath}
+          >
             {item.displayPath}
           </p>
-          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-base-content/60">
-            <span>{formatBytes(item.size)}</span>
-            <span className={`badge badge-xs ${getStatusClassName(item.status)}`}>
-              {STATUS_LABELS[item.status]}
-            </span>
-            {item.errorMessage ? <span className="text-error">{statusMessage}</span> : null}
-          </div>
-        </div>
-
-        <div className="grid min-w-0 grid-cols-[1fr_auto] items-center gap-2 sm:w-48">
-          <progress
-            className="progress progress-primary h-2"
-            value={progress}
-            max="100"
-            aria-label={`${item.displayPath} 上传进度`}
-          />
-          <span className="w-10 text-right text-xs tabular-nums">{progress}%</span>
+          <span className="shrink-0 text-xs text-base-content/60">{formatBytes(item.size)}</span>
+          <span className="shrink-0 text-xs font-medium tabular-nums">{progress}%</span>
+          <span className={`badge badge-xs ${getStatusClassName(item.status)}`}>
+            {STATUS_LABELS[item.status]}
+          </span>
+          {item.errorMessage ? <span className="text-xs text-error">{statusMessage}</span> : null}
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
@@ -128,6 +120,8 @@ export function UploadDetailsModal({
   onCancelRemaining,
 }: UploadDetailsModalProps) {
   const stats = countUploadQueueStats(items);
+  const isUploadComplete = stats.remaining === 0;
+  const visibleItems = items.filter((item) => item.status !== "success");
 
   return (
     <Dialog
@@ -138,10 +132,10 @@ export function UploadDetailsModal({
       showConfirmButton={false}
       widthMode="content"
       boxClassName="w-[min(52rem,95vw)]"
-      bodyClassName="max-h-[70vh] overflow-y-auto"
+      bodyClassName="max-h-[70vh] overflow-hidden"
     >
       <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-3 rounded-box bg-base-200 p-3 sm:flex-row sm:items-center">
+        <div className="flex shrink-0 flex-col gap-3 rounded-box bg-base-200 p-3 sm:flex-row sm:items-center">
           <div className="flex flex-1 flex-wrap gap-3 text-sm">
             <span>共 {stats.total} 个文件</span>
             <span>剩余 {stats.remaining}</span>
@@ -149,19 +143,23 @@ export function UploadDetailsModal({
           </div>
           <button
             type="button"
-            className="btn btn-outline btn-error btn-sm"
+            className={`btn btn-outline ${isUploadComplete ? "btn-success" : "btn-error"} btn-sm`}
             onClick={onCancelRemaining}
-            disabled={stats.remaining === 0}
+            disabled={isUploadComplete}
           >
-            取消全部剩余上传
+            {isUploadComplete ? "已完成" : "取消全部剩余上传"}
           </button>
         </div>
 
-        <ul className="grid gap-2">
-          {items.map((item) => (
-            <UploadItemRow key={item.id} item={item} onCancel={onCancel} onRetry={onRetry} />
-          ))}
-        </ul>
+        <div className="relative min-h-0 max-h-[calc(70vh-7rem)]">
+          <div className="max-h-[calc(70vh-7rem)] overflow-y-auto pr-2 [scrollbar-gutter:stable]">
+            <ul className="divide-y divide-base-300">
+              {visibleItems.map((item) => (
+                <UploadItemRow key={item.id} item={item} onCancel={onCancel} onRetry={onRetry} />
+              ))}
+            </ul>
+          </div>
+        </div>
       </div>
     </Dialog>
   );

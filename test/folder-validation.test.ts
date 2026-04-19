@@ -6,4 +6,12 @@ describe("folder name validation", () => {
     expect(validateFolderName(".fileyard-folder")).toBe("This is a reserved name");
     expect(validateFolderName(".fileshare-folder")).toBe("This is a reserved name");
   });
+
+  it("allows ordinary dot-prefixed folder names", () => {
+    expect(validateFolderName(".hidden")).toBeNull();
+  });
+
+  it("rejects the reserved system profile folder name", () => {
+    expect(validateFolderName(".user")).toBe("This is a reserved name");
+  });
 });

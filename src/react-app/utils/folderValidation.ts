@@ -1,4 +1,4 @@
-const RESERVED_FOLDER_NAMES = new Set([".fileyard-folder", ".fileshare-folder"]);
+const RESERVED_FOLDER_NAMES = new Set([".fileyard-folder", ".fileshare-folder", ".user"]);
 
 function containsControlCharacters(value: string): boolean {
   for (const char of value) {
@@ -16,9 +16,6 @@ export function validateFolderName(name: string): string | null {
   }
   if (RESERVED_FOLDER_NAMES.has(name)) {
     return "This is a reserved name";
-  }
-  if (name.startsWith(".")) {
-    return 'Folder name cannot start with "."';
   }
   if (name.includes("/")) {
     return 'Folder name cannot contain "/"';

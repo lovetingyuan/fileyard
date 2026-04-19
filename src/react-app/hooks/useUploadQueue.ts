@@ -27,6 +27,8 @@ type UseUploadQueueArgs = {
 };
 
 type UploadTask = ReturnType<typeof uploadFileWithProgress>;
+type CreateFolder = (parentPath: string, name: string) => Promise<void>;
+type EnsureParentFolders = (parentPath: string, isCanceled: () => boolean) => Promise<void>;
 
 const REMAINING_STATUSES = new Set<UploadQueueStatus>(["queued", "preparing", "uploading"]);
 const FAILED_STATUSES = new Set<UploadQueueStatus>(["failed", "oversized", "duplicate"]);
@@ -53,32 +55,41 @@ async function fetchUploadLimits(): Promise<FileUploadLimitsResponse> {
 async function createFolder(parentPath: string, name: string): Promise<void> {
   await apiRequest(FILE_FOLDERS_ENDPOINT, {
     method: "POST",
-    body: JSON.stringify({ parentPath, name } satisfies CreateFolderRequest),
+    body: JSON.stringify({ parentPath, name, ensure: true } satisfies CreateFolderRequest),
   });
 }
 
-async function ensureParentFolders(parentPath: string, isCanceled: () => boolean): Promise<void> {
-  if (!parentPath) {
-    return;
-  }
+export function createFolderEnsureer(createFolderRequest: CreateFolder): EnsureParentFolders {
+  const folderCreationPromises = new Map<string, Promise<void>>();
 
-  const segments = parentPath.split("/");
-  let path = "";
-  for (const name of segments) {
-    if (isCanceled()) {
-      throw new UploadCanceledError();
+  return async function ensureParentFolders(parentPath, isCanceled) {
+    if (!parentPath) {
+      return;
     }
 
-    try {
-      await createFolder(path, name);
-    } catch (error) {
-      if (!isFolderAlreadyExistsError(error)) {
-        throw error;
+    const segments = parentPath.split("/");
+    let path = "";
+    for (const name of segments) {
+      if (isCanceled()) {
+        throw new UploadCanceledError();
       }
-    }
 
-    path = path ? `${path}/${name}` : name;
-  }
+      const folderPath = path ? `${path}/${name}` : name;
+      let creationPromise = folderCreationPromises.get(folderPath);
+      if (!creationPromise) {
+        creationPromise = createFolderRequest(path, name).catch((error: unknown) => {
+          if (!isFolderAlreadyExistsError(error)) {
+            folderCreationPromises.delete(folderPath);
+            throw error;
+          }
+        });
+        folderCreationPromises.set(folderPath, creationPromise);
+      }
+
+      await creationPromise;
+      path = folderPath;
+    }
+  };
 }
 
 export function updateUploadQueueItem(
@@ -131,6 +142,7 @@ export function useUploadQueue({ currentPath, onUploadsComplete }: UseUploadQueu
   const itemsRef = useRef<UploadQueueItem[]>([]);
   const activeIdsRef = useRef(new Set<string>());
   const uploadTasksRef = useRef(new Map<string, UploadTask>());
+  const ensureParentFoldersRef = useRef(createFolderEnsureer(createFolder));
   const uploadedSinceIdleRef = useRef(false);
 
   const setItems = useCallback((updater: (items: UploadQueueItem[]) => UploadQueueItem[]) => {
@@ -172,7 +184,7 @@ export function useUploadQueue({ currentPath, onUploadsComplete }: UseUploadQueu
       );
 
       try {
-        await ensureParentFolders(item.parentPath, () => isItemCanceled(item.id));
+        await ensureParentFoldersRef.current(item.parentPath, () => isItemCanceled(item.id));
         if (isItemCanceled(item.id)) {
           return;
         }
@@ -269,6 +281,7 @@ export function useUploadQueue({ currentPath, onUploadsComplete }: UseUploadQueu
 
       setItems(() => nextItems);
       itemsRef.current = nextItems;
+      ensureParentFoldersRef.current = createFolderEnsureer(createFolder);
       uploadedSinceIdleRef.current = false;
       processQueueRef.current();
     },

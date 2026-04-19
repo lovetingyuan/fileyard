@@ -255,7 +255,23 @@ describe("authenticated R2 file manager", () => {
       },
       firstCookie,
     );
-    expect(hiddenFolderResponse.status).toBe(400);
+    expect(hiddenFolderResponse.status).toBe(201);
+
+    const systemFolderResponse = await apiFetch(
+      "/api/files/folders",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: ".user",
+          parentPath: "",
+        }),
+      },
+      firstCookie,
+    );
+    expect(systemFolderResponse.status).toBe(403);
 
     const createFolderResponse = await apiFetch(
       "/api/files/folders",

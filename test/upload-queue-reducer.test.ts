@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { UploadQueueItem } from "../src/types";
 import {
+  createFolderEnsureer,
   countUploadQueueStats,
   getUploadQueueSummary,
   resetFailedUploadItem,
@@ -71,5 +72,25 @@ describe("upload queue reducer helpers", () => {
       errorMessage: null,
     });
     expect(resetFailedUploadItem(item("b", "duplicate")).status).toBe("duplicate");
+  });
+
+  it("deduplicates folder creation requests across a batch", async () => {
+    const calls: Array<{ parentPath: string; name: string }> = [];
+    const ensureParentFolders = createFolderEnsureer(async (parentPath, name) => {
+      calls.push({ parentPath, name });
+    });
+
+    await Promise.all([
+      ensureParentFolders("albums/Photos/2026", () => false),
+      ensureParentFolders("albums/Photos/2026", () => false),
+      ensureParentFolders("albums/Photos/raw", () => false),
+    ]);
+
+    expect(calls).toEqual([
+      { parentPath: "", name: "albums" },
+      { parentPath: "albums", name: "Photos" },
+      { parentPath: "albums/Photos", name: "2026" },
+      { parentPath: "albums/Photos", name: "raw" },
+    ]);
   });
 });

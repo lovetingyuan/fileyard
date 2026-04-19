@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { AppContext } from "../context";
 import type {
+  CreateFolderRequest,
   DirectoryStatsResponse,
   FileListResponse,
   FileMutationResponse,
@@ -69,12 +70,6 @@ function resolveFileCreatedAt(object: Pick<R2Object, "uploaded" | "customMetadat
 function assertPathNotReserved(path: string): void {
   if (isReservedSystemPath(path)) {
     throw new FilePathValidationError("Path uses a reserved system directory", 403);
-  }
-}
-
-function assertFolderNameAllowed(name: string): void {
-  if (name.startsWith(".")) {
-    throw new FilePathValidationError('Folder name cannot start with "."');
   }
 }
 
@@ -243,15 +238,16 @@ files.get("/api/files/stats", async (c) => {
 
 files.post("/api/files/folders", async (c) => {
   try {
-    const body = await c.req.json<{ parentPath?: string; name?: string }>();
+    const body = await c.req.json<CreateFolderRequest>();
     const parentPath = normalizeRelativePath(body.parentPath, {
       allowEmpty: true,
       label: "Parent path",
     });
     assertPathNotReserved(parentPath);
     const name = normalizeName(body.name, "Folder name");
-    assertFolderNameAllowed(name);
+    const ensureOnly = body.ensure === true;
     const folderPath = joinRelativePath(parentPath, name);
+    assertPathNotReserved(folderPath);
     const { rootDirId } = await getFileContext(c);
 
     if (!(await folderExists(c.env, rootDirId, parentPath))) {
@@ -264,6 +260,13 @@ files.post("/api/files/folders", async (c) => {
     }
 
     if (await folderExists(c.env, rootDirId, folderPath)) {
+      if (ensureOnly) {
+        const response: FileMutationResponse = {
+          success: true,
+          message: "Folder already exists",
+        };
+        return c.json(response);
+      }
       return jsonError(c, "A folder with this name already exists", 409);
     }
 
@@ -275,6 +278,13 @@ files.post("/api/files/folders", async (c) => {
     });
 
     if (!putResult) {
+      if (ensureOnly && (await folderExists(c.env, rootDirId, folderPath))) {
+        const response: FileMutationResponse = {
+          success: true,
+          message: "Folder already exists",
+        };
+        return c.json(response);
+      }
       return jsonError(c, "A folder with this name already exists", 409);
     }
 
