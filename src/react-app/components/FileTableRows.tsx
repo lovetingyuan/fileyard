@@ -120,7 +120,7 @@ export function FolderRow({
           {isOptimistic && <span className="loading loading-spinner loading-xs shrink-0"></span>}
           <button
             type="button"
-            className="block min-w-0 truncate text-left font-medium link link-hover"
+            className="block min-w-0 truncate text-left font-bold link link-hover"
             onClick={() => onNavigate(folder.path)}
           >
             {folder.name}
