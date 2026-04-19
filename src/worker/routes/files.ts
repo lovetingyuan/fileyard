@@ -1,6 +1,11 @@
 import { Hono } from "hono";
 import type { AppContext } from "../context";
-import type { DirectoryStatsResponse, FileListResponse, FileMutationResponse } from "../../types";
+import type {
+  DirectoryStatsResponse,
+  FileListResponse,
+  FileMutationResponse,
+  FileUploadLimitsResponse,
+} from "../../types";
 import {
   FilePathValidationError,
   SYSTEM_PROFILE_FOLDER_NAME,
@@ -25,6 +30,7 @@ import {
 import { UploadTooLargeError, handlePathValidationError, jsonError } from "../utils/response";
 
 const files = new Hono<AppContext>();
+const MAX_BATCH_UPLOAD_BYTES = 1024 * 1024 * 1024;
 
 async function getFolderCreatedAt(
   bucket: R2Bucket,
@@ -71,6 +77,16 @@ function assertFolderNameAllowed(name: string): void {
     throw new FilePathValidationError('Folder name cannot start with "."');
   }
 }
+
+files.get("/api/files/upload-limits", (c) => {
+  const response: FileUploadLimitsResponse = {
+    success: true,
+    maxFileBytes: getUploadLimitBytes(c.env),
+    maxBatchBytes: MAX_BATCH_UPLOAD_BYTES,
+  };
+
+  return c.json(response);
+});
 
 files.get("/api/files", async (c) => {
   try {

@@ -3,7 +3,7 @@
 import { env } from "cloudflare:workers";
 import { runInDurableObject, SELF } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
-import type { FileListResponse, ProfileResponse } from "../src/types";
+import type { FileListResponse, FileUploadLimitsResponse, ProfileResponse } from "../src/types";
 import { generateSalt, hashPassword } from "../src/worker/utils/password";
 
 const TINY_PNG_BYTES = new Uint8Array([
@@ -110,6 +110,20 @@ describe("authenticated R2 file manager", () => {
     expect(response.status).toBe(200);
     expect(payload.success).toBe(true);
     expect(updatedUser?.rootDirId).toMatch(/^[a-f0-9]{32}$/);
+  });
+
+  it("returns upload size limits for authenticated users", async () => {
+    const { email } = await createVerifiedUser();
+    const cookie = await createSessionCookie(email);
+    const response = await apiFetch("/api/files/upload-limits", {}, cookie);
+    const payload = (await response.json()) as FileUploadLimitsResponse;
+
+    expect(response.status).toBe(200);
+    expect(payload).toEqual({
+      success: true,
+      maxFileBytes: Number.parseInt(env.MAX_UPLOAD_BYTES, 10),
+      maxBatchBytes: 1024 * 1024 * 1024,
+    });
   });
 
   it("creates folders with the fileyard marker and supports file upload, list, download, and delete", async () => {

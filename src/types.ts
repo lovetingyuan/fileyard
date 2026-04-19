@@ -68,6 +68,35 @@ export interface DirectoryStatsResponse {
   totalBytes: number;
 }
 
+export interface FileUploadLimitsResponse {
+  success: true;
+  maxFileBytes: number;
+  maxBatchBytes: number;
+}
+
+export type UploadQueueStatus =
+  | "queued"
+  | "preparing"
+  | "uploading"
+  | "success"
+  | "failed"
+  | "canceled"
+  | "oversized"
+  | "duplicate";
+
+export interface UploadQueueItem {
+  id: string;
+  file: File;
+  displayPath: string;
+  targetPath: string;
+  parentPath: string;
+  name: string;
+  size: number;
+  progress: number;
+  status: UploadQueueStatus;
+  errorMessage: string | null;
+}
+
 export interface CreateFolderRequest {
   parentPath: string;
   name: string;

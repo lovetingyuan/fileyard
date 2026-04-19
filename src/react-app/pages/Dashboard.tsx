@@ -17,6 +17,7 @@ import {
   useUploadFileMutation,
   useUpdateFileMutation,
 } from "../hooks/useFilesApi";
+import { useUploadQueue } from "../hooks/useUploadQueue";
 import { useUploadUnloadProtection } from "../hooks/useUploadUnloadProtection";
 import { FileToolbar } from "../components/FileToolbar";
 import { DeleteConfirmModal } from "../components/DeleteConfirmModal";
@@ -26,6 +27,7 @@ import { FileRow, FolderRow, NewFolderRow } from "../components/FileTableRows";
 import { PreviewModal } from "../components/PreviewModal";
 import { NewTextFileModal } from "../components/NewTextFileModal";
 import { ShareFileModal } from "../components/ShareFileModal";
+import { UploadDetailsModal } from "../components/UploadDetailsModal";
 import { getDownloadFilename } from "../utils/fileFormatters";
 import { validateFolderName } from "../utils/folderValidation";
 import type { DirectoryStatsResponse, FileEntry, SortKey, SortOrder } from "../../types";
@@ -56,6 +58,7 @@ async function runWithLargeFileUploadToast<T>(file: File, action: () => Promise<
 export function Dashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const folderInputRef = useRef<HTMLInputElement | null>(null);
   const newFolderInputRef = useRef<HTMLInputElement | null>(null);
   const [isCreatingNewFolder, setIsCreatingNewFolder] = useState(false);
   const [newFolderDefaultName, setNewFolderDefaultName] = useState("");
@@ -88,10 +91,15 @@ export function Dashboard() {
     removeOptimisticFolder,
   } = useFileListWithOptimistic(currentPath, sort, order);
   const { createFolder, isMutating: isCreatingFolder } = useCreateFolderMutation();
-  const { uploadFile, isMutating: isUploadingFile } = useUploadFileMutation();
+  const { uploadFile, isMutating: isUploadingTextFile } = useUploadFileMutation();
   const { updateFile } = useUpdateFileMutation();
   const { deleteFile, isMutating: isDeletingFile } = useDeleteFileMutation();
   const { deleteFolder, isMutating: isDeletingFolder } = useDeleteFolderMutation();
+  const uploadQueue = useUploadQueue({
+    currentPath,
+    onUploadsComplete: refresh,
+  });
+  const isUploadingFile = isUploadingTextFile || uploadQueue.isUploading;
   useUploadUnloadProtection(isUploadingFile);
 
   const busy =
@@ -211,6 +219,14 @@ export function Dashboard() {
     }
   }, []);
 
+  const folderInputCallbackRef = useCallback((node: HTMLInputElement | null) => {
+    folderInputRef.current = node;
+    if (node) {
+      node.setAttribute("webkitdirectory", "");
+      node.setAttribute("directory", "");
+    }
+  }, []);
+
   const handleStartCreateFolder = () => {
     setNewFolderDefaultName(getUniqueFolderName("新建文件夹"));
     setIsCreatingNewFolder(true);
@@ -249,21 +265,13 @@ export function Dashboard() {
     }
   };
 
-  const handleUploadSelection = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const handleUploadSelection = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
     event.target.value = "";
-    if (!file) {
+    if (files.length === 0) {
       return;
     }
-    try {
-      await runWithLargeFileUploadToast(file, async () => {
-        await uploadFile(file, currentPath);
-        await refresh();
-      });
-      toast.success(`"${file.name}" uploaded`);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to upload file");
-    }
+    void uploadQueue.enqueueUploadFiles(files);
   };
 
   const handleDeleteFile = async (path: string, name: string) => {
@@ -407,10 +415,27 @@ export function Dashboard() {
         onClose={() => setIsNewTextFileModalOpen(false)}
         onSave={handleSaveTextFile}
       />
+      <UploadDetailsModal
+        isOpen={uploadQueue.isDetailsOpen}
+        items={uploadQueue.items}
+        onClose={uploadQueue.closeDetails}
+        onCancel={uploadQueue.cancelUpload}
+        onRetry={uploadQueue.retryUpload}
+        onCancelRemaining={uploadQueue.cancelRemainingUploads}
+      />
       <input
         ref={fileInputRef}
         type="file"
         className="hidden"
+        multiple
+        onChange={handleUploadSelection}
+        disabled={busy}
+      />
+      <input
+        ref={folderInputCallbackRef}
+        type="file"
+        className="hidden"
+        multiple
         onChange={handleUploadSelection}
         disabled={busy}
       />
@@ -430,11 +455,14 @@ export function Dashboard() {
               isSearchPending={isSearchPending}
               onSetPath={setPath}
               onUploadClick={() => fileInputRef.current?.click()}
+              onUploadFolderClick={() => folderInputRef.current?.click()}
               onCreateFolder={handleStartCreateFolder}
               onCreateTextFile={() => setIsNewTextFileModalOpen(true)}
               onRefresh={() => refresh()}
               onSearchChange={handleSearchChange}
               onShowDirectoryStats={() => void handleShowDirectoryStats()}
+              uploadStatusText={uploadQueue.summaryText}
+              onShowUploadDetails={uploadQueue.showDetails}
             />
 
             {error ? (
