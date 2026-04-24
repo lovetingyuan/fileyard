@@ -1,9 +1,14 @@
-import { describe, expect, it, vi } from "vitest";
-import {
-  createUploadUnloadProtection,
-  UPLOAD_UNLOAD_TOAST_ID,
-  UPLOAD_UNLOAD_TOAST_MESSAGE,
-} from "../src/react-app/hooks/useUploadUnloadProtection";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { createUploadUnloadProtection } from "../src/react-app/hooks/useUploadUnloadProtection";
+
+const toastMock = vi.hoisted(() => ({
+  dismiss: vi.fn(),
+  loading: vi.fn(),
+}));
+
+vi.mock("react-hot-toast", () => ({
+  default: toastMock,
+}));
 
 class FakeBeforeUnloadTarget {
   listener: ((event: BeforeUnloadEvent) => void) | null = null;
@@ -26,21 +31,21 @@ class FakeBeforeUnloadTarget {
 }
 
 describe("upload unload protection", () => {
-  it("registers beforeunload and shows a warning toast while upload is active", () => {
+  beforeEach(() => {
+    toastMock.dismiss.mockClear();
+    toastMock.loading.mockClear();
+  });
+
+  it("registers beforeunload without showing an in-page warning toast while upload is active", () => {
     const target = new FakeBeforeUnloadTarget();
-    const loading = vi.fn();
-    const dismiss = vi.fn();
     const protection = createUploadUnloadProtection({
       target,
-      toaster: { loading, dismiss },
     });
 
     protection.start();
 
     expect(target.addEventListener).toHaveBeenCalledWith("beforeunload", expect.any(Function));
-    expect(loading).toHaveBeenCalledWith(UPLOAD_UNLOAD_TOAST_MESSAGE, {
-      id: UPLOAD_UNLOAD_TOAST_ID,
-    });
+    expect(toastMock.loading).not.toHaveBeenCalled();
 
     const event = {
       preventDefault: vi.fn(),
@@ -53,13 +58,10 @@ describe("upload unload protection", () => {
     expect(event.returnValue).toBe("");
   });
 
-  it("removes the guard and dismisses the toast when upload finishes", () => {
+  it("removes the guard without touching toast state when upload finishes", () => {
     const target = new FakeBeforeUnloadTarget();
-    const loading = vi.fn();
-    const dismiss = vi.fn();
     const protection = createUploadUnloadProtection({
       target,
-      toaster: { loading, dismiss },
     });
 
     protection.start();
@@ -69,7 +71,8 @@ describe("upload unload protection", () => {
       "beforeunload",
       expect.any(Function),
     );
-    expect(dismiss).toHaveBeenCalledWith(UPLOAD_UNLOAD_TOAST_ID);
+    expect(toastMock.loading).not.toHaveBeenCalled();
+    expect(toastMock.dismiss).not.toHaveBeenCalled();
     expect(target.listener).toBeNull();
   });
 });

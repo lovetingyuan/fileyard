@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  EMPTY_FOLDER_UPLOAD_MESSAGE,
   FILE_UPLOAD_BATCH_LIMIT_BYTES,
+  getUploadSelectionValidationMessage,
   createUploadQueueItems,
 } from "../src/react-app/utils/uploadSelection";
 
@@ -14,6 +16,11 @@ function makeFile(name: string, size: number, relativePath = ""): File {
 }
 
 describe("upload selection", () => {
+  it("rejects empty folder selections while leaving empty file selections silent", () => {
+    expect(getUploadSelectionValidationMessage([], "folder")).toBe(EMPTY_FOLDER_UPLOAD_MESSAGE);
+    expect(getUploadSelectionValidationMessage([], "file")).toBeNull();
+  });
+
   it("creates queued upload items for multiple files in the current folder", () => {
     const items = createUploadQueueItems({
       files: [makeFile("a.txt", 10), makeFile("b.txt", 20)],

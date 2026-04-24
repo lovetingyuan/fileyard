@@ -30,6 +30,7 @@ import { ShareFileModal } from "../components/ShareFileModal";
 import { UploadDetailsModal } from "../components/UploadDetailsModal";
 import { getDownloadFilename } from "../utils/fileFormatters";
 import { validateFolderName } from "../utils/folderValidation";
+import { getUploadSelectionValidationMessage } from "../utils/uploadSelection";
 import type { DirectoryStatsResponse, FileEntry, SortKey, SortOrder } from "../../types";
 
 type DeleteTarget = {
@@ -265,9 +266,17 @@ export function Dashboard() {
     }
   };
 
-  const handleUploadSelection = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUploadSelection = (
+    event: React.ChangeEvent<HTMLInputElement>,
+    source: "file" | "folder",
+  ) => {
     const files = Array.from(event.target.files ?? []);
     event.target.value = "";
+    const validationMessage = getUploadSelectionValidationMessage(files, source);
+    if (validationMessage) {
+      toast.error(validationMessage);
+      return;
+    }
     if (files.length === 0) {
       return;
     }
@@ -428,7 +437,7 @@ export function Dashboard() {
         type="file"
         className="hidden"
         multiple
-        onChange={handleUploadSelection}
+        onChange={(event) => handleUploadSelection(event, "file")}
         disabled={busy}
       />
       <input
@@ -436,7 +445,7 @@ export function Dashboard() {
         type="file"
         className="hidden"
         multiple
-        onChange={handleUploadSelection}
+        onChange={(event) => handleUploadSelection(event, "folder")}
         disabled={busy}
       />
       <main className="mx-auto flex w-[96%] max-w-300 flex-1 flex-col gap-4 py-6 md:w-[90%]">

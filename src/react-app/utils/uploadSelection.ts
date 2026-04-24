@@ -1,6 +1,9 @@
 import type { UploadQueueItem, UploadQueueStatus } from "../../types";
 
 export const FILE_UPLOAD_BATCH_LIMIT_BYTES = 1024 * 1024 * 1024;
+export const EMPTY_FOLDER_UPLOAD_MESSAGE = "不允许上传空文件夹";
+
+export type UploadSelectionSource = "file" | "folder";
 
 type CreateUploadQueueItemsArgs = {
   files: Iterable<File>;
@@ -55,6 +58,16 @@ function createItem(
     status,
     errorMessage,
   };
+}
+
+export function getUploadSelectionValidationMessage(
+  files: FileList | File[],
+  source: UploadSelectionSource,
+): string | null {
+  if (source === "folder" && files.length === 0) {
+    return EMPTY_FOLDER_UPLOAD_MESSAGE;
+  }
+  return null;
 }
 
 export function createUploadQueueItems({
