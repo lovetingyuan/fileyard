@@ -35,8 +35,7 @@ describe("upload selection", () => {
       files: [makeFile("a.txt", 10), makeFile("b.txt", 20)],
       currentPath: "docs",
       maxFileBytes: 100,
-      maxFilesPerUpload: 50,
-      remainingBytes: FILE_UPLOAD_BATCH_LIMIT_BYTES,
+      maxBatchBytes: FILE_UPLOAD_BATCH_LIMIT_BYTES,
     });
 
     expect(items).toMatchObject([
@@ -71,8 +70,7 @@ describe("upload selection", () => {
       ],
       currentPath: "albums",
       maxFileBytes: 100,
-      maxFilesPerUpload: 50,
-      remainingBytes: FILE_UPLOAD_BATCH_LIMIT_BYTES,
+      maxBatchBytes: FILE_UPLOAD_BATCH_LIMIT_BYTES,
     });
 
     expect(items.map((item) => item.targetPath)).toEqual([
@@ -82,17 +80,16 @@ describe("upload selection", () => {
     expect(items[1]?.parentPath).toBe("albums/Photos/2026");
   });
 
-  it("marks every file oversized when the batch exceeds the remaining total storage limit", () => {
+  it("marks only files that overflow the batch limit while keeping fitting files queued", () => {
     const items = createUploadQueueItems({
-      files: [makeFile("a.bin", 70), makeFile("b.bin", 40)],
+      files: [makeFile("a.bin", 70), makeFile("b.bin", 40), makeFile("c.bin", 20)],
       currentPath: "",
       maxFileBytes: 100,
-      maxFilesPerUpload: 50,
-      remainingBytes: 100,
+      maxBatchBytes: 100,
     });
 
-    expect(items.map((item) => item.status)).toEqual(["oversized", "oversized"]);
-    expect(items.every((item) => item.errorMessage?.includes("剩余容量"))).toBe(true);
+    expect(items.map((item) => item.status)).toEqual(["queued", "oversized", "queued"]);
+    expect(items[1]?.errorMessage).toContain("本次选择");
   });
 
   it("marks only files over the single file limit when the batch fits", () => {
@@ -100,8 +97,7 @@ describe("upload selection", () => {
       files: [makeFile("small.bin", 10), makeFile("large.bin", 101)],
       currentPath: "",
       maxFileBytes: 100,
-      maxFilesPerUpload: 50,
-      remainingBytes: 200,
+      maxBatchBytes: 200,
     });
 
     expect(items.map((item) => item.status)).toEqual(["queued", "oversized"]);
@@ -113,24 +109,22 @@ describe("upload selection", () => {
       files: [makeFile("same.txt", 10), makeFile("same.txt", 20)],
       currentPath: "",
       maxFileBytes: 100,
-      maxFilesPerUpload: 50,
-      remainingBytes: FILE_UPLOAD_BATCH_LIMIT_BYTES,
+      maxBatchBytes: FILE_UPLOAD_BATCH_LIMIT_BYTES,
     });
 
     expect(items.map((item) => item.status)).toEqual(["duplicate", "duplicate"]);
     expect(items.every((item) => item.errorMessage?.includes("重复"))).toBe(true);
   });
 
-  it("marks every file oversized when the selection exceeds the file count limit", () => {
+  it("does not count individually oversized files against the batch limit", () => {
     const items = createUploadQueueItems({
-      files: [makeFile("a.txt", 10), makeFile("b.txt", 20), makeFile("c.txt", 30)],
+      files: [makeFile("small.bin", 10), makeFile("large.bin", 101), makeFile("tiny.bin", 20)],
       currentPath: "",
       maxFileBytes: 100,
-      maxFilesPerUpload: 2,
-      remainingBytes: FILE_UPLOAD_BATCH_LIMIT_BYTES,
+      maxBatchBytes: 50,
     });
 
-    expect(items.map((item) => item.status)).toEqual(["oversized", "oversized", "oversized"]);
-    expect(items.every((item) => item.errorMessage?.includes("文件数量"))).toBe(true);
+    expect(items.map((item) => item.status)).toEqual(["queued", "oversized", "queued"]);
+    expect(items[1]?.errorMessage).toContain("单个文件");
   });
 });

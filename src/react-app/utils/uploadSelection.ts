@@ -67,6 +67,16 @@ export function getUploadSelectionValidationMessage(
   if (source === "folder" && files.length === 0) {
     return EMPTY_FOLDER_UPLOAD_MESSAGE;
   }
+  if (source === "folder") {
+    const rootNames = new Set(
+      [...files]
+        .map((file) => normalizeSlashes(file.webkitRelativePath).split("/")[0])
+        .filter(Boolean),
+    );
+    if (rootNames.size > 1) {
+      return "一次只能上传一个文件夹";
+    }
+  }
   return null;
 }
 
@@ -77,13 +87,12 @@ export function createUploadQueueItems({
   maxBatchBytes,
 }: CreateUploadQueueItemsArgs): UploadQueueItem[] {
   const selectedFiles = [...files];
-  const totalBytes = selectedFiles.reduce((sum, file) => sum + file.size, 0);
-  const batchIsOversized = totalBytes > maxBatchBytes;
   const targetPaths = selectedFiles.map((file) => {
     const relativePath = normalizeSlashes(file.webkitRelativePath || file.name);
     return joinUploadPath(currentPath, relativePath || file.name);
   });
   const pathCounts = new Map<string, number>();
+  let queuedBytes = 0;
 
   for (const targetPath of targetPaths) {
     pathCounts.set(targetPath, (pathCounts.get(targetPath) ?? 0) + 1);
@@ -91,15 +100,16 @@ export function createUploadQueueItems({
 
   return selectedFiles.map((file, index) => {
     const targetPath = targetPaths[index] ?? joinUploadPath(currentPath, file.name);
-    if (batchIsOversized) {
-      return createItem(file, targetPath, "oversized", "本次选择总大小超过 1GB 限制");
-    }
     if (file.size > maxFileBytes) {
       return createItem(file, targetPath, "oversized", "单个文件大小超过限制");
     }
     if ((pathCounts.get(targetPath) ?? 0) > 1) {
       return createItem(file, targetPath, "duplicate", "本次选择中存在重复路径");
     }
+    if (queuedBytes + file.size > maxBatchBytes) {
+      return createItem(file, targetPath, "oversized", "本次选择总大小超过 1GB 限制");
+    }
+    queuedBytes += file.size;
     return createItem(file, targetPath, "queued", null);
   });
 }
