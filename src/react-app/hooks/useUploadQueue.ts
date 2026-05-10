@@ -111,6 +111,13 @@ export function updateUploadQueueItem(
   return items.map((item) => (item.id === id ? { ...item, ...patch } : item));
 }
 
+export function appendUploadQueueItems(
+  items: UploadQueueItem[],
+  nextItems: UploadQueueItem[],
+): UploadQueueItem[] {
+  return [...items, ...nextItems];
+}
+
 export function resetFailedUploadItem(item: UploadQueueItem): UploadQueueItem {
   if (item.status !== "failed") {
     return item;
@@ -414,10 +421,8 @@ export function useUploadQueue({ currentPath, onUploadsComplete }: UseUploadQueu
         maxBatchBytes: limits.maxBatchBytes,
       });
 
-      setItems(() => nextItems);
-      itemsRef.current = nextItems;
+      setItems((currentItems) => appendUploadQueueItems(currentItems, nextItems));
       setIsPanelMinimized(false);
-      ensureParentFoldersRef.current = createFolderEnsureer(createFolder);
       uploadedSinceIdleRef.current = false;
       processQueueRef.current();
     },

@@ -103,7 +103,6 @@ export function Dashboard() {
     onUploadsComplete: refresh,
   });
   const isFileUploadInProgress = isUploadingTextFile || uploadQueue.isUploading;
-  const isUploadSelectionDisabled = uploadQueue.isUploading;
   useUploadUnloadProtection(isFileUploadInProgress);
 
   const fuzzyMatch = (name: string, query: string) => {
@@ -456,14 +455,12 @@ export function Dashboard() {
         className="hidden"
         multiple
         onChange={(event) => handleUploadSelection(event, "file")}
-        disabled={isUploadSelectionDisabled}
       />
       <input
         ref={folderInputCallbackRef}
         type="file"
         className="hidden"
         onChange={(event) => handleUploadSelection(event, "folder")}
-        disabled={isUploadSelectionDisabled}
       />
       <main className="mx-auto flex w-[96%] max-w-300 flex-1 flex-col gap-4 py-6 md:w-[90%]">
         <section className="card bg-base-100 shadow-sm">
@@ -472,7 +469,7 @@ export function Dashboard() {
               breadcrumbs={breadcrumbs}
               fileCount={filteredFiles.length}
               totalBytes={totalBytes}
-              isUploadDisabled={isUploadSelectionDisabled}
+              isUploadDisabled={false}
               isCreateTextFileDisabled={isUploadingTextFile}
               isCreateFolderDisabled={isCreatingFolder}
               isRefreshDisabled={isRefreshing}

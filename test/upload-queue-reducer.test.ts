@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { UploadQueueItem } from "../src/types";
 import {
   createFolderEnsureer,
+  appendUploadQueueItems,
   countUploadQueueStats,
   getActiveUploadItemsInFolder,
   getUploadQueuePanelState,
@@ -69,6 +70,18 @@ describe("upload queue reducer helpers", () => {
 
     expect(next[0]).toBe(queue[0]);
     expect(next[1]).toMatchObject({ id: "b", status: "uploading", progress: 50 });
+  });
+
+  it("appends newly selected uploads without replacing active queue items", () => {
+    const activeItems = [item("a", "uploading"), item("b", "queued")];
+    const newItems = [item("c", "queued")];
+
+    const next = appendUploadQueueItems(activeItems, newItems);
+
+    expect(next.map((queueItem) => queueItem.id)).toEqual(["a", "b", "c"]);
+    expect(next[0]).toBe(activeItems[0]);
+    expect(next[1]).toBe(activeItems[1]);
+    expect(next[2]).toBe(newItems[0]);
   });
 
   it("resets only failed items for retry", () => {

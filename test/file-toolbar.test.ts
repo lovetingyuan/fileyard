@@ -11,7 +11,13 @@ vi.mock("~icons/mdi/home-outline", () => ({ default: () => null }));
 vi.mock("~icons/mdi/magnify", () => ({ default: () => null }));
 vi.mock("~icons/mdi/refresh", () => ({ default: () => null }));
 
-function renderToolbar(isUploadDisabled = false): string {
+function renderToolbar({
+  isUploadDisabled = false,
+  isUploadingFile = false,
+}: {
+  isUploadDisabled?: boolean;
+  isUploadingFile?: boolean;
+} = {}): string {
   return renderToStaticMarkup(
     createElement(FileToolbar, {
       breadcrumbs: [],
@@ -21,7 +27,7 @@ function renderToolbar(isUploadDisabled = false): string {
       isCreateTextFileDisabled: false,
       isCreateFolderDisabled: false,
       isRefreshDisabled: false,
-      isUploadingFile: false,
+      isUploadingFile,
       isCreatingFolder: false,
       isRefreshing: false,
       isCreatingNewFolder: false,
@@ -43,20 +49,17 @@ function hasButton(markup: string, ariaLabel: string): boolean {
   return markup.includes(`aria-label="${ariaLabel}"`);
 }
 
-function hasDisabledButton(markup: string, ariaLabel: string): boolean {
+function getButtonTag(markup: string, ariaLabel: string): string {
   const escapedLabel = ariaLabel.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return new RegExp(
-    `<button(?=[^>]*aria-label="${escapedLabel}")(?=[^>]*disabled)[^>]*>`,
-  ).test(markup);
+  return new RegExp(`<button(?=[^>]*aria-label="${escapedLabel}")[^>]*>`).exec(markup)?.[0] ?? "";
+}
+
+function hasDisabledButton(markup: string, ariaLabel: string): boolean {
+  return /\sdisabled(?:=""|="disabled")?(?=[\s>])/.test(getButtonTag(markup, ariaLabel));
 }
 
 function getButtonClass(markup: string, ariaLabel: string): string {
-  const escapedLabel = ariaLabel.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return (
-    new RegExp(`<button(?=[^>]*aria-label="${escapedLabel}")[^>]*class="([^"]+)"`).exec(
-      markup,
-    )?.[1] ?? ""
-  );
+  return /class="([^"]+)"/.exec(getButtonTag(markup, ariaLabel))?.[1] ?? "";
 }
 
 describe("file toolbar", () => {
@@ -69,7 +72,7 @@ describe("file toolbar", () => {
   });
 
   it("disables both upload buttons when upload is disabled", () => {
-    const markup = renderToolbar(true);
+    const markup = renderToolbar({ isUploadDisabled: true });
 
     expect(hasDisabledButton(markup, "上传文件")).toBe(true);
     expect(hasDisabledButton(markup, "上传文件夹")).toBe(true);
@@ -84,5 +87,14 @@ describe("file toolbar", () => {
     expect(fileUploadClass).toContain("bg-emerald-500");
     expect(folderUploadClass).toContain("bg-green-500");
     expect(fileUploadClass).not.toBe(folderUploadClass);
+  });
+
+  it("keeps the upload file button visually idle while files are uploading", () => {
+    const markup = renderToolbar({ isUploadingFile: true });
+
+    const fileUploadClass = getButtonClass(markup, "上传文件");
+
+    expect(fileUploadClass).not.toContain("loading");
+    expect(hasDisabledButton(markup, "上传文件")).toBe(false);
   });
 });

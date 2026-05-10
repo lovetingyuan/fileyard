@@ -99,15 +99,15 @@ export function FileToolbar({
           {fileCount} files, {formatBytes(totalBytes)}
         </button>
         <div className="flex items-center gap-2">
-          <div className="tooltip" data-tip={isUploadingFile ? "上传中..." : "上传文件"}>
+          <div className="tooltip" data-tip={isUploadingFile ? "继续添加上传文件" : "上传文件"}>
             <button
               type="button"
-              className={`btn btn-square btn-sm border-emerald-500 bg-emerald-500 text-white hover:border-emerald-600 hover:bg-emerald-600 focus-visible:outline-emerald-500 disabled:border-emerald-300 disabled:bg-emerald-300 ${isUploadingFile ? "loading" : ""}`}
+              className="btn btn-square btn-sm border-emerald-500 bg-emerald-500 text-white hover:border-emerald-600 hover:bg-emerald-600 focus-visible:outline-emerald-500 disabled:border-emerald-300 disabled:bg-emerald-300"
               disabled={isUploadDisabled}
               onClick={onUploadClick}
               aria-label="上传文件"
             >
-              {!isUploadingFile && <MdiFileUpload className="w-5 h-5" />}
+              <MdiFileUpload className="w-5 h-5" />
             </button>
           </div>
           <div className="tooltip" data-tip="上传文件夹">
