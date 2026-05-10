@@ -15,14 +15,13 @@
     // Set to your production domain before deploying if you need a fixed origin.
     // When empty, auth and share links fall back to the incoming request origin.
     "APP_URL": "",
-    "MAX_UPLOAD_BYTES": "104857600",
+    "MAX_UPLOAD_BYTES": "1073741824",
     "SENDER_EMAIL": "Fileyard <fileyard@tingyuan.in>",
   },
   "kv_namespaces": [
     {
       "binding": "FILE_YARD_KV",
       "id": "d27e0ee9d2574d0a9929024ffd5118a3",
-      "remote": true,
     },
   ],
   "secrets": {

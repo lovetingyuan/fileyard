@@ -72,6 +72,38 @@ export interface FileUploadLimitsResponse {
   success: true;
   maxFileBytes: number;
   maxBatchBytes: number;
+  multipartPartBytes: number;
+}
+
+export interface MultipartUploadCreateRequest {
+  parentPath: string;
+  name: string;
+  size: number;
+  contentType: string | null;
+  overwrite?: boolean;
+}
+
+export interface MultipartUploadCreateResponse {
+  success: true;
+  uploadId: string;
+  partSize: number;
+  partCount: number;
+}
+
+export interface MultipartUploadPart {
+  partNumber: number;
+  etag: string;
+}
+
+export interface MultipartUploadPartResponse {
+  success: true;
+  part: MultipartUploadPart;
+  uploadedBytes: number;
+}
+
+export interface MultipartUploadCompleteRequest {
+  uploadId: string;
+  parts: MultipartUploadPart[];
 }
 
 export type UploadQueueStatus =

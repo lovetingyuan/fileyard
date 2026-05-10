@@ -1,6 +1,7 @@
 export const FOLDER_MARKER_NAME = ".fileyard-folder";
 const LEGACY_FOLDER_MARKER_NAMES = [".fileshare-folder"] as const;
-export const DEFAULT_MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
+export const DEFAULT_MAX_UPLOAD_BYTES = 1024 * 1024 * 1024;
+export const MULTIPART_UPLOAD_PART_BYTES = 10 * 1024 * 1024;
 export const SYSTEM_PROFILE_FOLDER_NAME = ".user";
 export const AVATAR_FILE_NAME = "avatar.png";
 const ALL_FOLDER_MARKER_NAMES = [FOLDER_MARKER_NAME, ...LEGACY_FOLDER_MARKER_NAMES] as const;

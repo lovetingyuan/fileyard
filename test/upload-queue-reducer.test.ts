@@ -3,18 +3,24 @@ import type { UploadQueueItem } from "../src/types";
 import {
   createFolderEnsureer,
   countUploadQueueStats,
+  getActiveUploadItemsInFolder,
+  getUploadQueuePanelState,
   getUploadQueueSummary,
   resetFailedUploadItem,
   updateUploadQueueItem,
 } from "../src/react-app/hooks/useUploadQueue";
 
-function item(id: string, status: UploadQueueItem["status"]): UploadQueueItem {
+function item(
+  id: string,
+  status: UploadQueueItem["status"],
+  targetPath = `${id}.txt`,
+): UploadQueueItem {
   return {
     id,
     file: new File(["x"], `${id}.txt`),
-    displayPath: `${id}.txt`,
-    targetPath: `${id}.txt`,
-    parentPath: "",
+    displayPath: targetPath,
+    targetPath,
+    parentPath: targetPath.includes("/") ? targetPath.split("/").slice(0, -1).join("/") : "",
     name: `${id}.txt`,
     size: 1,
     progress: status === "success" ? 100 : 0,
@@ -92,5 +98,48 @@ describe("upload queue reducer helpers", () => {
       { parentPath: "albums/Photos", name: "2026" },
       { parentPath: "albums/Photos", name: "raw" },
     ]);
+  });
+
+  it("finds only active uploads inside the requested folder path", () => {
+    const matches = getActiveUploadItemsInFolder(
+      [
+        item("queued-child", "queued", "docs/queued.txt"),
+        item("preparing-child", "preparing", "docs/nested/preparing.txt"),
+        item("uploading-child", "uploading", "docs/uploading.txt"),
+        item("same-prefix", "uploading", "docs-archive/uploading.txt"),
+        item("done-child", "success", "docs/done.txt"),
+        item("failed-child", "failed", "docs/failed.txt"),
+        item("canceled-child", "canceled", "docs/canceled.txt"),
+      ],
+      "docs",
+    );
+
+    expect(matches.map((match) => match.id)).toEqual([
+      "queued-child",
+      "preparing-child",
+      "uploading-child",
+    ]);
+  });
+
+  it("hides the progress panel after every upload succeeds", () => {
+    const panelState = getUploadQueuePanelState([item("a", "success"), item("b", "success")]);
+
+    expect(panelState).toMatchObject({
+      completed: 2,
+      isComplete: true,
+      hasTerminalIssues: false,
+      shouldShowPanel: false,
+    });
+  });
+
+  it("hides the progress panel after every remaining upload is canceled", () => {
+    const panelState = getUploadQueuePanelState([item("a", "canceled"), item("b", "canceled")]);
+
+    expect(panelState).toMatchObject({
+      canceled: 2,
+      isComplete: true,
+      hasTerminalIssues: true,
+      shouldShowPanel: false,
+    });
   });
 });

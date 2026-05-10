@@ -17,7 +17,7 @@ import {
   useUploadFileMutation,
   useUpdateFileMutation,
 } from "../hooks/useFilesApi";
-import { useUploadQueue } from "../hooks/useUploadQueue";
+import { getActiveUploadItemsInFolder, useUploadQueue } from "../hooks/useUploadQueue";
 import { useUploadUnloadProtection } from "../hooks/useUploadUnloadProtection";
 import { FileToolbar } from "../components/FileToolbar";
 import { DeleteConfirmModal } from "../components/DeleteConfirmModal";
@@ -27,7 +27,7 @@ import { FileRow, FolderRow, NewFolderRow } from "../components/FileTableRows";
 import { PreviewModal } from "../components/PreviewModal";
 import { NewTextFileModal } from "../components/NewTextFileModal";
 import { ShareFileModal } from "../components/ShareFileModal";
-import { UploadDetailsModal } from "../components/UploadDetailsModal";
+import { UploadProgressPanel } from "../components/UploadProgressPanel";
 import { getDownloadFilename } from "../utils/fileFormatters";
 import { validateFolderName } from "../utils/folderValidation";
 import { getUploadSelectionValidationMessage } from "../utils/uploadSelection";
@@ -69,6 +69,8 @@ export function Dashboard() {
   const [shareFile, setShareFile] = useState<FileEntry | null>(null);
   const [isNewTextFileModalOpen, setIsNewTextFileModalOpen] = useState(false);
   const [pendingDeleteTarget, setPendingDeleteTarget] = useState<DeleteTarget | null>(null);
+  const [deletingFilePath, setDeletingFilePath] = useState<string | null>(null);
+  const [deletingFolderPath, setDeletingFolderPath] = useState<string | null>(null);
   const [searchInputValue, setSearchInputValue] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [isDirectoryStatsModalOpen, setIsDirectoryStatsModalOpen] = useState(false);
@@ -94,21 +96,15 @@ export function Dashboard() {
   const { createFolder, isMutating: isCreatingFolder } = useCreateFolderMutation();
   const { uploadFile, isMutating: isUploadingTextFile } = useUploadFileMutation();
   const { updateFile } = useUpdateFileMutation();
-  const { deleteFile, isMutating: isDeletingFile } = useDeleteFileMutation();
-  const { deleteFolder, isMutating: isDeletingFolder } = useDeleteFolderMutation();
+  const { deleteFile } = useDeleteFileMutation();
+  const { deleteFolder } = useDeleteFolderMutation();
   const uploadQueue = useUploadQueue({
     currentPath,
     onUploadsComplete: refresh,
   });
-  const isUploadingFile = isUploadingTextFile || uploadQueue.isUploading;
-  useUploadUnloadProtection(isUploadingFile);
-
-  const busy =
-    isCreatingFolder ||
-    isUploadingFile ||
-    isDeletingFile ||
-    isDeletingFolder ||
-    downloadingPath !== null;
+  const isFileUploadInProgress = isUploadingTextFile || uploadQueue.isUploading;
+  const isUploadSelectionDisabled = uploadQueue.isUploading;
+  useUploadUnloadProtection(isFileUploadInProgress);
 
   const fuzzyMatch = (name: string, query: string) => {
     if (!query) {
@@ -132,8 +128,12 @@ export function Dashboard() {
   const hasItems = filteredFiles.length > 0 || filteredFolders.length > 0;
   const isSearchPending = searchInputValue !== deferredSearchQuery;
   const isDeleteConfirmBusy =
-    (pendingDeleteTarget?.type === "file" && isDeletingFile) ||
-    (pendingDeleteTarget?.type === "folder" && isDeletingFolder);
+    (pendingDeleteTarget?.type === "file" && deletingFilePath === pendingDeleteTarget.path) ||
+    (pendingDeleteTarget?.type === "folder" && deletingFolderPath === pendingDeleteTarget.path);
+  const pendingFolderActiveUploadCount =
+    pendingDeleteTarget?.type === "folder"
+      ? getActiveUploadItemsInFolder(uploadQueue.items, pendingDeleteTarget.path).length
+      : 0;
   const ActiveSortIcon = order === "asc" ? MdiArrowUp : MdiArrowDown;
   const NameSortIcon = sort === "name" ? ActiveSortIcon : MdiSwapVertical;
   const SizeSortIcon = sort === "size" ? ActiveSortIcon : MdiSwapVertical;
@@ -284,6 +284,7 @@ export function Dashboard() {
   };
 
   const handleDeleteFile = async (path: string, name: string) => {
+    setDeletingFilePath(path);
     try {
       await deleteFile(path);
       await refresh();
@@ -292,10 +293,13 @@ export function Dashboard() {
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to delete file");
       return false;
+    } finally {
+      setDeletingFilePath((currentPath) => (currentPath === path ? null : currentPath));
     }
   };
 
   const handleDeleteFolder = async (path: string, name: string) => {
+    setDeletingFolderPath(path);
     try {
       await deleteFolder(path);
       await refresh();
@@ -304,6 +308,8 @@ export function Dashboard() {
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to delete folder");
       return false;
+    } finally {
+      setDeletingFolderPath((currentPath) => (currentPath === path ? null : currentPath));
     }
   };
 
@@ -348,6 +354,11 @@ export function Dashboard() {
     setPendingDeleteTarget(null);
   };
 
+  const handleDeleteFolderAfterCancelingUploads = async (path: string, name: string) => {
+    await uploadQueue.cancelUploadsInFolderAndWait(path);
+    return handleDeleteFolder(path, name);
+  };
+
   const handleConfirmDelete = async () => {
     if (!pendingDeleteTarget || isDeleteConfirmBusy) {
       return;
@@ -356,7 +367,10 @@ export function Dashboard() {
     const isDeleted =
       pendingDeleteTarget.type === "file"
         ? await handleDeleteFile(pendingDeleteTarget.path, pendingDeleteTarget.name)
-        : await handleDeleteFolder(pendingDeleteTarget.path, pendingDeleteTarget.name);
+        : await handleDeleteFolderAfterCancelingUploads(
+            pendingDeleteTarget.path,
+            pendingDeleteTarget.name,
+          );
 
     if (isDeleted) {
       setPendingDeleteTarget(null);
@@ -399,6 +413,7 @@ export function Dashboard() {
     <div className="flex flex-1 flex-col">
       <DeleteConfirmModal
         target={pendingDeleteTarget}
+        containedActiveUploadCount={pendingFolderActiveUploadCount}
         onClose={handleCloseDeleteConfirm}
         onConfirm={handleConfirmDelete}
       />
@@ -424,13 +439,16 @@ export function Dashboard() {
         onClose={() => setIsNewTextFileModalOpen(false)}
         onSave={handleSaveTextFile}
       />
-      <UploadDetailsModal
-        isOpen={uploadQueue.isDetailsOpen}
+      <UploadProgressPanel
         items={uploadQueue.items}
-        onClose={uploadQueue.closeDetails}
+        panelState={uploadQueue.panelState}
+        isMinimized={uploadQueue.isPanelMinimized}
+        onMinimize={uploadQueue.minimizePanel}
+        onRestore={uploadQueue.restorePanel}
         onCancel={uploadQueue.cancelUpload}
         onRetry={uploadQueue.retryUpload}
-        onCancelRemaining={uploadQueue.cancelRemainingUploads}
+        onCancelAll={uploadQueue.cancelRemainingUploads}
+        onClose={uploadQueue.closePanel}
       />
       <input
         ref={fileInputRef}
@@ -438,15 +456,14 @@ export function Dashboard() {
         className="hidden"
         multiple
         onChange={(event) => handleUploadSelection(event, "file")}
-        disabled={busy}
+        disabled={isUploadSelectionDisabled}
       />
       <input
         ref={folderInputCallbackRef}
         type="file"
         className="hidden"
-        multiple
         onChange={(event) => handleUploadSelection(event, "folder")}
-        disabled={busy}
+        disabled={isUploadSelectionDisabled}
       />
       <main className="mx-auto flex w-[96%] max-w-300 flex-1 flex-col gap-4 py-6 md:w-[90%]">
         <section className="card bg-base-100 shadow-sm">
@@ -455,8 +472,11 @@ export function Dashboard() {
               breadcrumbs={breadcrumbs}
               fileCount={filteredFiles.length}
               totalBytes={totalBytes}
-              busy={busy}
-              isUploadingFile={isUploadingFile}
+              isUploadDisabled={isUploadSelectionDisabled}
+              isCreateTextFileDisabled={isUploadingTextFile}
+              isCreateFolderDisabled={isCreatingFolder}
+              isRefreshDisabled={isRefreshing}
+              isUploadingFile={uploadQueue.isUploading}
               isCreatingFolder={isCreatingFolder}
               isRefreshing={isRefreshing}
               isCreatingNewFolder={isCreatingNewFolder}
@@ -470,8 +490,6 @@ export function Dashboard() {
               onRefresh={() => refresh()}
               onSearchChange={handleSearchChange}
               onShowDirectoryStats={() => void handleShowDirectoryStats()}
-              uploadStatusText={uploadQueue.summaryText}
-              onShowUploadDetails={uploadQueue.showDetails}
             />
 
             {error ? (
@@ -557,8 +575,8 @@ export function Dashboard() {
                         <FolderRow
                           key={`folder:${folder.path}`}
                           folder={folder}
-                          busy={busy}
-                          isDeletingFolder={isDeletingFolder}
+                          isActionDisabled={deletingFolderPath === folder.path}
+                          isLoading={deletingFolderPath === folder.path}
                           onNavigate={setPath}
                           onShowDetails={(path) => void handleShowDirectoryStats(path)}
                           onRequestDelete={(path, name) =>
@@ -570,9 +588,10 @@ export function Dashboard() {
                         <FileRow
                           key={`file:${file.path}`}
                           file={file}
-                          busy={busy}
-                          isDeletingFile={isDeletingFile}
-                          isDownloading={downloadingPath === file.path}
+                          isActionDisabled={
+                            deletingFilePath === file.path || downloadingPath === file.path
+                          }
+                          isLoading={deletingFilePath === file.path || downloadingPath === file.path}
                           onDownload={handleDownloadFile}
                           onRequestDelete={(path, name) =>
                             handleRequestDelete({ type: "file", path, name })

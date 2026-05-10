@@ -15,6 +15,23 @@ import { generateSalt, hashPassword } from "../src/worker/utils/password";
 
 const mockUseSWR = vi.fn();
 
+vi.mock("~icons/mdi/account-plus", () => ({ default: () => null }));
+vi.mock("~icons/mdi/account-plus-outline", () => ({ default: () => null }));
+vi.mock("~icons/mdi/alert-circle-outline", () => ({ default: () => null }));
+vi.mock("~icons/mdi/chevron-down", () => ({ default: () => null }));
+vi.mock("~icons/mdi/email-outline", () => ({ default: () => null }));
+vi.mock("~icons/mdi/file-plus", () => ({ default: () => null }));
+vi.mock("~icons/mdi/file-upload", () => ({ default: () => null }));
+vi.mock("~icons/mdi/folder-plus", () => ({ default: () => null }));
+vi.mock("~icons/mdi/folder-upload", () => ({ default: () => null }));
+vi.mock("~icons/mdi/home-outline", () => ({ default: () => null }));
+vi.mock("~icons/mdi/lock-check-outline", () => ({ default: () => null }));
+vi.mock("~icons/mdi/lock-outline", () => ({ default: () => null }));
+vi.mock("~icons/mdi/login", () => ({ default: () => null }));
+vi.mock("~icons/mdi/magnify", () => ({ default: () => null }));
+vi.mock("~icons/mdi/refresh", () => ({ default: () => null }));
+vi.mock("~icons/mdi/upload", () => ({ default: () => null }));
+
 vi.mock("swr", () => ({
   default: (...args: unknown[]) => mockUseSWR(...args),
 }));
@@ -277,7 +294,10 @@ describe("release hardening frontend markup", () => {
         breadcrumbs: [],
         fileCount: 0,
         totalBytes: 0,
-        busy: false,
+        isUploadDisabled: false,
+        isCreateTextFileDisabled: false,
+        isCreateFolderDisabled: false,
+        isRefreshDisabled: false,
         isUploadingFile: false,
         isCreatingFolder: false,
         isRefreshing: false,
@@ -286,11 +306,14 @@ describe("release hardening frontend markup", () => {
         isSearchPending: false,
         onSetPath: vi.fn(),
         onUploadClick: vi.fn(),
+        onUploadFolderClick: vi.fn(),
         onCreateFolder: vi.fn(),
         onCreateTextFile: vi.fn(),
         onRefresh: vi.fn(),
         onSearchChange: vi.fn(),
         onShowDirectoryStats: vi.fn(),
+        uploadStatusText: null,
+        onShowUploadDetails: vi.fn(),
       }),
     );
 
@@ -299,6 +322,77 @@ describe("release hardening frontend markup", () => {
     expect(markup).toContain('aria-label="新建文件夹"');
     expect(markup).toContain('aria-label="刷新文件列表"');
     expect(markup).toContain('aria-label="搜索文件"');
+  });
+
+  it("keeps non-upload toolbar actions enabled while upload selection is disabled", () => {
+    const markup = renderToStaticMarkup(
+      createElement(FileToolbar, {
+        breadcrumbs: [],
+        fileCount: 0,
+        totalBytes: 0,
+        isUploadDisabled: true,
+        isCreateTextFileDisabled: false,
+        isCreateFolderDisabled: false,
+        isRefreshDisabled: false,
+        isUploadingFile: true,
+        isCreatingFolder: false,
+        isRefreshing: false,
+        isCreatingNewFolder: false,
+        searchQuery: "",
+        isSearchPending: false,
+        onSetPath: vi.fn(),
+        onUploadClick: vi.fn(),
+        onUploadFolderClick: vi.fn(),
+        onCreateFolder: vi.fn(),
+        onCreateTextFile: vi.fn(),
+        onRefresh: vi.fn(),
+        onSearchChange: vi.fn(),
+        onShowDirectoryStats: vi.fn(),
+        uploadStatusText: "上传中，点击查看详情",
+        onShowUploadDetails: vi.fn(),
+      }),
+    );
+
+    const hasDisabledButton = (ariaLabel: string) =>
+      new RegExp(`<button(?=[^>]*aria-label="${ariaLabel}")(?=[^>]*disabled)[^>]*>`).test(markup);
+
+    expect(hasDisabledButton("上传文件")).toBe(true);
+    expect(hasDisabledButton("新建文本文件")).toBe(false);
+    expect(hasDisabledButton("新建文件夹")).toBe(false);
+    expect(hasDisabledButton("刷新文件列表")).toBe(false);
+  });
+
+  it("keeps the mobile search input and refresh button on the same wrapped row", () => {
+    const markup = renderToStaticMarkup(
+      createElement(FileToolbar, {
+        breadcrumbs: [],
+        fileCount: 0,
+        totalBytes: 0,
+        isUploadDisabled: false,
+        isCreateTextFileDisabled: false,
+        isCreateFolderDisabled: false,
+        isRefreshDisabled: false,
+        isUploadingFile: false,
+        isCreatingFolder: false,
+        isRefreshing: false,
+        isCreatingNewFolder: false,
+        searchQuery: "report",
+        isSearchPending: false,
+        onSetPath: vi.fn(),
+        onUploadClick: vi.fn(),
+        onUploadFolderClick: vi.fn(),
+        onCreateFolder: vi.fn(),
+        onCreateTextFile: vi.fn(),
+        onRefresh: vi.fn(),
+        onSearchChange: vi.fn(),
+        onShowDirectoryStats: vi.fn(),
+      }),
+    );
+
+    expect(markup).toContain("flex-wrap");
+    expect(markup).toContain("group/search-actions");
+    expect(markup).toContain("order-last basis-full w-full sm:order-none sm:basis-auto sm:w-auto");
+    expect(markup).toContain("flex-1 sm:flex-none");
   });
 
   it("renders share downloads as direct links instead of blob-fetch buttons", () => {

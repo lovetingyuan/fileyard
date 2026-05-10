@@ -11,6 +11,7 @@ import { applySecurityHeadersToResponse } from "./utils/securityHeaders";
 import adminRoutes from "./routes/admin";
 import profileRoutes from "./routes/profile";
 import fileRoutes from "./routes/files";
+import multipartFileRoutes from "./routes/filesMultipart";
 import shareRoutes from "./routes/shares";
 import topBannerRoutes from "./routes/topBanner";
 
@@ -80,6 +81,7 @@ for (const prefix of protectedPrefixes) {
 
 app.route("/", adminRoutes);
 app.route("/", profileRoutes);
+app.route("/", multipartFileRoutes);
 app.route("/", fileRoutes);
 app.route("/", shareRoutes);
 app.route("/", topBannerRoutes);

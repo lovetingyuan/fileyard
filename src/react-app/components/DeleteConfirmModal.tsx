@@ -8,20 +8,29 @@ type DeleteTarget = {
 
 interface DeleteConfirmModalProps {
   target: DeleteTarget | null;
+  containedActiveUploadCount?: number;
   onClose: () => void;
   onConfirm: () => Promise<void>;
 }
 
-export function DeleteConfirmModal({ target, onClose, onConfirm }: DeleteConfirmModalProps) {
+export function DeleteConfirmModal({
+  target,
+  containedActiveUploadCount = 0,
+  onClose,
+  onConfirm,
+}: DeleteConfirmModalProps) {
   if (!target) {
     return null;
   }
 
+  const hasContainedActiveUploads =
+    target.type === "folder" && containedActiveUploadCount > 0;
   const title = target.type === "file" ? "删除文件" : "删除文件夹";
   const description =
     target.type === "file"
       ? `确认删除 “${target.name}” 吗？此操作无法撤销。`
       : `确认删除文件夹 “${target.name}” 吗？此操作无法撤销。`;
+  const confirmText = hasContainedActiveUploads ? "取消上传并删除" : "确认删除";
 
   return (
     <Dialog
@@ -29,7 +38,7 @@ export function DeleteConfirmModal({ target, onClose, onConfirm }: DeleteConfirm
       title={title}
       onClose={onClose}
       onConfirm={onConfirm}
-      confirmText="确认删除"
+      confirmText={confirmText}
       confirmPendingText="删除中..."
       boxClassName="max-w-md border border-error/10 bg-base-100"
       closeButtonAriaLabel="关闭删除确认弹窗"
@@ -39,7 +48,14 @@ export function DeleteConfirmModal({ target, onClose, onConfirm }: DeleteConfirm
         <span className="mt-0.5 shrink-0 inline-flex h-10 w-10 items-center justify-center rounded-full bg-error/12 text-error">
           <MdiAlertCircleOutline className="h-5 w-5" />
         </span>
-        <p className="text-sm leading-6 text-base-content/70">{description}</p>
+        <div className="space-y-2 text-sm leading-6 text-base-content/70">
+          <p>{description}</p>
+          {hasContainedActiveUploads ? (
+            <p className="text-error">
+              该文件夹下有 {containedActiveUploadCount} 个文件正在上传，确认后会先取消这些上传，再删除文件夹。
+            </p>
+          ) : null}
+        </div>
       </div>
     </Dialog>
   );

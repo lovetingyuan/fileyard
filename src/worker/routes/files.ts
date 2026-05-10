@@ -15,6 +15,7 @@ import {
   getFolderMarkerKey,
   getFolderMarkerKeys,
   getFolderPrefix,
+  MULTIPART_UPLOAD_PART_BYTES,
   isFolderMarkerKey,
   isReservedSystemPath,
   joinRelativePath,
@@ -78,6 +79,7 @@ files.get("/api/files/upload-limits", (c) => {
     success: true,
     maxFileBytes: getUploadLimitBytes(c.env),
     maxBatchBytes: MAX_BATCH_UPLOAD_BYTES,
+    multipartPartBytes: MULTIPART_UPLOAD_PART_BYTES,
   };
 
   return c.json(response);

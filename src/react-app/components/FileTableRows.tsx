@@ -50,11 +50,11 @@ export function NewFolderRow({ defaultName, inputRef, onBlur, onKeyDown }: NewFo
 }
 
 function RowActionsMenu({
-  busy,
+  isActionDisabled,
   isLoading,
   items,
 }: {
-  busy: boolean;
+  isActionDisabled: boolean;
   isLoading?: boolean;
   items: RowActionItem[];
 }) {
@@ -64,7 +64,7 @@ function RowActionsMenu({
         type="button"
         tabIndex={0}
         className={`btn btn-ghost btn-xs btn-square sm:btn-sm ${isLoading ? "loading" : ""}`}
-        disabled={busy}
+        disabled={isActionDisabled}
         aria-label="更多操作"
       >
         {!isLoading && <MdiDotsHorizontal className="h-4 w-4" />}
@@ -95,8 +95,8 @@ function RowActionsMenu({
 
 interface FolderRowProps {
   folder: FolderEntry & { isOptimistic?: boolean };
-  busy: boolean;
-  isDeletingFolder: boolean;
+  isActionDisabled: boolean;
+  isLoading: boolean;
   onNavigate: (path: string) => void;
   onShowDetails: (path: string) => void;
   onRequestDelete: (path: string, name: string) => void;
@@ -104,8 +104,8 @@ interface FolderRowProps {
 
 export function FolderRow({
   folder,
-  busy,
-  isDeletingFolder,
+  isActionDisabled,
+  isLoading,
   onNavigate,
   onShowDetails,
   onRequestDelete,
@@ -134,8 +134,8 @@ export function FolderRow({
       <td className="text-right">
         {!isOptimistic && (
           <RowActionsMenu
-            busy={busy}
-            isLoading={isDeletingFolder}
+            isActionDisabled={isActionDisabled}
+            isLoading={isLoading}
             items={[
               {
                 label: "删除",
@@ -158,9 +158,8 @@ export function FolderRow({
 
 interface FileRowProps {
   file: FileEntry;
-  busy: boolean;
-  isDeletingFile: boolean;
-  isDownloading: boolean;
+  isActionDisabled: boolean;
+  isLoading: boolean;
   onDownload: (path: string, name: string) => void;
   onRequestDelete: (path: string, name: string) => void;
   onPreview: (file: FileEntry) => void;
@@ -170,9 +169,8 @@ interface FileRowProps {
 
 export function FileRow({
   file,
-  busy,
-  isDeletingFile,
-  isDownloading,
+  isActionDisabled,
+  isLoading,
   onDownload,
   onRequestDelete,
   onPreview,
@@ -207,8 +205,8 @@ export function FileRow({
       </td>
       <td className="text-right">
         <RowActionsMenu
-          busy={busy}
-          isLoading={isDownloading || isDeletingFile}
+          isActionDisabled={isActionDisabled}
+          isLoading={isLoading}
           items={[
             {
               label: "下载",
