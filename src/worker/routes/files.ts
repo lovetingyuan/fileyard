@@ -6,6 +6,7 @@ import type {
   FileListResponse,
   FileMutationResponse,
   FileUploadLimitsResponse,
+  RenameRequest,
 } from "../../types";
 import {
   FilePathValidationError,
@@ -33,6 +34,95 @@ import { UploadTooLargeError, handlePathValidationError, jsonError } from "../ut
 
 const files = new Hono<AppContext>();
 const MAX_BATCH_UPLOAD_BYTES = 1024 * 1024 * 1024;
+
+function getParentPath(path: string): string {
+  const separatorIndex = path.lastIndexOf("/");
+  return separatorIndex === -1 ? "" : path.slice(0, separatorIndex);
+}
+
+function getNoOverwriteHeaders(): Headers {
+  return new Headers({ "If-None-Match": "*" });
+}
+
+function hasObjectBody(object: R2Object | R2ObjectBody | null): object is R2ObjectBody {
+  return Boolean(object && "body" in object);
+}
+
+function getObjectPutOptions(
+  object: R2Object,
+  customMetadata = object.customMetadata,
+): R2PutOptions {
+  return {
+    customMetadata,
+    httpMetadata: object.httpMetadata,
+    onlyIf: getNoOverwriteHeaders(),
+    ...(object.storageClass ? { storageClass: object.storageClass } : {}),
+  };
+}
+
+async function listAllObjects(bucket: R2Bucket, prefix: string): Promise<R2Object[]> {
+  const objects: R2Object[] = [];
+  let cursor: string | undefined;
+
+  do {
+    const listing = await bucket.list({
+      cursor,
+      include: ["httpMetadata", "customMetadata"],
+      prefix,
+    });
+    objects.push(...listing.objects);
+    cursor = listing.truncated ? listing.cursor : undefined;
+  } while (cursor);
+
+  return objects;
+}
+
+function assertNameChanged(currentPath: string, newName: string, type: "file" | "folder"): void {
+  if (getBaseName(currentPath) === newName) {
+    throw new FilePathValidationError(`New ${type} name must be different`);
+  }
+}
+
+async function assertRenameTargetAvailable(
+  env: AppContext["Bindings"],
+  rootDirId: string,
+  targetPath: string,
+): Promise<void> {
+  const fileCollision = await env.FILES_BUCKET.head(getFileKey(rootDirId, targetPath));
+  if (fileCollision) {
+    throw new FilePathValidationError("A file with this name already exists", 409);
+  }
+
+  if (await folderExists(env, rootDirId, targetPath)) {
+    throw new FilePathValidationError("A folder with this name already exists", 409);
+  }
+}
+
+function hasObjectSetChanged(currentObjects: R2Object[], expectedEtags: Map<string, string>): boolean {
+  if (currentObjects.length !== expectedEtags.size) {
+    return true;
+  }
+
+  return currentObjects.some((object) => expectedEtags.get(object.key) !== object.etag);
+}
+
+async function deleteKeysInBatches(bucket: R2Bucket, keys: string[]): Promise<void> {
+  for (let i = 0; i < keys.length; i += 1000) {
+    await bucket.delete(keys.slice(i, i + 1000));
+  }
+}
+
+async function cleanupCopiedKeys(bucket: R2Bucket, copiedKeys: string[]): Promise<void> {
+  if (copiedKeys.length === 0) {
+    return;
+  }
+
+  try {
+    await deleteKeysInBatches(bucket, copiedKeys);
+  } catch (error) {
+    console.error("Failed to clean up copied rename objects", error);
+  }
+}
 
 async function getFolderCreatedAt(
   bucket: R2Bucket,
@@ -347,6 +437,84 @@ files.delete("/api/files/folders", async (c) => {
   }
 });
 
+files.patch("/api/files/folders", async (c) => {
+  const copiedKeys: string[] = [];
+
+  try {
+    const body = await c.req.json<RenameRequest>();
+    const path = normalizeRelativePath(body.path, { allowEmpty: false, label: "Path" });
+    assertPathNotReserved(path);
+    const name = normalizeName(body.name, "Folder name");
+    assertNameChanged(path, name, "folder");
+    const parentPath = getParentPath(path);
+    const targetPath = joinRelativePath(parentPath, name);
+    assertPathNotReserved(targetPath);
+    const { rootDirId } = await getFileContext(c);
+
+    if (!(await folderExists(c.env, rootDirId, path))) {
+      return jsonError(c, "Folder not found", 404);
+    }
+
+    await assertRenameTargetAvailable(c.env, rootDirId, targetPath);
+
+    const sourcePrefix = getFolderPrefix(rootDirId, path);
+    const targetPrefix = getFolderPrefix(rootDirId, targetPath);
+    const sourceObjects = await listAllObjects(c.env.FILES_BUCKET, sourcePrefix);
+
+    if (sourceObjects.length === 0) {
+      return jsonError(c, "Folder not found", 404);
+    }
+
+    const sourceEtags = new Map(sourceObjects.map((object) => [object.key, object.etag]));
+
+    try {
+      for (const object of sourceObjects) {
+        const source = await c.env.FILES_BUCKET.get(object.key, {
+          onlyIf: { etagMatches: object.etag },
+        });
+        if (!hasObjectBody(source)) {
+          throw new FilePathValidationError("Folder changed during rename", 409);
+        }
+
+        const targetKey = `${targetPrefix}${object.key.slice(sourcePrefix.length)}`;
+        const putResult = await c.env.FILES_BUCKET.put(
+          targetKey,
+          source.body,
+          getObjectPutOptions(source),
+        );
+
+        if (!putResult) {
+          throw new FilePathValidationError("A file or folder with this name already exists", 409);
+        }
+        copiedKeys.push(targetKey);
+      }
+
+      const currentSourceObjects = await listAllObjects(c.env.FILES_BUCKET, sourcePrefix);
+      if (hasObjectSetChanged(currentSourceObjects, sourceEtags)) {
+        throw new FilePathValidationError("Folder changed during rename", 409);
+      }
+    } catch (error) {
+      await cleanupCopiedKeys(c.env.FILES_BUCKET, copiedKeys);
+      throw error;
+    }
+
+    await deleteKeysInBatches(c.env.FILES_BUCKET, sourceObjects.map((object) => object.key));
+
+    const response: FileMutationResponse = {
+      success: true,
+      message: "Folder renamed successfully",
+    };
+    return c.json(response);
+  } catch (error) {
+    const validationError = handlePathValidationError(c, error);
+    if (validationError) {
+      return validationError;
+    }
+    console.error("Failed to rename folder", error);
+    return jsonError(c, "Failed to rename folder", 500);
+  }
+});
+
 files.put("/api/files/object", async (c) => {
   try {
     const parentPath = normalizeRelativePath(c.req.query("parentPath"), {
@@ -425,6 +593,78 @@ files.put("/api/files/object", async (c) => {
     }
     console.error("Failed to upload file", error);
     return jsonError(c, "Failed to upload file", 500);
+  }
+});
+
+files.patch("/api/files/object", async (c) => {
+  let copiedKey: string | null = null;
+
+  try {
+    const body = await c.req.json<RenameRequest>();
+    const path = normalizeRelativePath(body.path, { allowEmpty: false, label: "Path" });
+    assertPathNotReserved(path);
+    const name = normalizeName(body.name, "File name");
+    assertNameChanged(path, name, "file");
+    const parentPath = getParentPath(path);
+    const targetPath = joinRelativePath(parentPath, name);
+    assertPathNotReserved(targetPath);
+    const { rootDirId } = await getFileContext(c);
+    const sourceKey = getFileKey(rootDirId, path);
+    const targetKey = getFileKey(rootDirId, targetPath);
+    const sourceHead = await c.env.FILES_BUCKET.head(sourceKey);
+
+    if (!sourceHead) {
+      return jsonError(c, "File not found", 404);
+    }
+
+    await assertRenameTargetAvailable(c.env, rootDirId, targetPath);
+
+    const source = await c.env.FILES_BUCKET.get(sourceKey, {
+      onlyIf: { etagMatches: sourceHead.etag },
+    });
+    if (!hasObjectBody(source)) {
+      return jsonError(c, "File changed during rename", 409);
+    }
+
+    const createdAt = source.customMetadata?.createdAt ?? source.uploaded.toISOString();
+    const putResult = await c.env.FILES_BUCKET.put(
+      targetKey,
+      source.body,
+      getObjectPutOptions(source, {
+        ...source.customMetadata,
+        originalName: name,
+        createdAt,
+      }),
+    );
+
+    if (!putResult) {
+      return jsonError(c, "A file with this name already exists", 409);
+    }
+    copiedKey = targetKey;
+
+    const latestSource = await c.env.FILES_BUCKET.head(sourceKey);
+    if (!latestSource || latestSource.etag !== sourceHead.etag) {
+      await c.env.FILES_BUCKET.delete(targetKey);
+      copiedKey = null;
+      return jsonError(c, "File changed during rename", 409);
+    }
+
+    await c.env.FILES_BUCKET.delete(sourceKey);
+    copiedKey = null;
+
+    const response: FileMutationResponse = { success: true, message: "File renamed successfully" };
+    return c.json(response);
+  } catch (error) {
+    if (copiedKey) {
+      await cleanupCopiedKeys(c.env.FILES_BUCKET, [copiedKey]);
+    }
+
+    const validationError = handlePathValidationError(c, error);
+    if (validationError) {
+      return validationError;
+    }
+    console.error("Failed to rename file", error);
+    return jsonError(c, "Failed to rename file", 500);
   }
 });
 

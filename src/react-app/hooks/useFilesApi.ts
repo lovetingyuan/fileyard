@@ -7,6 +7,7 @@ import type {
   FileListResponse,
   FileMutationResponse,
   OptimisticFolderEntry,
+  RenameRequest,
   ShareLinkResponse,
   SortKey,
   SortOrder,
@@ -227,6 +228,32 @@ export function useDeleteFileMutation() {
   };
 }
 
+export function useRenameFileMutation() {
+  const { trigger, isMutating } = useSWRMutation<
+    FileMutationResponse,
+    ApiError,
+    string,
+    RenameRequest
+  >(
+    FILE_OBJECT_ENDPOINT,
+    (url, { arg }) =>
+      apiRequest<FileMutationResponse>(url, {
+        method: "PATCH",
+        body: JSON.stringify(arg),
+      }),
+    {
+      throwOnError: true,
+    },
+  );
+
+  const renameFile = (path: string, name: string) => trigger({ path, name });
+
+  return {
+    renameFile,
+    isMutating,
+  };
+}
+
 export function useDeleteFolderMutation() {
   const { trigger, isMutating } = useSWRMutation<FileMutationResponse, ApiError, string, string>(
     FILE_FOLDERS_ENDPOINT,
@@ -245,6 +272,32 @@ export function useDeleteFolderMutation() {
 
   return {
     deleteFolder,
+    isMutating,
+  };
+}
+
+export function useRenameFolderMutation() {
+  const { trigger, isMutating } = useSWRMutation<
+    FileMutationResponse,
+    ApiError,
+    string,
+    RenameRequest
+  >(
+    FILE_FOLDERS_ENDPOINT,
+    (url, { arg }) =>
+      apiRequest<FileMutationResponse>(url, {
+        method: "PATCH",
+        body: JSON.stringify(arg),
+      }),
+    {
+      throwOnError: true,
+    },
+  );
+
+  const renameFolder = (path: string, name: string) => trigger({ path, name });
+
+  return {
+    renameFolder,
     isMutating,
   };
 }

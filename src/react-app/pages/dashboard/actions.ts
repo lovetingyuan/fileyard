@@ -3,6 +3,7 @@ import type {
   FileEntry,
   NewTextFileDraft,
   OptimisticFolderEntry,
+  RenameTarget,
   SortKey,
   UploadQueueItem,
 } from "../../../types";
@@ -160,6 +161,18 @@ export function closeDeleteTarget() {
   setPendingDeleteTarget(null);
 }
 
+export function requestRenameTarget(target: RenameTarget) {
+  const { setPendingRenameTarget } = getStoreMethods();
+
+  setPendingRenameTarget(target);
+}
+
+export function closeRenameTarget() {
+  const { setPendingRenameTarget } = getStoreMethods();
+
+  setPendingRenameTarget(null);
+}
+
 export function setDeletingFilePath(path: string | null) {
   const { setDeletingFilePath } = getStoreMethods();
 
@@ -170,6 +183,12 @@ export function setDeletingFolderPath(path: string | null) {
   const { setDeletingFolderPath } = getStoreMethods();
 
   setDeletingFolderPath(path);
+}
+
+export function setRenamingPath(path: string | null) {
+  const { setRenamingPath } = getStoreMethods();
+
+  setRenamingPath(path);
 }
 
 export function setDownloadingPath(path: string | null) {

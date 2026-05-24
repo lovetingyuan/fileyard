@@ -4,6 +4,7 @@ import type {
   FileEntry,
   NewTextFileDraft,
   OptimisticFolderEntry,
+  RenameTarget,
   SortKey,
   SortOrder,
   ThemePreference,
@@ -74,10 +75,14 @@ export const { useStore, getStoreMethods, getStoreState, getStateSnapshot, subsc
     deleting: false,
     /** 当前等待用户确认删除的文件或文件夹目标。 */
     pendingDeleteTarget: null as DeleteTarget | null,
+    /** 当前等待用户输入新名称的文件或文件夹目标。 */
+    pendingRenameTarget: null as RenameTarget | null,
     /** 当前正在删除的文件路径；null 表示没有文件删除任务。 */
     deletingFilePath: null as string | null,
     /** 当前正在删除的文件夹路径；null 表示没有文件夹删除任务。 */
     deletingFolderPath: null as string | null,
+    /** 当前正在重命名的路径；null 表示没有重命名任务。 */
+    renamingPath: null as string | null,
     /** 是否正在展示文件详情弹窗。 */
     viewDetail: false,
     /** 是否正在展示目录统计弹窗。 */

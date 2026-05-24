@@ -30,6 +30,15 @@ describe("upload selection", () => {
     expect(getUploadSelectionValidationMessage(files, "folder")).toBe("一次只能上传一个文件夹");
   });
 
+  it("rejects dropped folder files that came from more than one top-level folder", () => {
+    const files = [
+      makeFile("a.txt", 10, "Photos/2026/a.txt"),
+      makeFile("b.txt", 20, "Documents/2026/b.txt"),
+    ];
+
+    expect(getUploadSelectionValidationMessage(files, "folder")).toBe("一次只能上传一个文件夹");
+  });
+
   it("creates queued upload items for multiple files in the current folder", () => {
     const items = createUploadQueueItems({
       files: [makeFile("a.txt", 10), makeFile("b.txt", 20)],
@@ -78,6 +87,23 @@ describe("upload selection", () => {
       "albums/Photos/2026/raw.dng",
     ]);
     expect(items[1]?.parentPath).toBe("albums/Photos/2026");
+  });
+
+  it("preserves relative paths extracted from dropped folders", () => {
+    const items = createUploadQueueItems({
+      files: [
+        makeFile("cover.jpg", 10, "Photos/cover.jpg"),
+        makeFile("raw.dng", 20, "Photos/Raw/raw.dng"),
+      ],
+      currentPath: "",
+      maxFileBytes: 100,
+      maxBatchBytes: FILE_UPLOAD_BATCH_LIMIT_BYTES,
+    });
+
+    expect(items.map((item) => item.targetPath)).toEqual([
+      "Photos/cover.jpg",
+      "Photos/Raw/raw.dng",
+    ]);
   });
 
   it("marks only files that overflow the batch limit while keeping fitting files queued", () => {

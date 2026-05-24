@@ -580,4 +580,237 @@ describe("authenticated R2 file manager", () => {
     expect(ascList.folders.map((folder) => folder.name)).toEqual(["older", "newer"]);
     expect(ascList.files.map((file) => file.name)).toEqual(["report.txt"]);
   });
+
+  it("renames files by moving the R2 object while preserving content and created time", async () => {
+    const { email } = await createVerifiedUser();
+    const cookie = await createSessionCookie(email);
+
+    const uploadResponse = await apiFetch(
+      "/api/files/object?name=notes.txt",
+      {
+        method: "PUT",
+        headers: {
+          "Content-Length": String("draft".length),
+          "Content-Type": "text/plain",
+        },
+        body: "draft",
+      },
+      cookie,
+    );
+    expect(uploadResponse.status).toBe(201);
+
+    const initialListResponse = await apiFetch("/api/files", {}, cookie);
+    const initialList = (await initialListResponse.json()) as FileListResponse;
+    const initialFile = initialList.files.find((file) => file.path === "notes.txt");
+    expect(initialFile).toBeDefined();
+
+    const renameResponse = await apiFetch(
+      "/api/files/object",
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ path: "notes.txt", name: "renamed.txt" }),
+      },
+      cookie,
+    );
+    expect(renameResponse.status).toBe(200);
+
+    const oldDownloadResponse = await apiFetch("/api/files/object?path=notes.txt", {}, cookie);
+    expect(oldDownloadResponse.status).toBe(404);
+    await oldDownloadResponse.text();
+
+    const newDownloadResponse = await apiFetch("/api/files/object?path=renamed.txt", {}, cookie);
+    expect(newDownloadResponse.status).toBe(200);
+    expect(newDownloadResponse.headers.get("Content-Type")).toContain("text/plain");
+    expect(newDownloadResponse.headers.get("Content-Disposition")).toContain("renamed.txt");
+    expect(await newDownloadResponse.text()).toBe("draft");
+
+    const updatedListResponse = await apiFetch("/api/files", {}, cookie);
+    const updatedList = (await updatedListResponse.json()) as FileListResponse;
+    const renamedFile = updatedList.files.find((file) => file.path === "renamed.txt");
+
+    expect(updatedList.files.some((file) => file.path === "notes.txt")).toBe(false);
+    expect(renamedFile).toMatchObject({
+      name: "renamed.txt",
+      path: "renamed.txt",
+      contentType: "text/plain",
+      createdAt: initialFile?.createdAt,
+    });
+  });
+
+  it("renames folders by moving all objects under the old prefix", async () => {
+    const { email, user } = await createVerifiedUser();
+    const cookie = await createSessionCookie(email);
+    const rootDirId = user?.rootDirId;
+
+    if (!rootDirId) {
+      throw new Error("Expected rootDirId to be set");
+    }
+
+    const createDocsResponse = await apiFetch(
+      "/api/files/folders",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ parentPath: "", name: "docs" }),
+      },
+      cookie,
+    );
+    expect(createDocsResponse.status).toBe(201);
+
+    const createProjectsResponse = await apiFetch(
+      "/api/files/folders",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ parentPath: "docs", name: "projects" }),
+      },
+      cookie,
+    );
+    expect(createProjectsResponse.status).toBe(201);
+
+    const uploadResponse = await apiFetch(
+      "/api/files/object?parentPath=docs/projects&name=readme.md",
+      {
+        method: "PUT",
+        headers: {
+          "Content-Length": String("hello".length),
+          "Content-Type": "text/markdown",
+        },
+        body: "hello",
+      },
+      cookie,
+    );
+    expect(uploadResponse.status).toBe(201);
+
+    const renameResponse = await apiFetch(
+      "/api/files/folders",
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: "docs", name: "archive" }),
+      },
+      cookie,
+    );
+    expect(renameResponse.status).toBe(200);
+
+    expect(await env.FILES_BUCKET.head(`${rootDirId}/docs/.fileyard-folder`)).toBeNull();
+    expect(await env.FILES_BUCKET.head(`${rootDirId}/archive/.fileyard-folder`)).toBeTruthy();
+
+    const oldFolderResponse = await apiFetch("/api/files?path=docs", {}, cookie);
+    expect(oldFolderResponse.status).toBe(404);
+
+    const rootListResponse = await apiFetch("/api/files", {}, cookie);
+    const rootList = (await rootListResponse.json()) as FileListResponse;
+    expect(rootList.folders.map((folder) => folder.path)).toContain("archive");
+    expect(rootList.folders.map((folder) => folder.path)).not.toContain("docs");
+
+    const nestedListResponse = await apiFetch("/api/files?path=archive/projects", {}, cookie);
+    const nestedList = (await nestedListResponse.json()) as FileListResponse;
+    expect(nestedList.files).toHaveLength(1);
+    expect(nestedList.files[0]).toMatchObject({
+      name: "readme.md",
+      path: "archive/projects/readme.md",
+      contentType: "text/markdown",
+    });
+
+    const downloadResponse = await apiFetch(
+      "/api/files/object?path=archive/projects/readme.md",
+      {},
+      cookie,
+    );
+    expect(downloadResponse.status).toBe(200);
+    expect(await downloadResponse.text()).toBe("hello");
+  });
+
+  it("rejects rename requests with invalid names, unchanged names, and collisions", async () => {
+    const { email } = await createVerifiedUser();
+    const cookie = await createSessionCookie(email);
+
+    const createFolderResponse = await apiFetch(
+      "/api/files/folders",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ parentPath: "", name: "docs" }),
+      },
+      cookie,
+    );
+    expect(createFolderResponse.status).toBe(201);
+
+    const uploadResponse = await apiFetch(
+      "/api/files/object?name=report.txt",
+      {
+        method: "PUT",
+        headers: {
+          "Content-Length": String("report".length),
+          "Content-Type": "text/plain",
+        },
+        body: "report",
+      },
+      cookie,
+    );
+    expect(uploadResponse.status).toBe(201);
+
+    const unchangedResponse = await apiFetch(
+      "/api/files/object",
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: "report.txt", name: "report.txt" }),
+      },
+      cookie,
+    );
+    expect(unchangedResponse.status).toBe(400);
+    await expect(unchangedResponse.json()).resolves.toMatchObject({
+      success: false,
+      error: "New file name must be different",
+    });
+
+    const folderCollisionResponse = await apiFetch(
+      "/api/files/object",
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: "report.txt", name: "docs" }),
+      },
+      cookie,
+    );
+    expect(folderCollisionResponse.status).toBe(409);
+
+    const fileCollisionResponse = await apiFetch(
+      "/api/files/folders",
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: "docs", name: "report.txt" }),
+      },
+      cookie,
+    );
+    expect(fileCollisionResponse.status).toBe(409);
+
+    const invalidNameResponse = await apiFetch(
+      "/api/files/folders",
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: "docs", name: "bad/name" }),
+      },
+      cookie,
+    );
+    expect(invalidNameResponse.status).toBe(400);
+
+    const reservedNameResponse = await apiFetch(
+      "/api/files/object",
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: "report.txt", name: ".user" }),
+      },
+      cookie,
+    );
+    expect(reservedNameResponse.status).toBe(403);
+  });
 });

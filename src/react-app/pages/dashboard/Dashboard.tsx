@@ -1,12 +1,15 @@
+import { useRef, useState } from "react";
 import MdiAlertCircleOutline from "~icons/mdi/alert-circle-outline";
 import MdiArrowDown from "~icons/mdi/arrow-down";
 import MdiArrowUp from "~icons/mdi/arrow-up";
 import MdiFolderOpenOutline from "~icons/mdi/folder-open-outline";
 import MdiMagnifyRemoveOutline from "~icons/mdi/magnify-remove-outline";
 import MdiSwapVertical from "~icons/mdi/swap-vertical";
+import toast from "react-hot-toast";
 import type { SortKey } from "../../../types";
 import { useUploadUnloadProtection } from "../../hooks/useUploadUnloadProtection";
 import { useAppStore } from "../../store";
+import { getDroppedUploadFiles } from "../../utils/uploadDrop";
 import { toggleDashboardSort } from "./actions";
 import { DeleteConfirmModal } from "./components/DeleteConfirmModal";
 import { DirectoryStatsModal } from "./components/DirectoryStatsModal";
@@ -15,10 +18,12 @@ import { FileRow, FolderRow, NewFolderRow } from "./components/FileTableRows";
 import { FileToolbar } from "./components/FileToolbar";
 import { NewTextFileModal } from "./components/NewTextFileModal";
 import { PreviewModal } from "./components/PreviewModal";
+import { RenameModal } from "./components/RenameModal";
 import { ShareFileModal } from "./components/ShareFileModal";
 import { UploadProgressPanel } from "./components/UploadProgressPanel";
 import { useDashboardFileView } from "./hooks/useDashboardFileView";
 import { useUploadQueue } from "./hooks/useUploadQueue";
+import { uploadDashboardFiles } from "./uploadFiles";
 
 function SortButton({ isActive, sortKey }: { isActive: boolean; sortKey: SortKey }) {
   const { dashboardSortOrder } = useAppStore();
@@ -37,7 +42,14 @@ function SortButton({ isActive, sortKey }: { isActive: boolean; sortKey: SortKey
 }
 
 export function Dashboard() {
-  const { currentFile, isCreatingNewFolder, savingTextFile, sharing } = useAppStore();
+  const {
+    currentFile,
+    isCreatingNewFolder,
+    pendingRenameTarget,
+    renamingPath,
+    savingTextFile,
+    sharing,
+  } = useAppStore();
   const {
     currentPath,
     dashboardSortKey,
@@ -53,23 +65,71 @@ export function Dashboard() {
     currentPath,
     onUploadsComplete: refresh,
   });
+  const [isDraggingUpload, setIsDraggingUpload] = useState(false);
+  const dragDepthRef = useRef(0);
   const isFileUploadInProgress = savingTextFile || uploadQueue.isUploading;
+  const isFileMutationDisabled = Boolean(renamingPath);
   const EmptyStateIcon = searchInputValue ? MdiMagnifyRemoveOutline : MdiFolderOpenOutline;
 
   useUploadUnloadProtection(isFileUploadInProgress);
+
+  const handleDragEnter = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    dragDepthRef.current += 1;
+    setIsDraggingUpload(true);
+  };
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = isFileMutationDisabled ? "none" : "copy";
+    }
+  };
+
+  const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+    if (dragDepthRef.current === 0) {
+      setIsDraggingUpload(false);
+    }
+  };
+
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    dragDepthRef.current = 0;
+    setIsDraggingUpload(false);
+
+    void (async () => {
+      try {
+        const { files, source } = await getDroppedUploadFiles(event.dataTransfer);
+        await uploadDashboardFiles({ files, source, isFileMutationDisabled });
+      } catch {
+        toast.error("Failed to read dropped files");
+      }
+    })();
+  };
 
   return (
     <div className="flex flex-1 flex-col">
       <DeleteConfirmModal />
       <DirectoryStatsModal />
       <FileDetailsModal />
+      {pendingRenameTarget ? <RenameModal key={pendingRenameTarget.path} /> : null}
       {sharing && currentFile ? <ShareFileModal key={currentFile.path} /> : null}
       <PreviewModal />
       <NewTextFileModal />
       <UploadProgressPanel />
       <main className="mx-auto flex w-[96%] max-w-300 flex-1 flex-col gap-4 py-6 md:w-[90%]">
         <section className="card bg-base-100 shadow-sm">
-          <div className="card-body gap-4">
+          <div
+            className={`card-body gap-4 rounded-box border border-transparent transition-colors duration-150 ${
+              isDraggingUpload ? "border-primary/70 bg-primary/10 ring-2 ring-primary/20" : ""
+            }`}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+          >
             <FileToolbar />
 
             {error ? (

@@ -6,6 +6,7 @@ import MdiDownload from "~icons/mdi/download";
 import MdiFolder from "~icons/mdi/folder";
 import MdiFolderSync from "~icons/mdi/folder-sync";
 import MdiInformationOutline from "~icons/mdi/information-outline";
+import MdiPencil from "~icons/mdi/pencil";
 import MdiShareVariantOutline from "~icons/mdi/share-variant-outline";
 import toast from "react-hot-toast";
 import type { FileEntry, FolderEntry, OptimisticFolderEntry } from "../../../../types";
@@ -21,6 +22,7 @@ import {
   openFilePreview,
   openFileShare,
   requestDeleteTarget,
+  requestRenameTarget,
   setCreatingFolder,
 } from "../actions";
 import { downloadDashboardFile } from "../fileOperations";
@@ -159,10 +161,11 @@ export function NewFolderRow() {
 
 export function FolderRow({ folder }: { folder: DashboardFolder }) {
   const { setPath } = useDashboardPath();
-  const { deletingFolderPath } = useAppStore();
+  const { deletingFolderPath, renamingPath } = useAppStore();
   const isOptimistic = "isOptimistic" in folder;
   const FolderIcon = isOptimistic ? MdiFolderSync : MdiFolder;
-  const isLoading = deletingFolderPath === folder.path;
+  const isLoading = deletingFolderPath === folder.path || renamingPath === folder.path;
+  const isActionDisabled = Boolean(renamingPath) || isLoading;
 
   return (
     <tr className={isOptimistic ? "opacity-60" : ""}>
@@ -186,9 +189,15 @@ export function FolderRow({ folder }: { folder: DashboardFolder }) {
       <td className="text-right">
         {!isOptimistic && (
           <RowActionsMenu
-            isActionDisabled={isLoading}
+            isActionDisabled={isActionDisabled}
             isLoading={isLoading}
             items={[
+              {
+                label: "重命名",
+                Icon: MdiPencil,
+                onClick: () =>
+                  requestRenameTarget({ type: "folder", path: folder.path, name: folder.name }),
+              },
               {
                 label: "删除",
                 Icon: MdiDeleteOutline,
@@ -210,10 +219,12 @@ export function FolderRow({ folder }: { folder: DashboardFolder }) {
 }
 
 export function FileRow({ file }: { file: FileEntry }) {
-  const { deletingFilePath, downloadingPath } = useAppStore();
+  const { deletingFilePath, downloadingPath, renamingPath } = useAppStore();
   const fileIcon = getFileIcon(file.name);
   const createdAtTooltip = `创建时间：${formatDetailedDate(file.createdAt)}`;
-  const isLoading = deletingFilePath === file.path || downloadingPath === file.path;
+  const isLoading =
+    deletingFilePath === file.path || downloadingPath === file.path || renamingPath === file.path;
+  const isActionDisabled = Boolean(renamingPath) || isLoading;
 
   return (
     <tr>
@@ -241,7 +252,7 @@ export function FileRow({ file }: { file: FileEntry }) {
       </td>
       <td className="text-right">
         <RowActionsMenu
-          isActionDisabled={isLoading}
+          isActionDisabled={isActionDisabled}
           isLoading={isLoading}
           items={[
             {
@@ -253,6 +264,11 @@ export function FileRow({ file }: { file: FileEntry }) {
               label: "分享",
               Icon: MdiShareVariantOutline,
               onClick: () => openFileShare(file),
+            },
+            {
+              label: "重命名",
+              Icon: MdiPencil,
+              onClick: () => requestRenameTarget({ type: "file", path: file.path, name: file.name }),
             },
             {
               label: "删除",

@@ -75,6 +75,10 @@ export type DeleteTarget = FileOperationTarget & {
   type: "file" | "folder";
 };
 
+export type RenameTarget = FileOperationTarget & {
+  type: "file" | "folder";
+};
+
 export type NewTextFileDraft = {
   name: string;
   content: string;
@@ -162,6 +166,11 @@ export interface CreateFolderRequest {
   parentPath: string;
   name: string;
   ensure?: boolean;
+}
+
+export interface RenameRequest {
+  path: string;
+  name: string;
 }
 
 export interface FileMutationResponse {

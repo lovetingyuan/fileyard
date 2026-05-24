@@ -12,11 +12,13 @@ vi.mock("~icons/mdi/magnify", () => ({ default: () => null }));
 vi.mock("~icons/mdi/refresh", () => ({ default: () => null }));
 
 let uploadQueueActive = false;
+let renamingActive = false;
 
 vi.mock("../src/react-app/store", () => ({
   useAppStore: () => ({
     creatingFolder: false,
     isCreatingNewFolder: false,
+    renamingPath: renamingActive ? "docs/report.txt" : null,
     savingTextFile: false,
     uploadQueue: uploadQueueActive
       ? [
@@ -81,6 +83,7 @@ function getButtonClass(markup: string, ariaLabel: string): string {
 describe("file toolbar", () => {
   beforeEach(() => {
     uploadQueueActive = false;
+    renamingActive = false;
   });
 
   it("renders separate upload file and upload folder buttons without an upload type dropdown", () => {
@@ -117,5 +120,15 @@ describe("file toolbar", () => {
 
     expect(fileUploadClass).not.toContain("loading");
     expect(hasDisabledButton(markup, "上传文件")).toBe(false);
+  });
+
+  it("disables file mutation controls while a rename is running", () => {
+    renamingActive = true;
+    const markup = renderToolbar();
+
+    expect(hasDisabledButton(markup, "上传文件")).toBe(true);
+    expect(hasDisabledButton(markup, "上传文件夹")).toBe(true);
+    expect(hasDisabledButton(markup, "新建文本文件")).toBe(true);
+    expect(hasDisabledButton(markup, "新建文件夹")).toBe(true);
   });
 });

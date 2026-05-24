@@ -10,14 +10,17 @@ import {
   closeFilePreview,
   closeFileShare,
   closeNewTextFile,
+  closeRenameTarget,
   openFileDetails,
   openFilePreview,
   openFileShare,
   openNewTextFile,
   requestDeleteTarget,
+  requestRenameTarget,
   resetDashboardPathState,
   restoreUploadPanel,
   setDashboardSearchInput,
+  setRenamingPath,
   setUploadQueueItems,
   startCreateFolder,
   toggleDashboardSort,
@@ -61,9 +64,11 @@ function resetStore() {
   methods.setSharing(false);
   methods.setViewDetail(false);
   methods.setPendingDeleteTarget(null);
+  methods.setPendingRenameTarget(null);
   methods.setDownloadingPath(null);
   methods.setDeletingFilePath(null);
   methods.setDeletingFolderPath(null);
+  methods.setRenamingPath(null);
   methods.setIsDirectoryStatsModalOpen(false);
   methods.setDirectoryStatsPath("");
   methods.setUploadType("");
@@ -175,6 +180,26 @@ describe("app store actions", () => {
     closeDeleteTarget();
     expect(getStateSnapshot().addNewTextFile).toBeNull();
     expect(getStateSnapshot().pendingDeleteTarget).toBeNull();
+  });
+
+  it("tracks dashboard rename target and active renaming path", () => {
+    requestRenameTarget({ type: "file", path: file.path, name: file.name });
+    setRenamingPath(file.path);
+
+    const activeState = getStateSnapshot();
+
+    expect(activeState.pendingRenameTarget).toEqual({
+      type: "file",
+      path: file.path,
+      name: file.name,
+    });
+    expect(activeState.renamingPath).toBe(file.path);
+
+    closeRenameTarget();
+    setRenamingPath(null);
+
+    expect(getStateSnapshot().pendingRenameTarget).toBeNull();
+    expect(getStateSnapshot().renamingPath).toBeNull();
   });
 
   it("can clear dashboard search explicitly", () => {

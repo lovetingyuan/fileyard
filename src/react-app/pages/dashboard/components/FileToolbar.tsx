@@ -6,10 +6,8 @@ import MdiFolderUpload from "~icons/mdi/folder-upload";
 import MdiHomeOutline from "~icons/mdi/home-outline";
 import MdiMagnify from "~icons/mdi/magnify";
 import MdiRefresh from "~icons/mdi/refresh";
-import toast from "react-hot-toast";
 import { useAppStore } from "../../../store";
 import { formatBytes } from "../../../utils/fileFormatters";
-import { getUploadSelectionValidationMessage } from "../../../utils/uploadSelection";
 import {
   openDirectoryStats,
   openNewTextFile,
@@ -19,7 +17,8 @@ import {
 } from "../actions";
 import { useDashboardFileView } from "../hooks/useDashboardFileView";
 import { useDashboardPath } from "../hooks/useDashboardPath";
-import { countUploadQueueStats, enqueueDashboardUploadFiles } from "../hooks/useUploadQueue";
+import { countUploadQueueStats } from "../hooks/useUploadQueue";
+import { uploadDashboardFiles } from "../uploadFiles";
 
 export function FileToolbar() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -28,9 +27,11 @@ export function FileToolbar() {
   const { breadcrumbs, currentPath, setPath } = useDashboardPath();
   const { filteredFiles, getUniqueFolderName, isRefreshing, isSearchPending, refresh, searchInputValue, totalBytes } =
     useDashboardFileView();
-  const { creatingFolder, isCreatingNewFolder, savingTextFile, uploadQueue } = useAppStore();
+  const { creatingFolder, isCreatingNewFolder, renamingPath, savingTextFile, uploadQueue } =
+    useAppStore();
   const isSearchExpanded = searchInputValue.length > 0;
   const isUploadingFile = countUploadQueueStats(uploadQueue).active > 0;
+  const isFileMutationDisabled = Boolean(renamingPath);
 
   const folderInputCallbackRef = useCallback((node: HTMLInputElement | null) => {
     folderInputRef.current = node;
@@ -44,17 +45,9 @@ export function FileToolbar() {
     event: React.ChangeEvent<HTMLInputElement>,
     source: "file" | "folder",
   ) => {
-    const files = Array.from(event.target.files ?? []);
+    const files = event.target.files ?? [];
     event.target.value = "";
-    const validationMessage = getUploadSelectionValidationMessage(files, source);
-    if (validationMessage) {
-      toast.error(validationMessage);
-      return;
-    }
-    if (files.length === 0) {
-      return;
-    }
-    void enqueueDashboardUploadFiles(files);
+    void uploadDashboardFiles({ files, source, isFileMutationDisabled });
   };
 
   const focusSearchInput = () => {
@@ -121,6 +114,7 @@ export function FileToolbar() {
                 setUploadType("file");
                 fileInputRef.current?.click();
               }}
+              disabled={isFileMutationDisabled}
               aria-label="上传文件"
             >
               <MdiFileUpload className="w-5 h-5" />
@@ -134,6 +128,7 @@ export function FileToolbar() {
                 setUploadType("folder");
                 folderInputRef.current?.click();
               }}
+              disabled={isFileMutationDisabled}
               aria-label="上传文件夹"
             >
               <MdiFolderUpload className="w-5 h-5" />
@@ -144,7 +139,7 @@ export function FileToolbar() {
           <button
             type="button"
             className="btn btn-accent btn-square btn-sm"
-            disabled={savingTextFile}
+            disabled={savingTextFile || isFileMutationDisabled}
             onClick={openNewTextFile}
             aria-label="新建文本文件"
           >
@@ -155,7 +150,7 @@ export function FileToolbar() {
           <button
             type="button"
             className={`btn btn-secondary btn-square btn-sm ${creatingFolder ? "loading" : ""}`}
-            disabled={creatingFolder || isCreatingNewFolder}
+            disabled={creatingFolder || isCreatingNewFolder || isFileMutationDisabled}
             onClick={() => startCreateFolder(getUniqueFolderName("新建文件夹"))}
             aria-label="新建文件夹"
           >

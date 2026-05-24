@@ -56,6 +56,7 @@ vi.mock("../src/react-app/store", () => ({
   useAppStore: () => ({
     creatingFolder: false,
     isCreatingNewFolder: false,
+    renamingPath: null,
     savingTextFile: false,
     uploadQueue: [],
   }),
@@ -334,8 +335,12 @@ describe("release hardening frontend markup", () => {
   it("keeps toolbar actions enabled from internal dashboard state", () => {
     const markup = renderToStaticMarkup(createElement(FileToolbar));
 
+    const getButtonTag = (ariaLabel: string) => {
+      const escapedLabel = ariaLabel.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      return new RegExp(`<button(?=[^>]*aria-label="${escapedLabel}")[^>]*>`).exec(markup)?.[0] ?? "";
+    };
     const hasDisabledButton = (ariaLabel: string) =>
-      new RegExp(`<button(?=[^>]*aria-label="${ariaLabel}")(?=[^>]*disabled)[^>]*>`).test(markup);
+      /\sdisabled(?:=""|="disabled")?(?=[\s>])/.test(getButtonTag(ariaLabel));
 
     expect(hasDisabledButton("上传文件")).toBe(false);
     expect(hasDisabledButton("新建文本文件")).toBe(false);
