@@ -3,6 +3,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { FileToolbar } from "../src/react-app/pages/dashboard/components/FileToolbar";
 
+vi.mock("~icons/mdi/arrow-down", () => ({ default: () => null }));
+vi.mock("~icons/mdi/arrow-up", () => ({ default: () => null }));
 vi.mock("~icons/mdi/file-upload", () => ({ default: () => null }));
 vi.mock("~icons/mdi/file-plus", () => ({ default: () => null }));
 vi.mock("~icons/mdi/folder-plus", () => ({ default: () => null }));
@@ -10,6 +12,7 @@ vi.mock("~icons/mdi/folder-upload", () => ({ default: () => null }));
 vi.mock("~icons/mdi/home-outline", () => ({ default: () => null }));
 vi.mock("~icons/mdi/magnify", () => ({ default: () => null }));
 vi.mock("~icons/mdi/refresh", () => ({ default: () => null }));
+vi.mock("~icons/mdi/swap-vertical", () => ({ default: () => null }));
 
 let uploadQueueActive = false;
 let renamingActive = false;
@@ -17,6 +20,8 @@ let renamingActive = false;
 vi.mock("../src/react-app/store", () => ({
   useAppStore: () => ({
     creatingFolder: false,
+    dashboardSortKey: "uploadedAt",
+    dashboardSortOrder: "desc",
     isCreatingNewFolder: false,
     renamingPath: renamingActive ? "docs/report.txt" : null,
     savingTextFile: false,
@@ -130,5 +135,21 @@ describe("file toolbar", () => {
     expect(hasDisabledButton(markup, "上传文件夹")).toBe(true);
     expect(hasDisabledButton(markup, "新建文本文件")).toBe(true);
     expect(hasDisabledButton(markup, "新建文件夹")).toBe(true);
+  });
+
+  it("renders a sort dropdown with time selected by default", () => {
+    const markup = renderToolbar();
+
+    expect(hasButton(markup, "排序方式")).toBe(true);
+    expect(hasButton(markup, "按时间排序")).toBe(true);
+    expect(hasButton(markup, "按名称排序")).toBe(true);
+    expect(hasButton(markup, "按大小排序")).toBe(true);
+    expect(getButtonTag(markup, "按时间排序")).toContain('aria-current="true"');
+  });
+
+  it("describes the current sort method in the sort button tooltip", () => {
+    const markup = renderToolbar();
+
+    expect(markup).toContain('data-tip="当前排序：按时间排序（降序）"');
   });
 });

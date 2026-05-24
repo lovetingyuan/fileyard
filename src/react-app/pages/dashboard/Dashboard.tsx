@@ -1,16 +1,11 @@
 import { useRef, useState } from "react";
 import MdiAlertCircleOutline from "~icons/mdi/alert-circle-outline";
-import MdiArrowDown from "~icons/mdi/arrow-down";
-import MdiArrowUp from "~icons/mdi/arrow-up";
 import MdiFolderOpenOutline from "~icons/mdi/folder-open-outline";
 import MdiMagnifyRemoveOutline from "~icons/mdi/magnify-remove-outline";
-import MdiSwapVertical from "~icons/mdi/swap-vertical";
 import toast from "react-hot-toast";
-import type { SortKey } from "../../../types";
 import { useUploadUnloadProtection } from "../../hooks/useUploadUnloadProtection";
 import { useAppStore } from "../../store";
 import { getDroppedUploadFiles } from "../../utils/uploadDrop";
-import { toggleDashboardSort } from "./actions";
 import { DeleteConfirmModal } from "./components/DeleteConfirmModal";
 import { DirectoryStatsModal } from "./components/DirectoryStatsModal";
 import { FileDetailsModal } from "./components/FileDetailsModal";
@@ -25,22 +20,6 @@ import { useDashboardFileView } from "./hooks/useDashboardFileView";
 import { useUploadQueue } from "./hooks/useUploadQueue";
 import { uploadDashboardFiles } from "./uploadFiles";
 
-function SortButton({ isActive, sortKey }: { isActive: boolean; sortKey: SortKey }) {
-  const { dashboardSortOrder } = useAppStore();
-  const ActiveSortIcon = dashboardSortOrder === "asc" ? MdiArrowUp : MdiArrowDown;
-  const SortIcon = isActive ? ActiveSortIcon : MdiSwapVertical;
-
-  return (
-    <button
-      type="button"
-      className="btn btn-ghost btn-xs btn-square"
-      onClick={() => toggleDashboardSort(sortKey)}
-    >
-      <SortIcon className={`w-3.5 h-3.5 ${isActive ? "text-primary" : "opacity-60"}`} />
-    </button>
-  );
-}
-
 export function Dashboard() {
   const {
     currentFile,
@@ -52,11 +31,9 @@ export function Dashboard() {
   } = useAppStore();
   const {
     currentPath,
-    dashboardSortKey,
     error,
     filteredFiles,
     filteredFolders,
-    hasItems,
     isLoading,
     refresh,
     searchInputValue,
@@ -149,31 +126,13 @@ export function Dashboard() {
                   <thead className="bg-base-300">
                     <tr className="bg-base-200">
                       <th className="w-auto">
-                        <span className="inline-flex items-center gap-1">
-                          Name
-                          {hasItems && (
-                            <SortButton isActive={dashboardSortKey === "name"} sortKey="name" />
-                          )}
-                        </span>
+                        <span>Name</span>
                       </th>
                       <th className="hidden sm:table-cell sm:w-28">
-                        <span className="inline-flex items-center gap-1">
-                          Size
-                          {hasItems && (
-                            <SortButton isActive={dashboardSortKey === "size"} sortKey="size" />
-                          )}
-                        </span>
+                        <span>Size</span>
                       </th>
                       <th className="hidden sm:table-cell sm:w-46">
-                        <span className="inline-flex items-center gap-1">
-                          Updated
-                          {hasItems && (
-                            <SortButton
-                              isActive={dashboardSortKey === "uploadedAt"}
-                              sortKey="uploadedAt"
-                            />
-                          )}
-                        </span>
+                        <span>Updated</span>
                       </th>
                       <th className="w-18 text-right sm:w-21">
                         <span>Actions</span>

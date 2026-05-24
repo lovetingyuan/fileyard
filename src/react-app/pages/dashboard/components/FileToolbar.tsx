@@ -1,4 +1,6 @@
 import { useCallback, useRef } from "react";
+import MdiArrowDown from "~icons/mdi/arrow-down";
+import MdiArrowUp from "~icons/mdi/arrow-up";
 import MdiFileUpload from "~icons/mdi/file-upload";
 import MdiFilePlus from "~icons/mdi/file-plus";
 import MdiFolderPlus from "~icons/mdi/folder-plus";
@@ -6,6 +8,8 @@ import MdiFolderUpload from "~icons/mdi/folder-upload";
 import MdiHomeOutline from "~icons/mdi/home-outline";
 import MdiMagnify from "~icons/mdi/magnify";
 import MdiRefresh from "~icons/mdi/refresh";
+import MdiSwapVertical from "~icons/mdi/swap-vertical";
+import type { SortKey } from "../../../../types";
 import { useAppStore } from "../../../store";
 import { formatBytes } from "../../../utils/fileFormatters";
 import {
@@ -14,11 +18,66 @@ import {
   setDashboardSearchInput,
   setUploadType,
   startCreateFolder,
+  toggleDashboardSort,
 } from "../actions";
 import { useDashboardFileView } from "../hooks/useDashboardFileView";
 import { useDashboardPath } from "../hooks/useDashboardPath";
 import { countUploadQueueStats } from "../hooks/useUploadQueue";
 import { uploadDashboardFiles } from "../uploadFiles";
+
+const SORT_OPTIONS: Array<{ key: SortKey; label: string }> = [
+  { key: "uploadedAt", label: "按时间排序" },
+  { key: "name", label: "按名称排序" },
+  { key: "size", label: "按大小排序" },
+];
+
+function SortMenu() {
+  const { dashboardSortKey, dashboardSortOrder } = useAppStore();
+  const ActiveSortIcon = dashboardSortOrder === "asc" ? MdiArrowUp : MdiArrowDown;
+  const activeSortLabel =
+    SORT_OPTIONS.find((option) => option.key === dashboardSortKey)?.label ?? "按时间排序";
+  const sortOrderLabel = dashboardSortOrder === "asc" ? "升序" : "降序";
+
+  return (
+    <div className="dropdown dropdown-end tooltip" data-tip={`当前排序：${activeSortLabel}（${sortOrderLabel}）`}>
+      <button
+        type="button"
+        tabIndex={0}
+        className="btn btn-ghost btn-square btn-sm"
+        aria-label="排序方式"
+      >
+        <MdiSwapVertical className="h-5 w-5" />
+      </button>
+      <ul
+        tabIndex={0}
+        className="dropdown-content menu menu-sm bg-base-200 rounded-box z-20 mt-1 w-40 border border-base-300/60 p-2 shadow-lg space-y-1"
+      >
+        {SORT_OPTIONS.map((option) => {
+          const isActive = dashboardSortKey === option.key;
+          const SortIcon = isActive ? ActiveSortIcon : MdiSwapVertical;
+
+          return (
+            <li key={option.key}>
+              <button
+                type="button"
+                className={`gap-2 ${isActive ? "active font-medium" : ""}`}
+                aria-current={isActive ? "true" : undefined}
+                aria-label={option.label}
+                onClick={() => {
+                  (document.activeElement as HTMLElement | null)?.blur();
+                  toggleDashboardSort(option.key);
+                }}
+              >
+                <SortIcon className={`h-4 w-4 ${isActive ? "" : "opacity-50"}`} />
+                {option.label}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
 
 export function FileToolbar() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -157,6 +216,7 @@ export function FileToolbar() {
             {!creatingFolder && <MdiFolderPlus className="w-5 h-5" />}
           </button>
         </div>
+        <SortMenu />
         <div
           className={`group/search-actions flex h-8 min-w-0 shrink-0 items-center gap-3 focus-within:order-last focus-within:basis-full focus-within:w-full sm:focus-within:order-none sm:focus-within:basis-auto sm:focus-within:w-auto ${
             isSearchExpanded
