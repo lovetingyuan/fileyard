@@ -24,6 +24,7 @@
     "drizzle-orm": "^0.45.2",
     "hono": "4.11.1",
     "react": "19.2.1",
+    "react-atomic-store": "^0.0.9",
     "react-dom": "19.2.1",
     "react-hot-toast": "^2.6.0",
     "react-qr-code": "^2.0.18",

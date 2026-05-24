@@ -1,13 +1,15 @@
 import MdiCloseCircleOutline from "~icons/mdi/close-circle-outline";
 import MdiRefresh from "~icons/mdi/refresh";
-import type { UploadQueueItem, UploadQueueStatus } from "../../types";
-import { getUploadQueueItemProgress } from "../hooks/useUploadQueue";
-import { formatBytes } from "../utils/fileFormatters";
+import type { UploadQueueItem, UploadQueueStatus } from "../../../../types";
+import {
+  cancelDashboardUpload,
+  getUploadQueueItemProgress,
+  retryDashboardUpload,
+} from "../hooks/useUploadQueue";
+import { formatBytes } from "../../../utils/fileFormatters";
 
 interface UploadProgressRowProps {
   item: UploadQueueItem;
-  onCancel: (id: string) => void;
-  onRetry: (id: string) => void;
 }
 
 const STATUS_LABELS: Record<UploadQueueStatus, string> = {
@@ -36,7 +38,7 @@ const STATUS_BADGE_CLASS_NAMES: Record<UploadQueueStatus, string> = {
   duplicate: "border-violet-200 bg-violet-100 text-violet-700",
 };
 
-export function UploadProgressRow({ item, onCancel, onRetry }: UploadProgressRowProps) {
+export function UploadProgressRow({ item }: UploadProgressRowProps) {
   const progress = getUploadQueueItemProgress(item);
   const statusMessage = item.errorMessage ?? STATUS_LABELS[item.status];
 
@@ -59,7 +61,7 @@ export function UploadProgressRow({ item, onCancel, onRetry }: UploadProgressRow
             <button
               type="button"
               className="btn btn-ghost btn-xs btn-square"
-              onClick={() => onRetry(item.id)}
+              onClick={() => retryDashboardUpload(item.id)}
               aria-label={`重试上传 ${item.displayPath}`}
             >
               <MdiRefresh className="h-4 w-4" />
@@ -71,7 +73,7 @@ export function UploadProgressRow({ item, onCancel, onRetry }: UploadProgressRow
             <button
               type="button"
               className="btn btn-ghost btn-xs btn-square text-error"
-              onClick={() => onCancel(item.id)}
+              onClick={() => cancelDashboardUpload(item.id)}
               aria-label={`取消上传 ${item.displayPath}`}
             >
               <MdiCloseCircleOutline className="h-4 w-4" />

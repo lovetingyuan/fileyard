@@ -13,7 +13,13 @@ vi.mock("react-hot-toast", () => ({
   },
 }));
 
-vi.mock("../src/react-app/hooks/useAuth", () => ({
+vi.mock("~icons/mdi/account-plus-outline", () => ({ default: () => null }));
+vi.mock("~icons/mdi/alert-circle-outline", () => ({ default: () => null }));
+vi.mock("~icons/mdi/email-outline", () => ({ default: () => null }));
+vi.mock("~icons/mdi/lock-outline", () => ({ default: () => null }));
+vi.mock("~icons/mdi/login", () => ({ default: () => null }));
+
+vi.mock("../src/react-app/auth/useAuth", () => ({
   useAuth: () => ({
     login: vi.fn(),
     loginWithGoogle: vi.fn(),
@@ -31,9 +37,7 @@ function renderLogin(path: string) {
         null,
         createElement(Route, {
           path: "/login",
-          element: createElement(Login, {
-            onSwitchToRegister: vi.fn(),
-          }),
+          element: createElement(Login),
         }),
       ),
     ),

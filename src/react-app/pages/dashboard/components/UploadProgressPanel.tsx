@@ -2,21 +2,17 @@ import MdiCloseCircleOutline from '~icons/mdi/close-circle-outline'
 import MdiClose from '~icons/mdi/close'
 import MdiChevronDown from '~icons/mdi/chevron-down'
 import MdiChevronUp from '~icons/mdi/chevron-up'
-import type { UploadQueueItem } from '../../types'
+import type { UploadQueueItem } from '../../../../types'
+import { useAppStore } from '../../../store'
 import type { UploadQueuePanelState } from '../hooks/useUploadQueue'
+import {
+  cancelRemainingDashboardUploads,
+  closeDashboardUploadPanel,
+  getUploadQueuePanelState,
+  minimizeDashboardUploadPanel,
+  restoreDashboardUploadPanel,
+} from '../hooks/useUploadQueue'
 import { UploadProgressRow } from './UploadProgressRow'
-
-interface UploadProgressPanelProps {
-  items: UploadQueueItem[]
-  panelState: UploadQueuePanelState
-  isMinimized: boolean
-  onMinimize: () => void
-  onRestore: () => void
-  onCancel: (id: string) => void
-  onRetry: (id: string) => void
-  onCancelAll: () => void
-  onClose: () => void
-}
 
 const HIDDEN_LIST_STATUSES = new Set(['success', 'canceled'])
 
@@ -51,17 +47,11 @@ function getPanelSubtitleClassName(panelState: UploadQueuePanelState): string {
   return `min-w-0 truncate text-xs ${panelState.hasTerminalIssues ? 'text-error' : 'text-success'}`
 }
 
-export function UploadProgressPanel({
-  items,
-  panelState,
-  isMinimized,
-  onMinimize,
-  onRestore,
-  onCancel,
-  onRetry,
-  onCancelAll,
-  onClose,
-}: UploadProgressPanelProps) {
+export function UploadProgressPanel() {
+  const { isUploadPanelMinimized, uploadQueue: items } = useAppStore()
+  const panelState = getUploadQueuePanelState(items)
+  const isMinimized = isUploadPanelMinimized
+
   if (!panelState.shouldShowPanel) {
     return null
   }
@@ -89,7 +79,7 @@ export function UploadProgressPanel({
                 <button
                   type="button"
                   className="btn btn-ghost btn-xs btn-square"
-                  onClick={onRestore}
+                  onClick={restoreDashboardUploadPanel}
                   aria-label="展开上传进度面板"
                 >
                   <MdiChevronUp className="h-4 w-4" />
@@ -100,7 +90,7 @@ export function UploadProgressPanel({
                   <button
                     type="button"
                     className="btn btn-ghost btn-xs btn-square"
-                    onClick={onClose}
+                    onClick={closeDashboardUploadPanel}
                     aria-label="关闭上传进度面板"
                   >
                     <MdiClose className="h-4 w-4" />
@@ -138,7 +128,7 @@ export function UploadProgressPanel({
               <button
                 type="button"
                 className="btn btn-error btn-outline btn-xs"
-                onClick={onCancelAll}
+                onClick={cancelRemainingDashboardUploads}
               >
                 <MdiCloseCircleOutline className="h-4 w-4" />
                 全部取消
@@ -148,7 +138,7 @@ export function UploadProgressPanel({
               <button
                 type="button"
                 className="btn btn-ghost btn-xs btn-square"
-                onClick={onMinimize}
+                onClick={minimizeDashboardUploadPanel}
                 aria-label="折叠上传进度面板"
               >
                 <MdiChevronDown className="h-4 w-4" />
@@ -159,7 +149,7 @@ export function UploadProgressPanel({
                 <button
                   type="button"
                   className="btn btn-ghost btn-xs btn-square"
-                  onClick={onClose}
+                  onClick={closeDashboardUploadPanel}
                   aria-label="关闭上传进度面板"
                 >
                   <MdiClose className="h-4 w-4" />
@@ -179,7 +169,7 @@ export function UploadProgressPanel({
       {visibleItems.length > 0 ? (
         <ul className="mt-3 flex max-h-80 flex-col gap-2 overflow-y-auto">
           {visibleItems.map(item => (
-            <UploadProgressRow key={item.id} item={item} onCancel={onCancel} onRetry={onRetry} />
+            <UploadProgressRow key={item.id} item={item} />
           ))}
         </ul>
       ) : null}

@@ -4,9 +4,10 @@ import MdiArrowLeft from '~icons/mdi/arrow-left'
 import MdiGithub from '~icons/mdi/github'
 import MdiLogout from '~icons/mdi/logout'
 import toast from 'react-hot-toast'
-import { UserAvatar } from '../components/UserAvatar'
-import { useAuth } from '../hooks/useAuth'
-import { useProfile, useUploadAvatar } from '../hooks/useProfileApi'
+import { UserAvatar } from '../../components/UserAvatar'
+import { Dialog } from '../../components/Dialog'
+import { useAuth } from '../../auth/useAuth'
+import { useProfile, useUploadAvatar } from '../../hooks/useProfileApi'
 
 const MAX_AVATAR_BYTES = 500 * 1024
 const ACCEPTED_IMAGE_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp'])
@@ -89,6 +90,7 @@ export function Profile() {
   const navigate = useNavigate()
   const inputRef = useRef<HTMLInputElement | null>(null)
   const [isPreparingImage, setIsPreparingImage] = useState(false)
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false)
   const { user, logout, loading: isAuthMutating } = useAuth()
   const { profile, isLoading } = useProfile()
   const { uploadAvatar, isMutating } = useUploadAvatar()
@@ -98,6 +100,22 @@ export function Profile() {
 
   const handleLogout = async () => {
     await logout()
+  }
+
+  const handleOpenLogoutConfirm = () => {
+    if (isAuthMutating) {
+      return
+    }
+
+    setIsLogoutConfirmOpen(true)
+  }
+
+  const handleCloseLogoutConfirm = () => {
+    if (isAuthMutating) {
+      return
+    }
+
+    setIsLogoutConfirmOpen(false)
   }
 
   const handleAvatarClick = () => {
@@ -209,37 +227,44 @@ export function Profile() {
               </div>
             </div>
 
-            <div className="dropdown dropdown-end self-end md:self-auto">
+            <div className="self-end md:self-auto">
               <button
                 type="button"
-                tabIndex={0}
                 className={`btn btn-ghost btn-sm gap-2 ${isAuthMutating ? 'loading' : ''}`}
+                onClick={handleOpenLogoutConfirm}
                 disabled={isAuthMutating}
+                aria-haspopup="dialog"
+                aria-expanded={isLogoutConfirmOpen}
               >
                 {!isAuthMutating && <MdiLogout className="h-4 w-4" />}
                 退出登录
               </button>
-              <ul
-                tabIndex={0}
-                className="dropdown-content menu menu-sm bg-base-200 rounded-box z-10 mt-2 w-40 p-2 shadow-sm"
-              >
-                <li>
-                  <button
-                    type="button"
-                    className="text-error"
-                    onClick={() => {
-                      ;(document.activeElement as HTMLElement | null)?.blur()
-                      void handleLogout()
-                    }}
-                  >
-                    点击立即退出
-                  </button>
-                </li>
-              </ul>
             </div>
           </div>
         </div>
       </section>
+
+      <Dialog
+        isOpen={isLogoutConfirmOpen}
+        title="退出登录"
+        onClose={handleCloseLogoutConfirm}
+        onConfirm={handleLogout}
+        confirmText="确认退出"
+        confirmPendingText="退出中..."
+        isDismissDisabled={isAuthMutating}
+        boxClassName="max-w-md border border-error/10 bg-base-100"
+        closeButtonAriaLabel="关闭退出确认弹窗"
+        confirmButtonClassName="btn btn-sm btn-error text-error-content"
+      >
+        <div className="flex items-start gap-3">
+          <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-error/12 text-error">
+            <MdiLogout className="h-5 w-5" />
+          </span>
+          <p className="text-sm leading-6 text-base-content/70">
+            确认退出当前账号吗？退出后需要重新登录才能继续访问你的文件。
+          </p>
+        </div>
+      </Dialog>
     </main>
   )
 }

@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useCallback, useRef } from "react";
 import MdiFileUpload from "~icons/mdi/file-upload";
 import MdiFilePlus from "~icons/mdi/file-plus";
 import MdiFolderPlus from "~icons/mdi/folder-plus";
@@ -6,57 +6,57 @@ import MdiFolderUpload from "~icons/mdi/folder-upload";
 import MdiHomeOutline from "~icons/mdi/home-outline";
 import MdiMagnify from "~icons/mdi/magnify";
 import MdiRefresh from "~icons/mdi/refresh";
-import { formatBytes } from "../utils/fileFormatters";
+import toast from "react-hot-toast";
+import { useAppStore } from "../../../store";
+import { formatBytes } from "../../../utils/fileFormatters";
+import { getUploadSelectionValidationMessage } from "../../../utils/uploadSelection";
+import {
+  openDirectoryStats,
+  openNewTextFile,
+  setDashboardSearchInput,
+  setUploadType,
+  startCreateFolder,
+} from "../actions";
+import { useDashboardFileView } from "../hooks/useDashboardFileView";
+import { useDashboardPath } from "../hooks/useDashboardPath";
+import { countUploadQueueStats, enqueueDashboardUploadFiles } from "../hooks/useUploadQueue";
 
-interface FileToolbarProps {
-  breadcrumbs: string[];
-  fileCount: number;
-  totalBytes: number;
-  isUploadDisabled: boolean;
-  isCreateTextFileDisabled: boolean;
-  isCreateFolderDisabled: boolean;
-  isRefreshDisabled: boolean;
-  isUploadingFile: boolean;
-  isCreatingFolder: boolean;
-  isRefreshing: boolean;
-  isCreatingNewFolder: boolean;
-  searchQuery: string;
-  isSearchPending: boolean;
-  onSetPath: (path: string) => void;
-  onUploadClick: () => void;
-  onUploadFolderClick: () => void;
-  onCreateFolder: () => void;
-  onCreateTextFile: () => void;
-  onRefresh: () => void;
-  onSearchChange: (q: string) => void;
-  onShowDirectoryStats: () => void;
-}
+export function FileToolbar() {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const folderInputRef = useRef<HTMLInputElement | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const { breadcrumbs, currentPath, setPath } = useDashboardPath();
+  const { filteredFiles, getUniqueFolderName, isRefreshing, isSearchPending, refresh, searchInputValue, totalBytes } =
+    useDashboardFileView();
+  const { creatingFolder, isCreatingNewFolder, savingTextFile, uploadQueue } = useAppStore();
+  const isSearchExpanded = searchInputValue.length > 0;
+  const isUploadingFile = countUploadQueueStats(uploadQueue).active > 0;
 
-export function FileToolbar({
-  breadcrumbs,
-  fileCount,
-  totalBytes,
-  isUploadDisabled,
-  isCreateTextFileDisabled,
-  isCreateFolderDisabled,
-  isRefreshDisabled,
-  isUploadingFile,
-  isCreatingFolder,
-  isRefreshing,
-  isCreatingNewFolder,
-  searchQuery,
-  isSearchPending,
-  onSetPath,
-  onUploadClick,
-  onUploadFolderClick,
-  onCreateFolder,
-  onCreateTextFile,
-  onRefresh,
-  onSearchChange,
-  onShowDirectoryStats,
-}: FileToolbarProps) {
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  const isSearchExpanded = searchQuery.length > 0;
+  const folderInputCallbackRef = useCallback((node: HTMLInputElement | null) => {
+    folderInputRef.current = node;
+    if (node) {
+      node.setAttribute("webkitdirectory", "");
+      node.setAttribute("directory", "");
+    }
+  }, []);
+
+  const handleUploadSelection = (
+    event: React.ChangeEvent<HTMLInputElement>,
+    source: "file" | "folder",
+  ) => {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = "";
+    const validationMessage = getUploadSelectionValidationMessage(files, source);
+    if (validationMessage) {
+      toast.error(validationMessage);
+      return;
+    }
+    if (files.length === 0) {
+      return;
+    }
+    void enqueueDashboardUploadFiles(files);
+  };
+
   const focusSearchInput = () => {
     requestAnimationFrame(() => {
       searchInputRef.current?.focus();
@@ -65,13 +65,27 @@ export function FileToolbar({
 
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+      <input
+        ref={fileInputRef}
+        type="file"
+        className="hidden"
+        multiple
+        onChange={(event) => handleUploadSelection(event, "file")}
+      />
+      <input
+        ref={folderInputCallbackRef}
+        type="file"
+        className="hidden"
+        onChange={(event) => handleUploadSelection(event, "folder")}
+      />
+
       <div className="max-w-full shrink-0 overflow-x-auto breadcrumbs text-sm">
         <ul>
           <li>
             <button
               type="button"
               className="link link-hover inline-flex items-center gap-1"
-              onClick={() => onSetPath("")}
+              onClick={() => setPath("")}
             >
               <MdiHomeOutline className="w-5 h-5" />
               Home
@@ -81,7 +95,7 @@ export function FileToolbar({
             const path = breadcrumbs.slice(0, index + 1).join("/");
             return (
               <li key={path}>
-                <button type="button" className="link link-hover" onClick={() => onSetPath(path)}>
+                <button type="button" className="link link-hover" onClick={() => setPath(path)}>
                   {segment}
                 </button>
               </li>
@@ -94,17 +108,19 @@ export function FileToolbar({
         <button
           type="button"
           className="link link-hover mr-auto text-xs text-base-content/60 whitespace-nowrap sm:mr-0"
-          onClick={onShowDirectoryStats}
+          onClick={() => openDirectoryStats(currentPath)}
         >
-          {fileCount} files, {formatBytes(totalBytes)}
+          {filteredFiles.length} files, {formatBytes(totalBytes)}
         </button>
         <div className="flex items-center gap-2">
           <div className="tooltip" data-tip={isUploadingFile ? "继续添加上传文件" : "上传文件"}>
             <button
               type="button"
               className="btn btn-square btn-sm border-emerald-500 bg-emerald-500 text-white hover:border-emerald-600 hover:bg-emerald-600 focus-visible:outline-emerald-500 disabled:border-emerald-300 disabled:bg-emerald-300"
-              disabled={isUploadDisabled}
-              onClick={onUploadClick}
+              onClick={() => {
+                setUploadType("file");
+                fileInputRef.current?.click();
+              }}
               aria-label="上传文件"
             >
               <MdiFileUpload className="w-5 h-5" />
@@ -114,8 +130,10 @@ export function FileToolbar({
             <button
               type="button"
               className="btn btn-square btn-sm border-green-500 bg-green-500 text-white hover:border-green-600 hover:bg-green-600 focus-visible:outline-green-500 disabled:border-green-300 disabled:bg-green-300"
-              disabled={isUploadDisabled}
-              onClick={onUploadFolderClick}
+              onClick={() => {
+                setUploadType("folder");
+                folderInputRef.current?.click();
+              }}
               aria-label="上传文件夹"
             >
               <MdiFolderUpload className="w-5 h-5" />
@@ -126,22 +144,22 @@ export function FileToolbar({
           <button
             type="button"
             className="btn btn-accent btn-square btn-sm"
-            disabled={isCreateTextFileDisabled}
-            onClick={onCreateTextFile}
+            disabled={savingTextFile}
+            onClick={openNewTextFile}
             aria-label="新建文本文件"
           >
             <MdiFilePlus className="w-5 h-5" />
           </button>
         </div>
-        <div className="tooltip" data-tip={isCreatingFolder ? "Creating..." : "New Folder"}>
+        <div className="tooltip" data-tip={creatingFolder ? "Creating..." : "New Folder"}>
           <button
             type="button"
-            className={`btn btn-secondary btn-square btn-sm ${isCreatingFolder ? "loading" : ""}`}
-            disabled={isCreateFolderDisabled || isCreatingNewFolder}
-            onClick={onCreateFolder}
+            className={`btn btn-secondary btn-square btn-sm ${creatingFolder ? "loading" : ""}`}
+            disabled={creatingFolder || isCreatingNewFolder}
+            onClick={() => startCreateFolder(getUniqueFolderName("新建文件夹"))}
             aria-label="新建文件夹"
           >
-            {!isCreatingFolder && <MdiFolderPlus className="w-5 h-5" />}
+            {!creatingFolder && <MdiFolderPlus className="w-5 h-5" />}
           </button>
         </div>
         <div
@@ -166,12 +184,12 @@ export function FileToolbar({
                     : "border-transparent bg-transparent pr-9 opacity-0"
                 }`}
                 placeholder="Search current folder"
-                value={searchQuery}
-                onChange={(e) => onSearchChange(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Escape") {
-                    onSearchChange("");
-                    e.currentTarget.blur();
+                value={searchInputValue}
+                onChange={(event) => setDashboardSearchInput(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Escape") {
+                    setDashboardSearchInput("");
+                    event.currentTarget.blur();
                   }
                 }}
               />
@@ -183,7 +201,7 @@ export function FileToolbar({
                 className={`btn btn-ghost btn-square btn-sm h-8 w-8 transition-opacity duration-150 ease-in-out group-focus-within/search:pointer-events-none group-focus-within/search:opacity-0 ${
                   isSearchExpanded ? "pointer-events-none opacity-0" : ""
                 }`}
-                onMouseDown={(e) => e.preventDefault()}
+                onMouseDown={(event) => event.preventDefault()}
                 onClick={focusSearchInput}
                 aria-label="搜索文件"
               >
@@ -204,8 +222,8 @@ export function FileToolbar({
             <button
               type="button"
               className={`btn btn-ghost btn-square btn-sm ${isRefreshing ? "loading w-8 scale-75" : ""}`}
-              disabled={isRefreshDisabled}
-              onClick={onRefresh}
+              disabled={isRefreshing}
+              onClick={() => void refresh()}
               aria-label="刷新文件列表"
             >
               {!isRefreshing && <MdiRefresh className="w-5 h-5" />}

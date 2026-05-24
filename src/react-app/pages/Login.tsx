@@ -1,16 +1,12 @@
 import { useId, useRef, useState } from 'react'
-import { Link, useLocation, useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import MdiAccountPlusOutline from '~icons/mdi/account-plus-outline'
 import MdiAlertCircleOutline from '~icons/mdi/alert-circle-outline'
 import MdiEmailOutline from '~icons/mdi/email-outline'
 import MdiLockOutline from '~icons/mdi/lock-outline'
 import MdiLogin from '~icons/mdi/login'
 import toast from 'react-hot-toast'
-import { useAuth } from '../hooks/useAuth'
-
-interface LoginProps {
-  onSwitchToRegister: () => void
-}
+import { useAuth } from '../auth/useAuth'
 
 const AUTH_FEEDBACK_MESSAGES = {
   registered: 'Registration successful. Please check your email to verify your account.',
@@ -41,8 +37,9 @@ function GoogleIcon({ className }: { className?: string }) {
   )
 }
 
-export function Login({ onSwitchToRegister }: LoginProps) {
+export function Login() {
   const location = useLocation()
+  const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { login, loginWithGoogle, loading } = useAuth()
   const emailId = useId()
@@ -204,7 +201,7 @@ export function Login({ onSwitchToRegister }: LoginProps) {
           <button
             type="button"
             className="btn btn-outline gap-2"
-            onClick={onSwitchToRegister}
+            onClick={() => navigate('/register')}
             disabled={loading}
           >
             <MdiAccountPlusOutline className="w-5 h-5" />

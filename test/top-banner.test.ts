@@ -18,17 +18,14 @@ vi.mock("react-hot-toast", () => ({
   Toaster: () => createElement("div", { "data-testid": "toaster" }),
 }));
 
-vi.mock("../src/react-app/context/AuthContext", () => ({
-  AuthProvider: ({ children }: { children: ReactNode }) =>
-    createElement("div", { "data-testid": "auth-provider" }, children),
-}));
+vi.mock("~icons/mdi/close", () => ({ default: () => createElement("span", { "data-icon": "mdi:close" }) }));
 
 vi.mock("../src/react-app/routes", () => ({
   buildAppRouteElements: () => createElement("div", { "data-testid": "routes" }, "routes"),
   renderProtectedRoute: (_user: unknown, element: ReactNode) => element,
 }));
 
-vi.mock("../src/react-app/hooks/useAuth", () => ({
+vi.mock("../src/react-app/auth/useAuth", () => ({
   useAuth: () => ({ authLoading: false, user: null }),
 }));
 

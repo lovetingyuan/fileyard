@@ -10,10 +10,13 @@ import type { SharedFileMetadataResponse } from "../src/types";
 import { Register } from "../src/react-app/pages/Register";
 import { Login } from "../src/react-app/pages/Login";
 import { ShareDownload } from "../src/react-app/pages/ShareDownload";
-import { FileToolbar } from "../src/react-app/components/FileToolbar";
+import { FileToolbar } from "../src/react-app/pages/dashboard/components/FileToolbar";
 import { generateSalt, hashPassword } from "../src/worker/utils/password";
 
 const mockUseSWR = vi.fn();
+const toolbarState = vi.hoisted(() => ({
+  searchInputValue: "",
+}));
 
 vi.mock("~icons/mdi/account-plus", () => ({ default: () => null }));
 vi.mock("~icons/mdi/account-plus-outline", () => ({ default: () => null }));
@@ -36,7 +39,7 @@ vi.mock("swr", () => ({
   default: (...args: unknown[]) => mockUseSWR(...args),
 }));
 
-vi.mock("../src/react-app/hooks/useAuth", () => ({
+vi.mock("../src/react-app/auth/useAuth", () => ({
   useAuth: () => ({
     login: vi.fn(async () => ({ success: true })),
     register: vi.fn(async () => ({ success: true })),
@@ -46,6 +49,35 @@ vi.mock("../src/react-app/hooks/useAuth", () => ({
     authLoading: false,
     loading: false,
     error: null,
+  }),
+}));
+
+vi.mock("../src/react-app/store", () => ({
+  useAppStore: () => ({
+    creatingFolder: false,
+    isCreatingNewFolder: false,
+    savingTextFile: false,
+    uploadQueue: [],
+  }),
+}));
+
+vi.mock("../src/react-app/pages/dashboard/hooks/useDashboardPath", () => ({
+  useDashboardPath: () => ({
+    breadcrumbs: [],
+    currentPath: "",
+    setPath: vi.fn(),
+  }),
+}));
+
+vi.mock("../src/react-app/pages/dashboard/hooks/useDashboardFileView", () => ({
+  useDashboardFileView: () => ({
+    filteredFiles: [],
+    getUniqueFolderName: () => "新建文件夹",
+    isRefreshing: false,
+    isSearchPending: false,
+    refresh: vi.fn(),
+    searchInputValue: toolbarState.searchInputValue,
+    totalBytes: 0,
   }),
 }));
 
@@ -227,6 +259,7 @@ describe("release hardening backend", () => {
 describe("release hardening frontend markup", () => {
   beforeEach(() => {
     mockUseSWR.mockReset();
+    toolbarState.searchInputValue = "";
   });
 
   it("renders login and register forms with names and autocomplete attributes", () => {
@@ -237,7 +270,7 @@ describe("release hardening frontend markup", () => {
         null,
         createElement(Route, {
           path: "/login",
-          element: createElement(Login, { onSwitchToRegister: vi.fn() }),
+          element: createElement(Login),
         }),
       ),
     );
@@ -254,7 +287,7 @@ describe("release hardening frontend markup", () => {
         null,
         createElement(Route, {
           path: "/register",
-          element: createElement(Register, { onSwitchToLogin: vi.fn() }),
+          element: createElement(Register),
         }),
       ),
     );
@@ -276,7 +309,7 @@ describe("release hardening frontend markup", () => {
         null,
         createElement(Route, {
           path: "/login",
-          element: createElement(Login, { onSwitchToRegister: vi.fn() }),
+          element: createElement(Login),
         }),
       ),
     );
@@ -289,33 +322,7 @@ describe("release hardening frontend markup", () => {
   });
 
   it("renders file toolbar icon buttons with accessible labels", () => {
-    const markup = renderToStaticMarkup(
-      createElement(FileToolbar, {
-        breadcrumbs: [],
-        fileCount: 0,
-        totalBytes: 0,
-        isUploadDisabled: false,
-        isCreateTextFileDisabled: false,
-        isCreateFolderDisabled: false,
-        isRefreshDisabled: false,
-        isUploadingFile: false,
-        isCreatingFolder: false,
-        isRefreshing: false,
-        isCreatingNewFolder: false,
-        searchQuery: "",
-        isSearchPending: false,
-        onSetPath: vi.fn(),
-        onUploadClick: vi.fn(),
-        onUploadFolderClick: vi.fn(),
-        onCreateFolder: vi.fn(),
-        onCreateTextFile: vi.fn(),
-        onRefresh: vi.fn(),
-        onSearchChange: vi.fn(),
-        onShowDirectoryStats: vi.fn(),
-        uploadStatusText: null,
-        onShowUploadDetails: vi.fn(),
-      }),
-    );
+    const markup = renderToStaticMarkup(createElement(FileToolbar));
 
     expect(markup).toContain('aria-label="上传文件"');
     expect(markup).toContain('aria-label="新建文本文件"');
@@ -324,70 +331,21 @@ describe("release hardening frontend markup", () => {
     expect(markup).toContain('aria-label="搜索文件"');
   });
 
-  it("keeps non-upload toolbar actions enabled while upload selection is disabled", () => {
-    const markup = renderToStaticMarkup(
-      createElement(FileToolbar, {
-        breadcrumbs: [],
-        fileCount: 0,
-        totalBytes: 0,
-        isUploadDisabled: true,
-        isCreateTextFileDisabled: false,
-        isCreateFolderDisabled: false,
-        isRefreshDisabled: false,
-        isUploadingFile: true,
-        isCreatingFolder: false,
-        isRefreshing: false,
-        isCreatingNewFolder: false,
-        searchQuery: "",
-        isSearchPending: false,
-        onSetPath: vi.fn(),
-        onUploadClick: vi.fn(),
-        onUploadFolderClick: vi.fn(),
-        onCreateFolder: vi.fn(),
-        onCreateTextFile: vi.fn(),
-        onRefresh: vi.fn(),
-        onSearchChange: vi.fn(),
-        onShowDirectoryStats: vi.fn(),
-        uploadStatusText: "上传中，点击查看详情",
-        onShowUploadDetails: vi.fn(),
-      }),
-    );
+  it("keeps toolbar actions enabled from internal dashboard state", () => {
+    const markup = renderToStaticMarkup(createElement(FileToolbar));
 
     const hasDisabledButton = (ariaLabel: string) =>
       new RegExp(`<button(?=[^>]*aria-label="${ariaLabel}")(?=[^>]*disabled)[^>]*>`).test(markup);
 
-    expect(hasDisabledButton("上传文件")).toBe(true);
+    expect(hasDisabledButton("上传文件")).toBe(false);
     expect(hasDisabledButton("新建文本文件")).toBe(false);
     expect(hasDisabledButton("新建文件夹")).toBe(false);
     expect(hasDisabledButton("刷新文件列表")).toBe(false);
   });
 
   it("keeps the mobile search input and refresh button on the same wrapped row", () => {
-    const markup = renderToStaticMarkup(
-      createElement(FileToolbar, {
-        breadcrumbs: [],
-        fileCount: 0,
-        totalBytes: 0,
-        isUploadDisabled: false,
-        isCreateTextFileDisabled: false,
-        isCreateFolderDisabled: false,
-        isRefreshDisabled: false,
-        isUploadingFile: false,
-        isCreatingFolder: false,
-        isRefreshing: false,
-        isCreatingNewFolder: false,
-        searchQuery: "report",
-        isSearchPending: false,
-        onSetPath: vi.fn(),
-        onUploadClick: vi.fn(),
-        onUploadFolderClick: vi.fn(),
-        onCreateFolder: vi.fn(),
-        onCreateTextFile: vi.fn(),
-        onRefresh: vi.fn(),
-        onSearchChange: vi.fn(),
-        onShowDirectoryStats: vi.fn(),
-      }),
-    );
+    toolbarState.searchInputValue = "report";
+    const markup = renderToStaticMarkup(createElement(FileToolbar));
 
     expect(markup).toContain("flex-wrap");
     expect(markup).toContain("group/search-actions");

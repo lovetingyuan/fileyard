@@ -9,6 +9,7 @@ const config: KnipConfig = {
   ],
   project: ["src/**/*.{ts,tsx}", "test/**/*.{ts,tsx}"],
   ignoreFiles: ["src/react-app/vite-env.d.ts"],
+  ignoreUnresolved: ["^~icons/"],
   ignoreDependencies: [
     // Cloudflare Workers virtual modules used in tests.
     "cloudflare",

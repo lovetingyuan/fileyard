@@ -1,14 +1,8 @@
 import { useState } from "react";
+import type { User } from "../../types";
 import { authClient, type BetterAuthSession } from "../lib/auth-client";
 
-export interface User {
-  id: string;
-  email: string;
-  image: string | null;
-  name: string;
-  verified: boolean;
-  createdAt?: string;
-}
+export type { User } from "../../types";
 
 type RegisterResponse = {
   success: true;

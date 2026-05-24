@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import type { UploadQueueItem } from "../src/types";
-import { UploadDetailsModal } from "../src/react-app/components/UploadDetailsModal";
+import { UploadDetailsModal } from "../src/react-app/pages/dashboard/components/UploadDetailsModal";
 
 vi.mock("~icons/mdi/close-circle-outline", () => ({ default: () => null }));
 vi.mock("~icons/mdi/close", () => ({ default: () => null }));

@@ -35,6 +35,16 @@ vi.mock("react-hot-toast", () => ({
   },
 }));
 
+vi.mock("~icons/mdi/account-plus-outline", () => ({ default: () => null }));
+vi.mock("~icons/mdi/alert-circle-outline", () => ({ default: () => null }));
+vi.mock("~icons/mdi/close-circle", () => ({ default: () => null }));
+vi.mock("~icons/mdi/email-outline", () => ({ default: () => null }));
+vi.mock("~icons/mdi/information-outline", () => ({ default: () => null }));
+vi.mock("~icons/mdi/lock-check-outline", () => ({ default: () => null }));
+vi.mock("~icons/mdi/lock-outline", () => ({ default: () => null }));
+vi.mock("~icons/mdi/lock-reset", () => ({ default: () => null }));
+vi.mock("~icons/mdi/login", () => ({ default: () => null }));
+
 vi.mock("../src/react-app/hooks/useAuthApi", async () => {
   const actual = await vi.importActual<typeof import("../src/react-app/hooks/useAuthApi")>(
     "../src/react-app/hooks/useAuthApi",
@@ -47,7 +57,7 @@ vi.mock("../src/react-app/hooks/useAuthApi", async () => {
   };
 });
 
-vi.mock("../src/react-app/hooks/useAuth", () => ({
+vi.mock("../src/react-app/auth/useAuth", () => ({
   useAuth: () => ({
     login: vi.fn(async () => ({ success: true })),
     register: vi.fn(async () => ({ success: true })),
@@ -470,7 +480,7 @@ describe("password reset frontend markup", () => {
         null,
         createElement(Route, {
           path: "/login",
-          element: createElement(Login, { onSwitchToRegister: vi.fn() }),
+          element: createElement(Login),
         }),
       ),
     );
@@ -487,7 +497,7 @@ describe("password reset frontend markup", () => {
         null,
         createElement(Route, {
           path: "/login",
-          element: createElement(Login, { onSwitchToRegister: vi.fn() }),
+          element: createElement(Login),
         }),
       ),
     );

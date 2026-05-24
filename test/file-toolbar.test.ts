@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
-import { FileToolbar } from "../src/react-app/components/FileToolbar";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { FileToolbar } from "../src/react-app/pages/dashboard/components/FileToolbar";
 
 vi.mock("~icons/mdi/file-upload", () => ({ default: () => null }));
 vi.mock("~icons/mdi/file-plus", () => ({ default: () => null }));
@@ -11,38 +11,54 @@ vi.mock("~icons/mdi/home-outline", () => ({ default: () => null }));
 vi.mock("~icons/mdi/magnify", () => ({ default: () => null }));
 vi.mock("~icons/mdi/refresh", () => ({ default: () => null }));
 
-function renderToolbar({
-  isUploadDisabled = false,
-  isUploadingFile = false,
-}: {
-  isUploadDisabled?: boolean;
-  isUploadingFile?: boolean;
-} = {}): string {
-  return renderToStaticMarkup(
-    createElement(FileToolbar, {
-      breadcrumbs: [],
-      fileCount: 0,
-      totalBytes: 0,
-      isUploadDisabled,
-      isCreateTextFileDisabled: false,
-      isCreateFolderDisabled: false,
-      isRefreshDisabled: false,
-      isUploadingFile,
-      isCreatingFolder: false,
-      isRefreshing: false,
-      isCreatingNewFolder: false,
-      searchQuery: "",
-      isSearchPending: false,
-      onSetPath: vi.fn(),
-      onUploadClick: vi.fn(),
-      onUploadFolderClick: vi.fn(),
-      onCreateFolder: vi.fn(),
-      onCreateTextFile: vi.fn(),
-      onRefresh: vi.fn(),
-      onSearchChange: vi.fn(),
-      onShowDirectoryStats: vi.fn(),
-    }),
-  );
+let uploadQueueActive = false;
+
+vi.mock("../src/react-app/store", () => ({
+  useAppStore: () => ({
+    creatingFolder: false,
+    isCreatingNewFolder: false,
+    savingTextFile: false,
+    uploadQueue: uploadQueueActive
+      ? [
+          {
+            id: "upload-1",
+            file: new File(["x"], "upload.txt"),
+            displayPath: "upload.txt",
+            targetPath: "upload.txt",
+            parentPath: "",
+            name: "upload.txt",
+            size: 1,
+            progress: 50,
+            status: "uploading",
+            errorMessage: null,
+          },
+        ]
+      : [],
+  }),
+}));
+
+vi.mock("../src/react-app/pages/dashboard/hooks/useDashboardPath", () => ({
+  useDashboardPath: () => ({
+    breadcrumbs: [],
+    currentPath: "",
+    setPath: vi.fn(),
+  }),
+}));
+
+vi.mock("../src/react-app/pages/dashboard/hooks/useDashboardFileView", () => ({
+  useDashboardFileView: () => ({
+    filteredFiles: [],
+    getUniqueFolderName: () => "新建文件夹",
+    isRefreshing: false,
+    isSearchPending: false,
+    refresh: vi.fn(),
+    searchInputValue: "",
+    totalBytes: 0,
+  }),
+}));
+
+function renderToolbar(): string {
+  return renderToStaticMarkup(createElement(FileToolbar));
 }
 
 function hasButton(markup: string, ariaLabel: string): boolean {
@@ -63,6 +79,10 @@ function getButtonClass(markup: string, ariaLabel: string): string {
 }
 
 describe("file toolbar", () => {
+  beforeEach(() => {
+    uploadQueueActive = false;
+  });
+
   it("renders separate upload file and upload folder buttons without an upload type dropdown", () => {
     const markup = renderToolbar();
 
@@ -71,11 +91,11 @@ describe("file toolbar", () => {
     expect(hasButton(markup, "选择上传类型")).toBe(false);
   });
 
-  it("disables both upload buttons when upload is disabled", () => {
-    const markup = renderToolbar({ isUploadDisabled: true });
+  it("keeps both upload buttons enabled from internal dashboard state", () => {
+    const markup = renderToolbar();
 
-    expect(hasDisabledButton(markup, "上传文件")).toBe(true);
-    expect(hasDisabledButton(markup, "上传文件夹")).toBe(true);
+    expect(hasDisabledButton(markup, "上传文件")).toBe(false);
+    expect(hasDisabledButton(markup, "上传文件夹")).toBe(false);
   });
 
   it("uses distinct but related green colors for the two upload buttons", () => {
@@ -90,7 +110,8 @@ describe("file toolbar", () => {
   });
 
   it("keeps the upload file button visually idle while files are uploading", () => {
-    const markup = renderToolbar({ isUploadingFile: true });
+    uploadQueueActive = true;
+    const markup = renderToolbar();
 
     const fileUploadClass = getButtonClass(markup, "上传文件");
 

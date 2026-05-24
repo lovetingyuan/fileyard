@@ -1,20 +1,17 @@
 import { useRef, useState, type ComponentType, type CSSProperties } from "react";
 import QRCodeImport from "react-qr-code";
 import toast from "react-hot-toast";
-import type { FileEntry, ShareLinkResponse, ShareDurationOption } from "../../types";
-import { Dialog } from "./Dialog";
-import { ShareLinkCopyButton } from "./ShareLinkCopyButton";
-import { useCreateShareLinkMutation } from "../hooks/useFilesApi";
+import type { ShareLinkResponse, ShareDurationOption } from "../../../../types";
+import { Dialog } from "../../../components/Dialog";
+import { ShareLinkCopyButton } from "../../../components/ShareLinkCopyButton";
+import { useCreateShareLinkMutation } from "../../../hooks/useFilesApi";
+import { useAppStore } from "../../../store";
 import {
   formatShareDuration,
   formatShareExpiry,
   shareDurationOptions,
-} from "../utils/shareDurations";
-
-interface ShareFileModalProps {
-  file: FileEntry | null;
-  onClose: () => void;
-}
+} from "../../../utils/shareDurations";
+import { closeFileShare } from "../actions";
 
 type QRCodeComponentProps = {
   value: string;
@@ -30,7 +27,9 @@ const QRCode = ((QRCodeImport as unknown as { QRCode?: unknown; default?: unknow
   (QRCodeImport as unknown as { default?: unknown }).default ??
   QRCodeImport) as ComponentType<QRCodeComponentProps>;
 
-export function ShareFileModal({ file, onClose }: ShareFileModalProps) {
+export function ShareFileModal() {
+  const { currentFile, sharing } = useAppStore();
+  const file = sharing ? currentFile : null;
   const [expiresInSeconds, setExpiresInSeconds] =
     useState<ShareDurationOption>(DEFAULT_SHARE_DURATION);
   const [shareLink, setShareLink] = useState<ShareLinkResponse | null>(null);
@@ -89,7 +88,7 @@ export function ShareFileModal({ file, onClose }: ShareFileModalProps) {
 
   const handleClose = () => {
     resetCopyFeedback();
-    onClose();
+    closeFileShare();
   };
 
   const isLoading = isMutating || shareLink === null;

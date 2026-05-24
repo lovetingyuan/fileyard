@@ -9,7 +9,7 @@ import {
   getUploadQueueSummary,
   resetFailedUploadItem,
   updateUploadQueueItem,
-} from "../src/react-app/hooks/useUploadQueue";
+} from "../src/react-app/pages/dashboard/hooks/useUploadQueue";
 
 function item(
   id: string,

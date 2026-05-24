@@ -1,28 +1,22 @@
-import type { DirectoryStatsResponse } from "../../types";
-import { formatBytes } from "../utils/fileFormatters";
-import { Dialog } from "./Dialog";
-import { DetailsList } from "./DetailsList";
+import { Dialog } from "../../../components/Dialog";
+import { DetailsList } from "../../../components/DetailsList";
+import { useDirectoryStats } from "../../../hooks/useFilesApi";
+import { useAppStore } from "../../../store";
+import { formatBytes } from "../../../utils/fileFormatters";
+import { closeDirectoryStats } from "../actions";
 
-interface DirectoryStatsModalProps {
-  isOpen: boolean;
-  path: string;
-  stats: DirectoryStatsResponse | null;
-  error: string | null;
-  isLoading: boolean;
-  onClose: () => void;
-}
+export function DirectoryStatsModal() {
+  const { directoryStatsPath, isDirectoryStatsModalOpen } = useAppStore();
+  const { error, isLoading, stats } = useDirectoryStats(
+    directoryStatsPath,
+    isDirectoryStatsModalOpen,
+  );
 
-export function DirectoryStatsModal({
-  isOpen,
-  path,
-  stats,
-  error,
-  isLoading,
-  onClose,
-}: DirectoryStatsModalProps) {
-  const pathSegments = path.split("/").filter(Boolean);
-  const folderName = path ? (pathSegments[pathSegments.length - 1] ?? path) : "根目录";
-  const displayPath = path ? `/${path}` : "/";
+  const pathSegments = directoryStatsPath.split("/").filter(Boolean);
+  const folderName = directoryStatsPath
+    ? (pathSegments[pathSegments.length - 1] ?? directoryStatsPath)
+    : "根目录";
+  const displayPath = directoryStatsPath ? `/${directoryStatsPath}` : "/";
   const detailItems = [
     {
       label: "名称",
@@ -54,7 +48,7 @@ export function DirectoryStatsModal({
             },
             {
               label: "原因",
-              value: error,
+              value: error.message,
               valueClassName: "text-base-content/70",
             },
           ]
@@ -80,9 +74,9 @@ export function DirectoryStatsModal({
 
   return (
     <Dialog
-      isOpen={isOpen}
+      isOpen={isDirectoryStatsModalOpen}
       title="文件夹详情"
-      onClose={onClose}
+      onClose={closeDirectoryStats}
       cancelText="关闭"
       showConfirmButton={false}
       boxClassName="max-w-md bg-base-100 p-5 shadow-sm"

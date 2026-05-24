@@ -1,7 +1,6 @@
-import { BrowserRouter, Routes, useLocation, useNavigate } from "react-router-dom";
+import { BrowserRouter, Routes, useLocation } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
-import { AuthProvider } from "./context/AuthContext";
-import { useAuth } from "./hooks/useAuth";
+import { useAuth } from "./auth/useAuth";
 import { buildAppRouteElements } from "./routes";
 import { allowsAuthenticatedEmailActionPath } from "./utils/authRouteAccess";
 import { TopBanner } from "./components/TopBanner";
@@ -10,17 +9,7 @@ export { renderProtectedRoute } from "./routes";
 function AppContent() {
   const { authLoading, user } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
   const allowAuthenticatedEmailAction = allowsAuthenticatedEmailActionPath(location.pathname);
-
-  const handleSwitchToRegister = () => {
-    navigate("/register");
-  };
-
-  const handleSwitchToLogin = (email?: string) => {
-    const search = email ? `?email=${encodeURIComponent(email)}&registered=1` : "";
-    navigate(`/login${search}`);
-  };
 
   return (
     <Routes>
@@ -28,8 +17,6 @@ function AppContent() {
         user,
         authLoading,
         allowAuthenticatedEmailAction,
-        onSwitchToRegister: handleSwitchToRegister,
-        onSwitchToLogin: handleSwitchToLogin,
       })}
     </Routes>
   );
@@ -40,9 +27,7 @@ export function AppShell() {
     <>
       <Toaster position="top-center" toastOptions={{ duration: 5000 }} />
       <TopBanner />
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
+      <AppContent />
     </>
   );
 }

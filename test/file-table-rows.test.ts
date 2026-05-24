@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
-import { FileRow, FolderRow } from "../src/react-app/components/FileTableRows";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { FileRow, FolderRow } from "../src/react-app/pages/dashboard/components/FileTableRows";
 
 vi.mock("~icons/mdi/delete-outline", () => ({ default: () => null }));
 vi.mock("~icons/mdi/dots-horizontal", () => ({ default: () => null }));
@@ -14,6 +14,31 @@ vi.mock("../src/react-app/constants/fileIcons", () => ({
   getFileIcon: () => ({ Icon: () => null, color: "" }),
 }));
 
+const rowState = vi.hoisted(() => ({
+  deletingFilePath: null as string | null,
+  downloadingPath: null as string | null,
+}));
+
+vi.mock("../src/react-app/store", () => ({
+  useAppStore: () => ({
+    addNewFolderName: "",
+    deletingFilePath: rowState.deletingFilePath,
+    deletingFolderPath: rowState.deletingFilePath,
+    downloadingPath: rowState.downloadingPath,
+  }),
+  getStoreMethods: () => ({
+    setAddNewFolderName: vi.fn(),
+    setIsCreatingNewFolder: vi.fn(),
+  }),
+}));
+
+vi.mock("../src/react-app/pages/dashboard/hooks/useDashboardPath", () => ({
+  useDashboardPath: () => ({
+    currentPath: "",
+    setPath: vi.fn(),
+  }),
+}));
+
 function hasDisabledButton(markup: string, ariaLabel: string): boolean {
   const escapedLabel = ariaLabel.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   return new RegExp(
@@ -22,6 +47,11 @@ function hasDisabledButton(markup: string, ariaLabel: string): boolean {
 }
 
 describe("file table rows", () => {
+  beforeEach(() => {
+    rowState.deletingFilePath = null;
+    rowState.downloadingPath = null;
+  });
+
   it("renders folder names in bold", () => {
     const markup = renderToStaticMarkup(
       createElement(FolderRow, {
@@ -30,11 +60,6 @@ describe("file table rows", () => {
           path: "Projects",
           createdAt: "2026-04-19T00:00:00.000Z",
         },
-        isActionDisabled: false,
-        isLoading: false,
-        onNavigate: vi.fn(),
-        onShowDetails: vi.fn(),
-        onRequestDelete: vi.fn(),
       }),
     );
 
@@ -53,13 +78,6 @@ describe("file table rows", () => {
           uploadedAt: "2026-04-19T00:00:00.000Z",
           contentType: "application/pdf",
         },
-        isActionDisabled: false,
-        isLoading: false,
-        onDownload: vi.fn(),
-        onRequestDelete: vi.fn(),
-        onPreview: vi.fn(),
-        onShare: vi.fn(),
-        onShowDetails: vi.fn(),
       }),
     );
 
@@ -67,6 +85,7 @@ describe("file table rows", () => {
   });
 
   it("disables and marks only the current row action menu as loading", () => {
+    rowState.deletingFilePath = "docs/report.pdf";
     const markup = renderToStaticMarkup(
       createElement(FileRow, {
         file: {
@@ -77,13 +96,6 @@ describe("file table rows", () => {
           uploadedAt: "2026-04-19T00:00:00.000Z",
           contentType: "application/pdf",
         },
-        isActionDisabled: true,
-        isLoading: true,
-        onDownload: vi.fn(),
-        onRequestDelete: vi.fn(),
-        onPreview: vi.fn(),
-        onShare: vi.fn(),
-        onShowDetails: vi.fn(),
       }),
     );
 

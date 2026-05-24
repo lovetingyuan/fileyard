@@ -1,9 +1,9 @@
 import MdiCloseCircleOutline from "~icons/mdi/close-circle-outline";
 import MdiRefresh from "~icons/mdi/refresh";
-import type { UploadQueueItem, UploadQueueStatus } from "../../types";
-import { formatBytes } from "../utils/fileFormatters";
+import type { UploadQueueItem, UploadQueueStatus } from "../../../../types";
+import { Dialog } from "../../../components/Dialog";
+import { formatBytes } from "../../../utils/fileFormatters";
 import { countUploadQueueStats } from "../hooks/useUploadQueue";
-import { Dialog } from "./Dialog";
 
 interface UploadDetailsModalProps {
   isOpen: boolean;

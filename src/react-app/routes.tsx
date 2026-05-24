@@ -1,15 +1,15 @@
 import { Navigate, Outlet, Route } from "react-router-dom";
 import type { ReactElement } from "react";
 import { AppLayout } from "./components/AppLayout";
-import { Dashboard } from "./pages/Dashboard";
+import { Dashboard } from "./pages/dashboard/Dashboard";
 import { ForgotPassword } from "./pages/ForgotPassword";
 import { Login } from "./pages/Login";
 import { NotFound } from "./pages/NotFound";
-import { Profile } from "./pages/Profile";
+import { Profile } from "./pages/profile/Profile";
 import { Register } from "./pages/Register";
 import { ResetPassword } from "./pages/ResetPassword";
 import { ShareDownload } from "./pages/ShareDownload";
-import type { User } from "./hooks/useAuthApi";
+import type { User } from "../types";
 
 export function renderProtectedRoute(user: User | null, element: ReactElement) {
   return user ? element : <Navigate to="/login" replace />;
@@ -30,16 +30,12 @@ function AuthGate({ authLoading }: { authLoading: boolean }) {
 type BuildAppRouteElementsOptions = {
   allowAuthenticatedEmailAction: boolean;
   authLoading: boolean;
-  onSwitchToLogin: (email?: string) => void;
-  onSwitchToRegister: () => void;
   user: User | null;
 };
 
 export function buildAppRouteElements({
   allowAuthenticatedEmailAction,
   authLoading,
-  onSwitchToLogin,
-  onSwitchToRegister,
   user,
 }: BuildAppRouteElementsOptions) {
   return (
@@ -49,15 +45,11 @@ export function buildAppRouteElements({
         <Route element={<AuthGate authLoading={authLoading} />}>
           <Route
             path="login"
-            element={
-              user ? <Navigate to="/" replace /> : <Login onSwitchToRegister={onSwitchToRegister} />
-            }
+            element={user ? <Navigate to="/" replace /> : <Login />}
           />
           <Route
             path="register"
-            element={
-              user ? <Navigate to="/" replace /> : <Register onSwitchToLogin={onSwitchToLogin} />
-            }
+            element={user ? <Navigate to="/" replace /> : <Register />}
           />
           <Route
             path="forgot-password"

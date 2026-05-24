@@ -1,5 +1,5 @@
 import { Link, Outlet } from 'react-router-dom'
-import { useAuth } from '../hooks/useAuth'
+import { useAuth } from '../auth/useAuth'
 import { useProfile } from '../hooks/useProfileApi'
 import { UserAvatar } from './UserAvatar'
 import { ThemeSwitcher } from './ThemeSwitcher'

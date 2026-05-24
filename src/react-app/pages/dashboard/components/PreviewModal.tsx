@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { SyntheticEvent } from "react";
+import MdiCheck from "~icons/mdi/check";
 import MdiContentCopy from "~icons/mdi/content-copy";
 import MdiFileAlertOutline from "~icons/mdi/file-alert-outline";
 import MdiFullscreen from "~icons/mdi/fullscreen";
@@ -7,9 +8,14 @@ import MdiFullscreenExit from "~icons/mdi/fullscreen-exit";
 import MdiPencil from "~icons/mdi/pencil";
 import toast from "react-hot-toast";
 import useSWR from "swr";
-import type { FileEntry } from "../../types";
-import { Dialog } from "./Dialog";
-import { buildPreviewUrl } from "../hooks/useFilesApi";
+import type { FileEntry } from "../../../../types";
+import { Dialog } from "../../../components/Dialog";
+import { buildPreviewUrl, useUpdateFileMutation } from "../../../hooks/useFilesApi";
+import { useAppStore } from "../../../store";
+import { getPreviewInfo } from "../../../utils/previewInfo";
+import { closeFilePreview } from "../actions";
+import { runWithLargeFileUploadToast } from "../fileOperations";
+import { useDashboardFileView } from "../hooks/useDashboardFileView";
 import {
   getPreviewContentWrapperClassName,
   getPreviewModalBoxClassName,
@@ -17,8 +23,7 @@ import {
   STANDARD_PDF_CLASS_NAME,
   STANDARD_TEXT_CLASS_NAME,
   STANDARD_VIDEO_CLASS_NAME,
-} from "./previewModalLayout";
-import { getPreviewInfo } from "../utils/previewInfo";
+} from "../../../components/previewModalLayout";
 
 // --- Preview size limits (in bytes) ---
 
@@ -31,6 +36,7 @@ const PREVIEW_SIZE_LIMITS = {
 } as const;
 
 const PREVIEW_MEDIA_VOLUME_STORAGE_KEY = "fileyard:preview-media:volume";
+const COPY_FEEDBACK_RESET_DELAY_MS = 1800;
 
 function getBrowserLocalStorage(): Storage | null {
   if (typeof window === "undefined") {
@@ -150,7 +156,7 @@ function TextPreview({
   if (isEditing) {
     return (
       <textarea
-        className={`textarea textarea-bordered w-full font-mono text-sm resize-none ${isFullscreen ? "h-full" : "h-[60vh]"}`}
+        className={`textarea textarea-bordered w-full bg-info/5 font-mono text-sm resize-none ${isFullscreen ? "h-full" : "h-[60vh]"}`}
         value={editContent}
         onChange={(e) => onEditContentChange(e.target.value)}
         disabled={isBusy}
@@ -177,6 +183,35 @@ function UnsupportedMessage({ reason }: { reason: string }) {
       <MdiFileAlertOutline className="w-12 h-12" />
       <p className="text-sm text-center">{reason}</p>
     </div>
+  );
+}
+
+interface PreviewCopyTextButtonProps {
+  disabled: boolean;
+  isCopied: boolean;
+  onClick: () => void;
+}
+
+export function PreviewCopyTextButton({
+  disabled,
+  isCopied,
+  onClick,
+}: PreviewCopyTextButtonProps) {
+  const Icon = isCopied ? MdiCheck : MdiContentCopy;
+
+  return (
+    <button
+      type="button"
+      className={`btn btn-ghost btn-sm min-w-24 transition-colors duration-200 ${isCopied ? "text-success" : ""}`}
+      onClick={onClick}
+      disabled={disabled}
+      data-copy-state={isCopied ? "copied" : "idle"}
+      aria-label={isCopied ? "文本已复制" : undefined}
+      aria-live="polite"
+    >
+      <Icon className="w-4 h-4" />
+      {isCopied ? "已复制" : "复制文本"}
+    </button>
   );
 }
 
@@ -244,32 +279,41 @@ function PdfPreview({
   );
 }
 
-// --- Main modal ---
-
-interface PreviewModalProps {
-  file: FileEntry | null;
-  onClose: () => void;
-  onSave?: (path: string, content: string) => Promise<void>;
-}
-
-export function PreviewModal({ file, onClose, onSave }: PreviewModalProps) {
+export function PreviewModal() {
+  const { currentFile, previewing } = useAppStore();
+  const { refresh } = useDashboardFileView();
+  const { updateFile } = useUpdateFileMutation();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState("");
   const [forceTextPreview, setForceTextPreview] = useState(false);
+  const [isCopyFeedbackVisible, setIsCopyFeedbackVisible] = useState(false);
+  const copyFeedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [loadedTextState, setLoadedTextState] = useState<{ path: string; content: string } | null>(
     null,
   );
 
+  const clearCopyFeedbackTimeout = () => {
+    if (copyFeedbackTimeoutRef.current !== null) {
+      clearTimeout(copyFeedbackTimeoutRef.current);
+      copyFeedbackTimeoutRef.current = null;
+    }
+  };
+
+  useEffect(() => clearCopyFeedbackTimeout, []);
+
   const handleClose = () => {
+    clearCopyFeedbackTimeout();
     setIsFullscreen(false);
     setIsEditing(false);
     setEditContent("");
     setForceTextPreview(false);
+    setIsCopyFeedbackVisible(false);
     setLoadedTextState(null);
-    onClose();
+    closeFilePreview();
   };
 
+  const file = previewing ? currentFile : null;
   const previewUrl = file ? buildPreviewUrl(file.path) : "";
   const info = file ? getPreviewInfo(file) : { kind: "unsupported" as const };
   const effectiveInfo = forceTextPreview ? { kind: "text" as const } : info;
@@ -279,14 +323,17 @@ export function PreviewModal({ file, onClose, onSave }: PreviewModalProps) {
   }
 
   const canForceTextPreview = info.kind === "unsupported" && file.size <= PREVIEW_SIZE_LIMITS.TEXT;
-  const canEditTextFile = effectiveInfo.kind === "text" && Boolean(onSave);
-  const loadedText = loadedTextState?.path === file.path ? loadedTextState.content : null;
+  const canEditTextFile = effectiveInfo.kind === "text";
+  const loadedText =
+    loadedTextState && loadedTextState.path === file.path ? loadedTextState.content : null;
 
   const handleDataLoaded = (data: string) => {
     setLoadedTextState({ path: file.path, content: data });
   };
 
   const handleStartEdit = () => {
+    clearCopyFeedbackTimeout();
+    setIsCopyFeedbackVisible(false);
     setEditContent(loadedText ?? "");
     setIsEditing(true);
   };
@@ -297,11 +344,26 @@ export function PreviewModal({ file, onClose, onSave }: PreviewModalProps) {
   };
 
   const handleSave = async () => {
-    if (!onSave || !file) {
+    if (!file) {
       return;
     }
-    await onSave(file.path, editContent);
-    handleClose();
+
+    const pathParts = file.path.split("/");
+    const filename = pathParts.pop() || "";
+    const parentPath = pathParts.join("/");
+    const blob = new Blob([editContent], { type: "text/plain;charset=utf-8" });
+    const nextFile = new File([blob], filename, { type: "text/plain;charset=utf-8" });
+
+    try {
+      await runWithLargeFileUploadToast(nextFile, async () => {
+        await updateFile(nextFile, parentPath);
+        await refresh();
+      });
+      toast.success(`"${filename}" updated`);
+      handleClose();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to update file");
+    }
   };
 
   const handleCopyText = async () => {
@@ -311,8 +373,15 @@ export function PreviewModal({ file, onClose, onSave }: PreviewModalProps) {
 
     try {
       await navigator.clipboard.writeText(loadedText);
-      toast.success("文本已复制");
+      setIsCopyFeedbackVisible(true);
+      clearCopyFeedbackTimeout();
+      copyFeedbackTimeoutRef.current = setTimeout(() => {
+        setIsCopyFeedbackVisible(false);
+        copyFeedbackTimeoutRef.current = null;
+      }, COPY_FEEDBACK_RESET_DELAY_MS);
     } catch (error) {
+      clearCopyFeedbackTimeout();
+      setIsCopyFeedbackVisible(false);
       toast.error(error instanceof Error ? error.message : "复制文本失败");
     }
   };
@@ -382,15 +451,11 @@ export function PreviewModal({ file, onClose, onSave }: PreviewModalProps) {
                 </>
               ) : (
                 <>
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-ghost"
-                    onClick={() => void handleCopyText()}
+                  <PreviewCopyTextButton
                     disabled={loadedText === null}
-                  >
-                    <MdiContentCopy className="w-4 h-4" />
-                    复制文本
-                  </button>
+                    isCopied={isCopyFeedbackVisible}
+                    onClick={() => void handleCopyText()}
+                  />
                   {canEditTextFile ? (
                     <button
                       type="button"

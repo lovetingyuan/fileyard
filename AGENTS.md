@@ -39,6 +39,7 @@ src/
 - **React Hooks**: Try to avoid using useEffect; please refer to the corresponding best practices.
 - **Honojs**: Hono routes must use full path definitions, and route processing methods are split into separate modules.
 - **typescript**: Place common and global types at src/types.ts.
+- **state management**: use `react-atomic-store` to manage app state.
 
 ## Debug
 

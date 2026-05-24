@@ -1,18 +1,16 @@
 import { useId, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import MdiAccountPlus from "~icons/mdi/account-plus";
 import MdiEmailOutline from "~icons/mdi/email-outline";
 import MdiLockCheckOutline from "~icons/mdi/lock-check-outline";
 import MdiLockOutline from "~icons/mdi/lock-outline";
 import MdiLogin from "~icons/mdi/login";
 import toast from "react-hot-toast";
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "../auth/useAuth";
 import { getPasswordErrors, PASSWORD_REQUIREMENTS_HINT } from "../utils/passwordRules";
 
-interface RegisterProps {
-  onSwitchToLogin: (email?: string) => void;
-}
-
-export function Register({ onSwitchToLogin }: RegisterProps) {
+export function Register() {
+  const navigate = useNavigate();
   const { register, loading } = useAuth();
   const emailId = useId();
   const passwordId = useId();
@@ -42,7 +40,7 @@ export function Register({ onSwitchToLogin }: RegisterProps) {
 
     const result = await register(email, password);
     if (result.success) {
-      onSwitchToLogin(email.trim().toLowerCase());
+      navigate(`/login?email=${encodeURIComponent(email.trim().toLowerCase())}&registered=1`);
     } else {
       toast.error(result.error || "Registration failed");
     }
@@ -159,7 +157,7 @@ export function Register({ onSwitchToLogin }: RegisterProps) {
           <button
             type="button"
             className="btn btn-outline gap-2"
-            onClick={() => onSwitchToLogin()}
+            onClick={() => navigate("/login")}
             disabled={loading}
           >
             <MdiLogin className="w-5 h-5" />

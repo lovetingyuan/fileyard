@@ -3,6 +3,17 @@ export interface Profile {
   avatarUrl: string | null;
 }
 
+export interface User {
+  id: string;
+  email: string;
+  image: string | null;
+  name: string;
+  verified: boolean;
+  createdAt?: string;
+}
+
+export type ThemePreference = "light" | "dark" | "system";
+
 export const SHARE_DURATION_OPTIONS = [600, 1800, 3600, 7200, 86400] as const;
 
 export type ShareDurationOption = (typeof SHARE_DURATION_OPTIONS)[number];
@@ -50,6 +61,24 @@ export interface FileEntry {
   uploadedAt: string;
   contentType: string | null;
 }
+
+export type OptimisticFolderEntry = FolderEntry & {
+  isOptimistic: true;
+};
+
+export type FileOperationTarget = {
+  name: string;
+  path: string;
+};
+
+export type DeleteTarget = FileOperationTarget & {
+  type: "file" | "folder";
+};
+
+export type NewTextFileDraft = {
+  name: string;
+  content: string;
+};
 
 export type SortKey = "name" | "size" | "uploadedAt";
 export type SortOrder = "asc" | "desc";

@@ -1,8 +1,8 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { AuthContext } from "../src/react-app/context/auth-context";
-import { AuthProvider } from "../src/react-app/context/AuthContext";
+import { useAuth } from "../src/react-app/auth/useAuth";
+import { getStoreMethods } from "../src/react-app/store";
 
 const mockMutateAuth = vi.fn(async () => undefined);
 const mockTriggerLogout = vi.fn(async () => undefined);
@@ -32,31 +32,29 @@ vi.mock("../src/react-app/hooks/useAuthApi", () => ({
   }),
 }));
 
-function captureAuthContext() {
-  let captured: React.ContextType<typeof AuthContext> = null;
+function captureAuth() {
+  let captured: ReturnType<typeof useAuth> | null = null;
 
   renderToStaticMarkup(
-    createElement(
-      AuthProvider,
-      null,
-      createElement(AuthContext.Consumer, null, (value) => {
-        captured = value;
-        return null;
-      }),
-    ),
+    createElement(() => {
+      captured = useAuth();
+      return null;
+    }),
   );
 
   if (!captured) {
-    throw new Error("Expected auth context");
+    throw new Error("Expected auth hook result");
   }
 
   return captured;
 }
 
-describe("AuthProvider logout", () => {
+describe("useAuth logout", () => {
   beforeEach(() => {
     mockMutateAuth.mockClear();
     mockTriggerLogout.mockClear();
+    getStoreMethods().setAuthError(null);
+    getStoreMethods().setAuthMutating(false);
   });
 
   it("navigates to the homepage after logout succeeds in the browser", async () => {
@@ -69,7 +67,7 @@ describe("AuthProvider logout", () => {
     });
 
     try {
-      const auth = captureAuthContext();
+      const auth = captureAuth();
 
       await auth.logout();
 

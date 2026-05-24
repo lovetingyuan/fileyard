@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-
-type Theme = "light" | "dark" | "system";
+import { useEffect } from "react";
+import type { ThemePreference } from "../../types";
+import { getStoreMethods, useAppStore } from "../store";
 
 const STORAGE_KEY = "theme-preference";
 
@@ -8,15 +8,7 @@ function getSystemTheme(): "light" | "dark" {
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
-function getStoredTheme(): Theme {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored === "light" || stored === "dark" || stored === "system") {
-    return stored;
-  }
-  return "system";
-}
-
-function getEffectiveTheme(preference: Theme): "light" | "dark" {
+function getEffectiveTheme(preference: ThemePreference): "light" | "dark" {
   return preference === "system" ? getSystemTheme() : preference;
 }
 
@@ -26,7 +18,7 @@ function applyTheme(effective: "light" | "dark") {
 }
 
 export function useTheme() {
-  const [theme, setThemeState] = useState<Theme>(getStoredTheme);
+  const { themePreference: theme } = useAppStore();
   const effectiveTheme = getEffectiveTheme(theme);
 
   useEffect(() => {
@@ -40,9 +32,9 @@ export function useTheme() {
     }
   }, [theme, effectiveTheme]);
 
-  const setTheme = (newTheme: Theme) => {
+  const setTheme = (newTheme: ThemePreference) => {
     localStorage.setItem(STORAGE_KEY, newTheme);
-    setThemeState(newTheme);
+    getStoreMethods().setThemePreference(newTheme);
   };
 
   return { theme, effectiveTheme, setTheme };

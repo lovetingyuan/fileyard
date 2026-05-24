@@ -1,4 +1,3 @@
-import { useState } from "react";
 import useSWR from "swr";
 import useSWRMutation from "swr/mutation";
 import type {
@@ -7,10 +6,12 @@ import type {
   DirectoryStatsResponse,
   FileListResponse,
   FileMutationResponse,
+  OptimisticFolderEntry,
   ShareLinkResponse,
   SortKey,
   SortOrder,
 } from "../../types";
+import { getStoreMethods, useAppStore } from "../store";
 import { ApiError, apiRequest } from "../utils/apiRequest";
 
 const FILES_ENDPOINT = "/api/files";
@@ -51,6 +52,22 @@ export function buildPreviewUrl(path: string): string {
 
 export function getDirectoryStats(path: string) {
   return apiRequest<DirectoryStatsResponse>(buildStatsUrl(path));
+}
+
+export function useDirectoryStats(path: string, enabled: boolean) {
+  const { data, error, isLoading } = useSWR<DirectoryStatsResponse, ApiError>(
+    enabled ? [FILE_STATS_ENDPOINT, path] : null,
+    (key) => {
+      const [, currentPath] = key as [string, string];
+      return apiRequest<DirectoryStatsResponse>(buildStatsUrl(currentPath));
+    },
+  );
+
+  return {
+    stats: data ?? null,
+    error,
+    isLoading,
+  };
 }
 
 function useFileList(path: string, sort: SortKey, order: SortOrder) {
@@ -105,20 +122,14 @@ export function useCreateFolderMutation() {
   };
 }
 
-type OptimisticFolder = {
-  path: string;
-  name: string;
-  createdAt: string;
-  isOptimistic: true;
-};
-
 export function useFileListWithOptimistic(path: string, sort: SortKey, order: SortOrder) {
-  const [optimisticFolders, setOptimisticFolders] = useState<OptimisticFolder[]>([]);
+  const { optimisticFolders } = useAppStore();
+  const { setOptimisticFolders } = getStoreMethods();
   const result = useFileList(path, sort, order);
 
   const addOptimisticFolder = (name: string) => {
     const folderPath = path ? `${path}/${name}` : name;
-    setOptimisticFolders((prev) => [
+    setOptimisticFolders((prev: OptimisticFolderEntry[]) => [
       ...prev,
       { path: folderPath, name, createdAt: "", isOptimistic: true },
     ]);

@@ -1,13 +1,14 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import type {
   CreateFolderRequest,
   FileUploadLimitsResponse,
   UploadQueueItem,
   UploadQueueStatus,
-} from "../../types";
-import { ApiError, apiRequest } from "../utils/apiRequest";
-import { FileUploadError, UploadCanceledError, uploadFileWithProgress } from "../utils/fileUpload";
-import { FILE_UPLOAD_BATCH_LIMIT_BYTES, createUploadQueueItems } from "../utils/uploadSelection";
+} from "../../../../types";
+import { getStoreMethods, useAppStore } from "../../../store";
+import { ApiError, apiRequest } from "../../../utils/apiRequest";
+import { FileUploadError, UploadCanceledError, uploadFileWithProgress } from "../../../utils/fileUpload";
+import { FILE_UPLOAD_BATCH_LIMIT_BYTES, createUploadQueueItems } from "../../../utils/uploadSelection";
 
 const FILE_UPLOAD_LIMITS_ENDPOINT = "/api/files/upload-limits";
 const FILE_FOLDERS_ENDPOINT = "/api/files/folders";
@@ -40,6 +41,54 @@ type UseUploadQueueArgs = {
 type UploadTask = ReturnType<typeof uploadFileWithProgress>;
 type CreateFolder = (parentPath: string, name: string) => Promise<void>;
 type EnsureParentFolders = (parentPath: string, isCanceled: () => boolean) => Promise<void>;
+type UploadQueueControls = {
+  enqueueUploadFiles: (files: FileList | File[]) => Promise<void>;
+  cancelUpload: (id: string) => void;
+  cancelUploadsInFolderAndWait: (folderPath: string) => Promise<void>;
+  cancelRemainingUploads: () => void;
+  retryUpload: (id: string) => void;
+  minimizePanel: () => void;
+  restorePanel: () => void;
+  closePanel: () => void;
+};
+
+let activeUploadQueueControls: UploadQueueControls | null = null;
+
+function getActiveUploadQueueControls(): UploadQueueControls | null {
+  return activeUploadQueueControls;
+}
+
+export function enqueueDashboardUploadFiles(files: FileList | File[]) {
+  return getActiveUploadQueueControls()?.enqueueUploadFiles(files) ?? Promise.resolve();
+}
+
+export function cancelDashboardUpload(id: string) {
+  getActiveUploadQueueControls()?.cancelUpload(id);
+}
+
+export function retryDashboardUpload(id: string) {
+  getActiveUploadQueueControls()?.retryUpload(id);
+}
+
+export function cancelRemainingDashboardUploads() {
+  getActiveUploadQueueControls()?.cancelRemainingUploads();
+}
+
+export function minimizeDashboardUploadPanel() {
+  getActiveUploadQueueControls()?.minimizePanel();
+}
+
+export function restoreDashboardUploadPanel() {
+  getActiveUploadQueueControls()?.restorePanel();
+}
+
+export function closeDashboardUploadPanel() {
+  getActiveUploadQueueControls()?.closePanel();
+}
+
+export function cancelDashboardUploadsInFolderAndWait(folderPath: string) {
+  return getActiveUploadQueueControls()?.cancelUploadsInFolderAndWait(folderPath) ?? Promise.resolve();
+}
 
 const REMAINING_STATUSES = new Set<UploadQueueStatus>(["queued", "preparing", "uploading"]);
 const FAILED_STATUSES = new Set<UploadQueueStatus>(["failed", "oversized", "duplicate"]);
@@ -215,9 +264,9 @@ export function getUploadQueuePanelState(items: UploadQueueItem[]): UploadQueueP
 }
 
 export function useUploadQueue({ currentPath, onUploadsComplete }: UseUploadQueueArgs) {
-  const [items, setItemsState] = useState<UploadQueueItem[]>([]);
-  const [isPanelMinimized, setIsPanelMinimized] = useState(false);
-  const itemsRef = useRef<UploadQueueItem[]>([]);
+  const { isUploadPanelMinimized, uploadQueue: items } = useAppStore();
+  const { setIsUploadPanelMinimized, setUploadQueue } = getStoreMethods();
+  const itemsRef = useRef<UploadQueueItem[]>(items);
   const activeIdsRef = useRef(new Set<string>());
   const activeItemPromisesRef = useRef(new Map<string, Promise<void>>());
   const uploadTasksRef = useRef(new Map<string, UploadTask>());
@@ -236,8 +285,8 @@ export function useUploadQueue({ currentPath, onUploadsComplete }: UseUploadQueu
   const setItems = useCallback((updater: (items: UploadQueueItem[]) => UploadQueueItem[]) => {
     const nextItems = updater(itemsRef.current);
     itemsRef.current = nextItems;
-    setItemsState(nextItems);
-  }, []);
+    setUploadQueue(nextItems);
+  }, [setUploadQueue]);
 
   const isItemCanceled = useCallback((id: string) => {
     return itemsRef.current.find((item) => item.id === id)?.status === "canceled";
@@ -256,11 +305,11 @@ export function useUploadQueue({ currentPath, onUploadsComplete }: UseUploadQueu
         return;
       }
       itemsRef.current = [];
-      setItemsState([]);
-      setIsPanelMinimized(false);
+      setUploadQueue([]);
+      setIsUploadPanelMinimized(false);
       successDismissTimerRef.current = null;
     }, SUCCESS_PANEL_DISMISS_DELAY_MS);
-  }, [clearSuccessDismissTimer]);
+  }, [clearSuccessDismissTimer, setIsUploadPanelMinimized, setUploadQueue]);
 
   const finishIdleBatch = useCallback(() => {
     if (activeIdsRef.current.size > 0) {
@@ -295,9 +344,9 @@ export function useUploadQueue({ currentPath, onUploadsComplete }: UseUploadQueu
           : item,
       );
       itemsRef.current = nextItems;
-      setItemsState(nextItems);
+      setUploadQueue(nextItems);
     },
-    [clearSuccessDismissTimer],
+    [clearSuccessDismissTimer, setUploadQueue],
   );
 
   const cancelUpload = useCallback(
@@ -422,11 +471,11 @@ export function useUploadQueue({ currentPath, onUploadsComplete }: UseUploadQueu
       });
 
       setItems((currentItems) => appendUploadQueueItems(currentItems, nextItems));
-      setIsPanelMinimized(false);
+      setIsUploadPanelMinimized(false);
       uploadedSinceIdleRef.current = false;
       processQueueRef.current();
     },
-    [clearSuccessDismissTimer, currentPath, setItems],
+    [clearSuccessDismissTimer, currentPath, setIsUploadPanelMinimized, setItems],
   );
 
   const cancelRemainingUploads = useCallback(() => {
@@ -467,19 +516,19 @@ export function useUploadQueue({ currentPath, onUploadsComplete }: UseUploadQueu
   );
 
   const minimizePanel = useCallback(() => {
-    setIsPanelMinimized(true);
-  }, []);
+    setIsUploadPanelMinimized(true);
+  }, [setIsUploadPanelMinimized]);
 
   const restorePanel = useCallback(() => {
-    setIsPanelMinimized(false);
-  }, []);
+    setIsUploadPanelMinimized(false);
+  }, [setIsUploadPanelMinimized]);
 
   const closePanel = useCallback(() => {
     clearSuccessDismissTimer();
     itemsRef.current = [];
-    setItemsState([]);
-    setIsPanelMinimized(false);
-  }, [clearSuccessDismissTimer]);
+    setUploadQueue([]);
+    setIsUploadPanelMinimized(false);
+  }, [clearSuccessDismissTimer, setIsUploadPanelMinimized, setUploadQueue]);
 
   const panelState = getUploadQueuePanelState(items);
 
@@ -487,11 +536,40 @@ export function useUploadQueue({ currentPath, onUploadsComplete }: UseUploadQueu
     return clearSuccessDismissTimer;
   }, [clearSuccessDismissTimer]);
 
+  useEffect(() => {
+    const controls = {
+      enqueueUploadFiles,
+      cancelUpload,
+      cancelUploadsInFolderAndWait,
+      cancelRemainingUploads,
+      retryUpload,
+      minimizePanel,
+      restorePanel,
+      closePanel,
+    };
+
+    activeUploadQueueControls = controls;
+    return () => {
+      if (activeUploadQueueControls === controls) {
+        activeUploadQueueControls = null;
+      }
+    };
+  }, [
+    enqueueUploadFiles,
+    cancelUpload,
+    cancelUploadsInFolderAndWait,
+    cancelRemainingUploads,
+    retryUpload,
+    minimizePanel,
+    restorePanel,
+    closePanel,
+  ]);
+
   return {
     items,
     stats: countUploadQueueStats(items),
     panelState,
-    isPanelMinimized,
+    isPanelMinimized: isUploadPanelMinimized,
     isUploading: countUploadQueueStats(items).active > 0,
     enqueueUploadFiles,
     cancelUpload,

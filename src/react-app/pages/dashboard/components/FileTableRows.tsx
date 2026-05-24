@@ -1,3 +1,4 @@
+import { useCallback, useRef } from "react";
 import type { ComponentType, SVGProps } from "react";
 import MdiDeleteOutline from "~icons/mdi/delete-outline";
 import MdiDotsHorizontal from "~icons/mdi/dots-horizontal";
@@ -6,11 +7,28 @@ import MdiFolder from "~icons/mdi/folder";
 import MdiFolderSync from "~icons/mdi/folder-sync";
 import MdiInformationOutline from "~icons/mdi/information-outline";
 import MdiShareVariantOutline from "~icons/mdi/share-variant-outline";
-import type { FolderEntry, FileEntry } from "../../types";
-import { formatBytes, formatDate, formatDetailedDate } from "../utils/fileFormatters";
-import { getFileIcon } from "../constants/fileIcons";
+import toast from "react-hot-toast";
+import type { FileEntry, FolderEntry, OptimisticFolderEntry } from "../../../../types";
+import { getFileIcon } from "../../../constants/fileIcons";
+import { useCreateFolderMutation } from "../../../hooks/useFilesApi";
+import { getStoreMethods, useAppStore } from "../../../store";
+import { formatBytes, formatDate, formatDetailedDate } from "../../../utils/fileFormatters";
+import { validateFolderName } from "../../../utils/folderValidation";
+import {
+  closeCreateFolder,
+  openDirectoryStats,
+  openFileDetails,
+  openFilePreview,
+  openFileShare,
+  requestDeleteTarget,
+  setCreatingFolder,
+} from "../actions";
+import { downloadDashboardFile } from "../fileOperations";
+import { useDashboardFileView } from "../hooks/useDashboardFileView";
+import { useDashboardPath } from "../hooks/useDashboardPath";
 
 type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
+type DashboardFolder = FolderEntry | OptimisticFolderEntry;
 
 type RowActionItem = {
   label: string;
@@ -18,36 +36,6 @@ type RowActionItem = {
   tone?: "default" | "danger";
   onClick: () => void;
 };
-
-interface NewFolderRowProps {
-  defaultName: string;
-  inputRef: React.RefCallback<HTMLInputElement>;
-  onBlur: () => void;
-  onKeyDown: (event: React.KeyboardEvent) => void;
-}
-
-export function NewFolderRow({ defaultName, inputRef, onBlur, onKeyDown }: NewFolderRowProps) {
-  return (
-    <tr>
-      <td className="min-w-0">
-        <span className="inline-flex w-full min-w-0 items-center gap-1">
-          <MdiFolder className="h-5 w-5 shrink-0 text-warning" />
-          <input
-            ref={inputRef}
-            type="text"
-            className="input input-sm input-bordered w-full min-w-0 sm:w-48"
-            defaultValue={defaultName}
-            onBlur={onBlur}
-            onKeyDown={onKeyDown}
-          />
-        </span>
-      </td>
-      <td className="hidden text-base-content/50 sm:table-cell">-</td>
-      <td className="hidden text-base-content/50 sm:table-cell">-</td>
-      <td className="text-right"></td>
-    </tr>
-  );
-}
 
 function RowActionsMenu({
   isActionDisabled,
@@ -93,25 +81,89 @@ function RowActionsMenu({
   );
 }
 
-interface FolderRowProps {
-  folder: FolderEntry & { isOptimistic?: boolean };
-  isActionDisabled: boolean;
-  isLoading: boolean;
-  onNavigate: (path: string) => void;
-  onShowDetails: (path: string) => void;
-  onRequestDelete: (path: string, name: string) => void;
+export function NewFolderRow() {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const { addNewFolderName } = useAppStore();
+  const { currentPath } = useDashboardPath();
+  const { addOptimisticFolder, refresh, removeOptimisticFolder } = useDashboardFileView();
+  const { createFolder } = useCreateFolderMutation();
+
+  const focusRef = useCallback((node: HTMLInputElement | null) => {
+    inputRef.current = node;
+    if (node) {
+      node.focus();
+      node.select();
+    }
+  }, []);
+
+  const handleBlur = async () => {
+    const name = inputRef.current?.value.trim();
+    const { setAddNewFolderName, setIsCreatingNewFolder } = getStoreMethods();
+    setIsCreatingNewFolder(false);
+    setAddNewFolderName("");
+
+    if (!name) {
+      return;
+    }
+
+    const validationError = validateFolderName(name);
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
+
+    const optimisticPath = addOptimisticFolder(name);
+    setCreatingFolder(true);
+    try {
+      await createFolder(currentPath, name);
+      await refresh();
+      removeOptimisticFolder(optimisticPath);
+      toast.success("Folder created");
+    } catch (error) {
+      removeOptimisticFolder(optimisticPath);
+      toast.error(error instanceof Error ? error.message : "Failed to create folder");
+    } finally {
+      setCreatingFolder(false);
+    }
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === "Enter") {
+      inputRef.current?.blur();
+    } else if (event.key === "Escape") {
+      closeCreateFolder();
+    }
+  };
+
+  return (
+    <tr>
+      <td className="min-w-0">
+        <span className="inline-flex w-full min-w-0 items-center gap-1">
+          <MdiFolder className="h-5 w-5 shrink-0 text-warning" />
+          <input
+            ref={focusRef}
+            type="text"
+            className="input input-sm input-bordered w-full min-w-0 sm:w-48"
+            defaultValue={addNewFolderName}
+            onBlur={() => void handleBlur()}
+            onKeyDown={handleKeyDown}
+          />
+        </span>
+      </td>
+      <td className="hidden text-base-content/50 sm:table-cell">-</td>
+      <td className="hidden text-base-content/50 sm:table-cell">-</td>
+      <td className="text-right"></td>
+    </tr>
+  );
 }
 
-export function FolderRow({
-  folder,
-  isActionDisabled,
-  isLoading,
-  onNavigate,
-  onShowDetails,
-  onRequestDelete,
-}: FolderRowProps) {
+export function FolderRow({ folder }: { folder: DashboardFolder }) {
+  const { setPath } = useDashboardPath();
+  const { deletingFolderPath } = useAppStore();
   const isOptimistic = "isOptimistic" in folder;
   const FolderIcon = isOptimistic ? MdiFolderSync : MdiFolder;
+  const isLoading = deletingFolderPath === folder.path;
+
   return (
     <tr className={isOptimistic ? "opacity-60" : ""}>
       <td className="min-w-0">
@@ -121,7 +173,7 @@ export function FolderRow({
           <button
             type="button"
             className="block min-w-0 truncate text-left font-bold link link-hover"
-            onClick={() => onNavigate(folder.path)}
+            onClick={() => setPath(folder.path)}
           >
             {folder.name}
           </button>
@@ -134,19 +186,20 @@ export function FolderRow({
       <td className="text-right">
         {!isOptimistic && (
           <RowActionsMenu
-            isActionDisabled={isActionDisabled}
+            isActionDisabled={isLoading}
             isLoading={isLoading}
             items={[
               {
                 label: "删除",
                 Icon: MdiDeleteOutline,
                 tone: "danger",
-                onClick: () => onRequestDelete(folder.path, folder.name),
+                onClick: () =>
+                  requestDeleteTarget({ type: "folder", path: folder.path, name: folder.name }),
               },
               {
                 label: "查看详情",
                 Icon: MdiInformationOutline,
-                onClick: () => onShowDetails(folder.path),
+                onClick: () => openDirectoryStats(folder.path),
               },
             ]}
           />
@@ -156,29 +209,12 @@ export function FolderRow({
   );
 }
 
-interface FileRowProps {
-  file: FileEntry;
-  isActionDisabled: boolean;
-  isLoading: boolean;
-  onDownload: (path: string, name: string) => void;
-  onRequestDelete: (path: string, name: string) => void;
-  onPreview: (file: FileEntry) => void;
-  onShare: (file: FileEntry) => void;
-  onShowDetails: (file: FileEntry) => void;
-}
-
-export function FileRow({
-  file,
-  isActionDisabled,
-  isLoading,
-  onDownload,
-  onRequestDelete,
-  onPreview,
-  onShare,
-  onShowDetails,
-}: FileRowProps) {
+export function FileRow({ file }: { file: FileEntry }) {
+  const { deletingFilePath, downloadingPath } = useAppStore();
   const fileIcon = getFileIcon(file.name);
   const createdAtTooltip = `创建时间：${formatDetailedDate(file.createdAt)}`;
+  const isLoading = deletingFilePath === file.path || downloadingPath === file.path;
+
   return (
     <tr>
       <td className="min-w-0 font-medium">
@@ -187,7 +223,7 @@ export function FileRow({
           <button
             type="button"
             className="min-w-0 truncate text-left link link-hover"
-            onClick={() => onPreview(file)}
+            onClick={() => openFilePreview(file)}
           >
             {file.name}
           </button>
@@ -205,29 +241,29 @@ export function FileRow({
       </td>
       <td className="text-right">
         <RowActionsMenu
-          isActionDisabled={isActionDisabled}
+          isActionDisabled={isLoading}
           isLoading={isLoading}
           items={[
             {
               label: "下载",
               Icon: MdiDownload,
-              onClick: () => onDownload(file.path, file.name),
+              onClick: () => void downloadDashboardFile(file.path, file.name),
             },
             {
               label: "分享",
               Icon: MdiShareVariantOutline,
-              onClick: () => onShare(file),
+              onClick: () => openFileShare(file),
             },
             {
               label: "删除",
               Icon: MdiDeleteOutline,
               tone: "danger",
-              onClick: () => onRequestDelete(file.path, file.name),
+              onClick: () => requestDeleteTarget({ type: "file", path: file.path, name: file.name }),
             },
             {
               label: "查看详情",
               Icon: MdiInformationOutline,
-              onClick: () => onShowDetails(file),
+              onClick: () => openFileDetails(file),
             },
           ]}
         />

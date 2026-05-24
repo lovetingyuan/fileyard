@@ -1,11 +1,21 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter, Navigate, createRoutesFromElements, matchRoutes } from "react-router-dom";
-import { describe, expect, it } from "vitest";
-import { buildAppRouteElements } from "../src/react-app/routes";
+import { describe, expect, it, vi } from "vitest";
+import { buildAppRouteElements, renderProtectedRoute } from "../src/react-app/routes";
 import { NotFound } from "../src/react-app/pages/NotFound";
-import { renderProtectedRoute } from "../src/react-app/App";
-import type { User } from "../src/react-app/hooks/useAuthApi";
+import type { User } from "../src/types";
+
+vi.mock("../src/react-app/components/AppLayout", () => ({ AppLayout: () => null }));
+vi.mock("../src/react-app/pages/dashboard/Dashboard", () => ({ Dashboard: () => null }));
+vi.mock("../src/react-app/pages/ForgotPassword", () => ({ ForgotPassword: () => null }));
+vi.mock("../src/react-app/pages/Login", () => ({ Login: () => null }));
+vi.mock("../src/react-app/pages/profile/Profile", () => ({ Profile: () => null }));
+vi.mock("../src/react-app/pages/Register", () => ({ Register: () => null }));
+vi.mock("../src/react-app/pages/ResetPassword", () => ({ ResetPassword: () => null }));
+vi.mock("../src/react-app/pages/ShareDownload", () => ({ ShareDownload: () => null }));
+vi.mock("~icons/mdi/arrow-left", () => ({ default: () => null }));
+vi.mock("~icons/mdi/compass-off-outline", () => ({ default: () => null }));
 
 function createUser(): User {
   return {
@@ -42,8 +52,6 @@ describe("app route tree", () => {
         user: createUser(),
         authLoading: false,
         allowAuthenticatedEmailAction: false,
-        onSwitchToLogin: () => undefined,
-        onSwitchToRegister: () => undefined,
       }),
     );
 
