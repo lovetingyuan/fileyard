@@ -9,8 +9,9 @@ import { getDroppedUploadFiles } from "../../utils/uploadDrop";
 import { DeleteConfirmModal } from "./components/DeleteConfirmModal";
 import { DirectoryStatsModal } from "./components/DirectoryStatsModal";
 import { FileDetailsModal } from "./components/FileDetailsModal";
-import { FileRow, FolderRow, NewFolderRow } from "./components/FileTableRows";
+import { FileRow, FolderRow } from "./components/FileTableRows";
 import { FileToolbar } from "./components/FileToolbar";
+import { NewFolderModal } from "./components/NewFolderModal";
 import { NewTextFileModal } from "./components/NewTextFileModal";
 import { PreviewModal } from "./components/PreviewModal";
 import { RenameModal } from "./components/RenameModal";
@@ -24,6 +25,7 @@ export function Dashboard() {
   const {
     currentFile,
     isCreatingNewFolder,
+    addNewFolderName,
     pendingRenameTarget,
     renamingPath,
     savingTextFile,
@@ -94,6 +96,7 @@ export function Dashboard() {
       {pendingRenameTarget ? <RenameModal key={pendingRenameTarget.path} /> : null}
       {sharing && currentFile ? <ShareFileModal key={currentFile.path} /> : null}
       <PreviewModal />
+      {isCreatingNewFolder ? <NewFolderModal key={addNewFolderName} /> : null}
       <NewTextFileModal />
       <UploadProgressPanel />
       <main className="mx-auto flex w-[96%] max-w-300 flex-1 flex-col gap-4 py-6 md:w-[90%]">
@@ -140,7 +143,6 @@ export function Dashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {isCreatingNewFolder && <NewFolderRow />}
                     {filteredFolders.map((folder) => (
                       <FolderRow key={`folder:${folder.path}`} folder={folder} />
                     ))}

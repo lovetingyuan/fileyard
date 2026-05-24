@@ -21,6 +21,8 @@ const toolbarState = vi.hoisted(() => ({
 vi.mock("~icons/mdi/account-plus", () => ({ default: () => null }));
 vi.mock("~icons/mdi/account-plus-outline", () => ({ default: () => null }));
 vi.mock("~icons/mdi/alert-circle-outline", () => ({ default: () => null }));
+vi.mock("~icons/mdi/arrow-down", () => ({ default: () => null }));
+vi.mock("~icons/mdi/arrow-up", () => ({ default: () => null }));
 vi.mock("~icons/mdi/chevron-down", () => ({ default: () => null }));
 vi.mock("~icons/mdi/email-outline", () => ({ default: () => null }));
 vi.mock("~icons/mdi/file-plus", () => ({ default: () => null }));
@@ -33,6 +35,7 @@ vi.mock("~icons/mdi/lock-outline", () => ({ default: () => null }));
 vi.mock("~icons/mdi/login", () => ({ default: () => null }));
 vi.mock("~icons/mdi/magnify", () => ({ default: () => null }));
 vi.mock("~icons/mdi/refresh", () => ({ default: () => null }));
+vi.mock("~icons/mdi/swap-vertical", () => ({ default: () => null }));
 vi.mock("~icons/mdi/upload", () => ({ default: () => null }));
 
 vi.mock("swr", () => ({

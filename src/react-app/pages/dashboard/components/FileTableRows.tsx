@@ -1,4 +1,3 @@
-import { useCallback, useRef } from "react";
 import type { ComponentType, SVGProps } from "react";
 import MdiDeleteOutline from "~icons/mdi/delete-outline";
 import MdiDotsHorizontal from "~icons/mdi/dots-horizontal";
@@ -8,25 +7,19 @@ import MdiFolderSync from "~icons/mdi/folder-sync";
 import MdiInformationOutline from "~icons/mdi/information-outline";
 import MdiPencil from "~icons/mdi/pencil";
 import MdiShareVariantOutline from "~icons/mdi/share-variant-outline";
-import toast from "react-hot-toast";
 import type { FileEntry, FolderEntry, OptimisticFolderEntry } from "../../../../types";
 import { getFileIcon } from "../../../constants/fileIcons";
-import { useCreateFolderMutation } from "../../../hooks/useFilesApi";
-import { getStoreMethods, useAppStore } from "../../../store";
+import { useAppStore } from "../../../store";
 import { formatBytes, formatDate, formatDetailedDate } from "../../../utils/fileFormatters";
-import { validateFolderName } from "../../../utils/folderValidation";
 import {
-  closeCreateFolder,
   openDirectoryStats,
   openFileDetails,
   openFilePreview,
   openFileShare,
   requestDeleteTarget,
   requestRenameTarget,
-  setCreatingFolder,
 } from "../actions";
 import { downloadDashboardFile } from "../fileOperations";
-import { useDashboardFileView } from "../hooks/useDashboardFileView";
 import { useDashboardPath } from "../hooks/useDashboardPath";
 
 type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
@@ -80,82 +73,6 @@ function RowActionsMenu({
         ))}
       </ul>
     </div>
-  );
-}
-
-export function NewFolderRow() {
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const { addNewFolderName } = useAppStore();
-  const { currentPath } = useDashboardPath();
-  const { addOptimisticFolder, refresh, removeOptimisticFolder } = useDashboardFileView();
-  const { createFolder } = useCreateFolderMutation();
-
-  const focusRef = useCallback((node: HTMLInputElement | null) => {
-    inputRef.current = node;
-    if (node) {
-      node.focus();
-      node.select();
-    }
-  }, []);
-
-  const handleBlur = async () => {
-    const name = inputRef.current?.value.trim();
-    const { setAddNewFolderName, setIsCreatingNewFolder } = getStoreMethods();
-    setIsCreatingNewFolder(false);
-    setAddNewFolderName("");
-
-    if (!name) {
-      return;
-    }
-
-    const validationError = validateFolderName(name);
-    if (validationError) {
-      toast.error(validationError);
-      return;
-    }
-
-    const optimisticPath = addOptimisticFolder(name);
-    setCreatingFolder(true);
-    try {
-      await createFolder(currentPath, name);
-      await refresh();
-      removeOptimisticFolder(optimisticPath);
-      toast.success("Folder created");
-    } catch (error) {
-      removeOptimisticFolder(optimisticPath);
-      toast.error(error instanceof Error ? error.message : "Failed to create folder");
-    } finally {
-      setCreatingFolder(false);
-    }
-  };
-
-  const handleKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key === "Enter") {
-      inputRef.current?.blur();
-    } else if (event.key === "Escape") {
-      closeCreateFolder();
-    }
-  };
-
-  return (
-    <tr>
-      <td className="min-w-0">
-        <span className="inline-flex w-full min-w-0 items-center gap-1">
-          <MdiFolder className="h-5 w-5 shrink-0 text-warning" />
-          <input
-            ref={focusRef}
-            type="text"
-            className="input input-sm input-bordered w-full min-w-0 sm:w-48"
-            defaultValue={addNewFolderName}
-            onBlur={() => void handleBlur()}
-            onKeyDown={handleKeyDown}
-          />
-        </span>
-      </td>
-      <td className="hidden text-base-content/50 sm:table-cell">-</td>
-      <td className="hidden text-base-content/50 sm:table-cell">-</td>
-      <td className="text-right"></td>
-    </tr>
   );
 }
 

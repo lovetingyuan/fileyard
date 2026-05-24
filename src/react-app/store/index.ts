@@ -49,11 +49,11 @@ export const { useStore, getStoreMethods, getStoreState, getStateSnapshot, subsc
     searchInputValue: '',
     /** 已提交给 Dashboard 文件列表过滤逻辑的搜索关键字。 */
     searchKeyword: '',
-    /** 是否正在显示新建文件夹输入行。 */
+    /** 是否正在显示新建文件夹弹窗。 */
     isCreatingNewFolder: false,
     /** 新建文件夹请求是否正在提交。 */
     creatingFolder: false,
-    /** 新建文件夹输入行的默认文件夹名称。 */
+    /** 新建文件夹弹窗的默认文件夹名称。 */
     addNewFolderName: '',
     /** 本地乐观显示但尚未被文件列表接口确认的文件夹。 */
     optimisticFolders: [] as OptimisticFolderEntry[],

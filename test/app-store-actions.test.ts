@@ -143,6 +143,11 @@ describe("app store actions", () => {
 
   it("tracks folder creation, text file draft, delete target, and upload panel state", () => {
     startCreateFolder("新建文件夹");
+    expect(getStateSnapshot()).toMatchObject({
+      isCreatingNewFolder: true,
+      addNewFolderName: "新建文件夹",
+    });
+
     closeCreateFolder();
     openNewTextFile();
     updateNewTextFileDraft({ name: "note.txt", content: "hello" });
