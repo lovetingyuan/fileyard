@@ -8,12 +8,17 @@ import { closeCreateFolder, setCreatingFolder } from "../actions";
 import { useDashboardFileView } from "../hooks/useDashboardFileView";
 import { useDashboardPath } from "../hooks/useDashboardPath";
 
+export function getCreateFolderErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "Failed to create folder";
+}
+
 export function NewFolderModal() {
   const { addNewFolderName, creatingFolder, isCreatingNewFolder } = useAppStore();
   const { currentPath } = useDashboardPath();
   const { addOptimisticFolder, refresh, removeOptimisticFolder } = useDashboardFileView();
   const { createFolder } = useCreateFolderMutation();
   const [name, setName] = useState(addNewFolderName);
+  const [createErrorMessage, setCreateErrorMessage] = useState<string | null>(null);
   const focusInputRef = useCallback((node: HTMLInputElement | null) => {
     if (node) {
       node.focus();
@@ -27,6 +32,7 @@ export function NewFolderModal() {
 
   const trimmedName = name.trim();
   const validationMessage = validateFolderName(trimmedName);
+  const fieldErrorMessage = validationMessage ?? createErrorMessage;
   const confirmDisabled = Boolean(validationMessage) || creatingFolder;
 
   const handleClose = () => {
@@ -41,6 +47,7 @@ export function NewFolderModal() {
     }
 
     const optimisticPath = addOptimisticFolder(trimmedName);
+    setCreateErrorMessage(null);
     setCreatingFolder(true);
     try {
       await createFolder(currentPath, trimmedName);
@@ -50,7 +57,7 @@ export function NewFolderModal() {
       toast.success("Folder created");
     } catch (error) {
       removeOptimisticFolder(optimisticPath);
-      toast.error(error instanceof Error ? error.message : "Failed to create folder");
+      setCreateErrorMessage(getCreateFolderErrorMessage(error));
     } finally {
       setCreatingFolder(false);
     }
@@ -76,13 +83,16 @@ export function NewFolderModal() {
           <input
             ref={focusInputRef}
             type="text"
-            className={`input input-bordered w-full ${validationMessage ? "input-error" : ""}`}
+            className={`input input-bordered w-full ${fieldErrorMessage ? "input-error" : ""}`}
             value={name}
-            onChange={(event) => setName(event.target.value)}
+            onChange={(event) => {
+              setName(event.target.value);
+              setCreateErrorMessage(null);
+            }}
             disabled={isInteractionDisabled}
             autoFocus
           />
-          {validationMessage ? <span className="text-xs text-error">{validationMessage}</span> : null}
+          {fieldErrorMessage ? <span className="text-xs text-error">{fieldErrorMessage}</span> : null}
         </label>
       )}
     </Dialog>

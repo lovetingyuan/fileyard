@@ -22,7 +22,7 @@
     "@tailwindcss/vite": "^4.2.2",
     "better-auth": "^1.6.2",
     "drizzle-orm": "^0.45.2",
-    "hono": "4.11.1",
+    "hono": "4.12.23",
     "react": "19.2.1",
     "react-atomic-store": "^0.0.9",
     "react-dom": "19.2.1",
@@ -57,6 +57,13 @@
     "vite": "^8.0.3",
     "vitest": "^4.1.2",
     "wrangler": "^4.83.0"
+  },
+  "overrides": {
+    "kysely": "0.28.17",
+    "postcss": "8.5.15",
+    "@esbuild-kit/core-utils": {
+      "esbuild": "0.25.12"
+    }
   },
   "cloudflare": {
     "label": "Fileyard",

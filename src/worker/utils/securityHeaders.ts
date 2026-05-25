@@ -18,7 +18,7 @@ export function applySecurityHeadersToResponse(response: Response, url: string):
 }
 
 export function applySecurityHeaders(headers: Headers, options?: { skipCSP?: boolean }): void {
-  if (!options?.skipCSP) {
+  if (!options?.skipCSP && !headers.has('Content-Security-Policy')) {
     headers.set(
       'Content-Security-Policy',
       [

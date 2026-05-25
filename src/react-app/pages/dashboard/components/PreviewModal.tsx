@@ -1,14 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import type { SyntheticEvent } from "react";
-import MdiCheck from "~icons/mdi/check";
-import MdiContentCopy from "~icons/mdi/content-copy";
-import MdiFileAlertOutline from "~icons/mdi/file-alert-outline";
 import MdiFullscreen from "~icons/mdi/fullscreen";
 import MdiFullscreenExit from "~icons/mdi/fullscreen-exit";
 import MdiPencil from "~icons/mdi/pencil";
 import toast from "react-hot-toast";
-import useSWR from "swr";
-import type { FileEntry } from "../../../../types";
 import { Dialog } from "../../../components/Dialog";
 import { buildPreviewUrl, useUpdateFileMutation } from "../../../hooks/useFilesApi";
 import { useAppStore } from "../../../store";
@@ -19,264 +13,30 @@ import { useDashboardFileView } from "../hooks/useDashboardFileView";
 import {
   getPreviewContentWrapperClassName,
   getPreviewModalBoxClassName,
-  STANDARD_AUDIO_CLASS_NAME,
-  STANDARD_PDF_CLASS_NAME,
-  STANDARD_TEXT_CLASS_NAME,
-  STANDARD_VIDEO_CLASS_NAME,
 } from "../../../components/previewModalLayout";
+import { AudioPreview, ImagePreview, VideoPreview } from "./preview/PreviewMedia";
+import { PdfPreview } from "./preview/PreviewPdf";
+import { TextPreview } from "./preview/PreviewText";
+import { PreviewCopyTextButton } from "./preview/PreviewCopyTextButton";
+import { PreviewUnsupportedMessage } from "./preview/PreviewUnsupportedMessage";
+import { PREVIEW_SIZE_LIMITS } from "./preview/previewLimits";
 
-// --- Preview size limits (in bytes) ---
-
-const PREVIEW_SIZE_LIMITS = {
-  TEXT: 2 * 1024 * 1024, // 2MB
-  IMAGE: 15 * 1024 * 1024, // 15MB
-  PDF: 30 * 1024 * 1024, // 30MB
-  VIDEO: 200 * 1024 * 1024, // 200MB
-  AUDIO: 100 * 1024 * 1024, // 100MB
-} as const;
-
-const PREVIEW_MEDIA_VOLUME_STORAGE_KEY = "fileyard:preview-media:volume";
 const COPY_FEEDBACK_RESET_DELAY_MS = 1800;
 
-function getBrowserLocalStorage(): Storage | null {
-  if (typeof window === "undefined") {
-    return null;
+function getPreviewSizeError(
+  kind: "audio" | "image" | "text" | "unsupported" | "video" | "pdf",
+  fileSize: number,
+): string | null {
+  if (kind === "image" && fileSize > PREVIEW_SIZE_LIMITS.IMAGE) {
+    return `图片文件过大，无法预览（超过 ${PREVIEW_SIZE_LIMITS.IMAGE / 1024 / 1024}MB）`;
   }
-
-  try {
-    return window.localStorage;
-  } catch {
-    return null;
+  if (kind === "video" && fileSize > PREVIEW_SIZE_LIMITS.VIDEO) {
+    return `视频文件过大，无法预览（超过 ${PREVIEW_SIZE_LIMITS.VIDEO / 1024 / 1024}MB）`;
   }
-}
-
-function readStoredPreviewMediaVolume(): number | null {
-  const storage = getBrowserLocalStorage();
-  if (!storage) {
-    return null;
+  if (kind === "audio" && fileSize > PREVIEW_SIZE_LIMITS.AUDIO) {
+    return `音频文件过大，无法预览（超过 ${PREVIEW_SIZE_LIMITS.AUDIO / 1024 / 1024}MB）`;
   }
-
-  let storedVolume: string | null;
-  try {
-    storedVolume = storage.getItem(PREVIEW_MEDIA_VOLUME_STORAGE_KEY);
-  } catch {
-    return null;
-  }
-
-  if (storedVolume === null) {
-    return null;
-  }
-
-  const volume = Number(storedVolume);
-  return Number.isFinite(volume) && volume >= 0 && volume <= 1 ? volume : null;
-}
-
-function writeStoredPreviewMediaVolume(volume: number): void {
-  const storage = getBrowserLocalStorage();
-  if (!storage || !Number.isFinite(volume)) {
-    return;
-  }
-
-  const normalizedVolume = Math.min(1, Math.max(0, volume));
-
-  try {
-    storage.setItem(PREVIEW_MEDIA_VOLUME_STORAGE_KEY, String(normalizedVolume));
-  } catch {
-    // Ignore storage failures so private browsing or quota errors do not break preview playback.
-  }
-}
-
-function restoreStoredPreviewMediaVolume(element: HTMLMediaElement | null): void {
-  if (!element) {
-    return;
-  }
-
-  const storedVolume = readStoredPreviewMediaVolume();
-  if (storedVolume !== null) {
-    element.volume = storedVolume;
-  }
-}
-
-function handlePreviewMediaVolumeChange(event: SyntheticEvent<HTMLMediaElement>): void {
-  writeStoredPreviewMediaVolume(event.currentTarget.volume);
-}
-
-// --- Sub-components ---
-
-function TextPreview({
-  file,
-  previewUrl,
-  isFullscreen,
-  isEditing,
-  editContent,
-  isBusy,
-  onEditContentChange,
-  onDataLoaded,
-}: {
-  file: FileEntry;
-  previewUrl: string;
-  isFullscreen: boolean;
-  isEditing: boolean;
-  editContent: string;
-  isBusy: boolean;
-  onEditContentChange: (content: string) => void;
-  onDataLoaded?: (data: string) => void;
-}) {
-  const tooLarge = file.size > PREVIEW_SIZE_LIMITS.TEXT;
-  const { data, isLoading, error } = useSWR(
-    tooLarge ? null : previewUrl,
-    (url: string) =>
-      fetch(url, { credentials: "include" }).then((r) => {
-        if (!r.ok) {
-          throw new Error("加载失败");
-        }
-        return r.text();
-      }),
-    { onSuccess: (d) => onDataLoaded?.(d) },
-  );
-
-  if (tooLarge) {
-    return (
-      <UnsupportedMessage
-        reason={`文件过大，无法预览（超过 ${PREVIEW_SIZE_LIMITS.TEXT / 1024 / 1024}MB）`}
-      />
-    );
-  }
-  if (isLoading) {
-    return (
-      <div className="flex justify-center py-12">
-        <span className="loading loading-spinner loading-lg" />
-      </div>
-    );
-  }
-  if (error) {
-    return <UnsupportedMessage reason="加载文件内容失败，请稍后重试" />;
-  }
-
-  if (isEditing) {
-    return (
-      <textarea
-        className={`textarea textarea-bordered w-full bg-info/5 font-mono text-sm resize-none ${isFullscreen ? "h-full" : "h-[60vh]"}`}
-        value={editContent}
-        onChange={(e) => onEditContentChange(e.target.value)}
-        disabled={isBusy}
-      />
-    );
-  }
-
-  return (
-    <pre
-      className={
-        isFullscreen
-          ? "overflow-auto text-sm bg-base-200 rounded-box p-4 whitespace-pre h-full"
-          : STANDARD_TEXT_CLASS_NAME
-      }
-    >
-      {data}
-    </pre>
-  );
-}
-
-function UnsupportedMessage({ reason }: { reason: string }) {
-  return (
-    <div className="flex flex-col items-center gap-3 py-12 text-base-content/60">
-      <MdiFileAlertOutline className="w-12 h-12" />
-      <p className="text-sm text-center">{reason}</p>
-    </div>
-  );
-}
-
-interface PreviewCopyTextButtonProps {
-  disabled: boolean;
-  isCopied: boolean;
-  onClick: () => void;
-}
-
-export function PreviewCopyTextButton({
-  disabled,
-  isCopied,
-  onClick,
-}: PreviewCopyTextButtonProps) {
-  const Icon = isCopied ? MdiCheck : MdiContentCopy;
-
-  return (
-    <button
-      type="button"
-      className={`btn btn-ghost btn-sm min-w-24 transition-colors duration-200 ${isCopied ? "text-success" : ""}`}
-      onClick={onClick}
-      disabled={disabled}
-      data-copy-state={isCopied ? "copied" : "idle"}
-      aria-label={isCopied ? "文本已复制" : undefined}
-      aria-live="polite"
-    >
-      <Icon className="w-4 h-4" />
-      {isCopied ? "已复制" : "复制文本"}
-    </button>
-  );
-}
-
-function PdfPreview({
-  file,
-  previewUrl,
-  isFullscreen,
-}: {
-  file: FileEntry;
-  previewUrl: string;
-  isFullscreen: boolean;
-}) {
-  const tooLarge = file.size > PREVIEW_SIZE_LIMITS.PDF;
-
-  const {
-    data: blobUrl,
-    isLoading,
-    error,
-  } = useSWR(
-    tooLarge ? null : previewUrl,
-    async (url: string) => {
-      const response = await fetch(url, { credentials: "include" });
-      if (!response.ok) {
-        throw new Error("加载失败");
-      }
-      const blob = await response.blob();
-      return URL.createObjectURL(blob);
-    },
-    { revalidateOnFocus: false },
-  );
-
-  useEffect(() => {
-    return () => {
-      if (blobUrl) {
-        URL.revokeObjectURL(blobUrl);
-      }
-    };
-  }, [blobUrl]);
-
-  if (tooLarge) {
-    return (
-      <UnsupportedMessage
-        reason={`PDF 文件过大，无法预览（超过 ${PREVIEW_SIZE_LIMITS.PDF / 1024 / 1024}MB）`}
-      />
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center py-12">
-        <span className="loading loading-spinner loading-lg" />
-      </div>
-    );
-  }
-  if (error) {
-    return <UnsupportedMessage reason="加载 PDF 失败，请稍后重试" />;
-  }
-
-  return (
-    <iframe
-      src={blobUrl}
-      title="PDF Preview"
-      className={isFullscreen ? "w-full rounded border-0 h-full" : STANDARD_PDF_CLASS_NAME}
-    />
-  );
+  return null;
 }
 
 export function PreviewModal() {
@@ -344,10 +104,6 @@ export function PreviewModal() {
   };
 
   const handleSave = async () => {
-    if (!file) {
-      return;
-    }
-
     const pathParts = file.path.split("/");
     const filename = pathParts.pop() || "";
     const parentPath = pathParts.join("/");
@@ -386,14 +142,7 @@ export function PreviewModal() {
     }
   };
 
-  let sizeError: string | null = null;
-  if (effectiveInfo.kind === "image" && file.size > PREVIEW_SIZE_LIMITS.IMAGE) {
-    sizeError = `图片文件过大，无法预览（超过 ${PREVIEW_SIZE_LIMITS.IMAGE / 1024 / 1024}MB）`;
-  } else if (effectiveInfo.kind === "video" && file.size > PREVIEW_SIZE_LIMITS.VIDEO) {
-    sizeError = `视频文件过大，无法预览（超过 ${PREVIEW_SIZE_LIMITS.VIDEO / 1024 / 1024}MB）`;
-  } else if (effectiveInfo.kind === "audio" && file.size > PREVIEW_SIZE_LIMITS.AUDIO) {
-    sizeError = `音频文件过大，无法预览（超过 ${PREVIEW_SIZE_LIMITS.AUDIO / 1024 / 1024}MB）`;
-  }
+  const sizeError = getPreviewSizeError(effectiveInfo.kind, file.size);
   const canCopyText = effectiveInfo.kind === "text" && !sizeError;
   const previewContentWrapperClassName = getPreviewContentWrapperClassName(
     effectiveInfo.kind,
@@ -477,53 +226,17 @@ export function PreviewModal() {
       {({ isConfirming }) => (
         <>
           {sizeError ? (
-            <UnsupportedMessage reason={sizeError} />
+            <PreviewUnsupportedMessage reason={sizeError} />
           ) : (
             <div className={previewContentWrapperClassName}>
               {effectiveInfo.kind === "image" && (
-                <div
-                  className={
-                    isFullscreen ? "flex h-full items-center justify-center" : "flex justify-center"
-                  }
-                >
-                  <img
-                    src={previewUrl}
-                    alt={file.name}
-                    className={
-                      isFullscreen
-                        ? "max-h-full max-w-full object-contain rounded"
-                        : "max-h-[70vh] max-w-full object-contain rounded"
-                    }
-                  />
-                </div>
+                <ImagePreview file={file} previewUrl={previewUrl} isFullscreen={isFullscreen} />
               )}
               {effectiveInfo.kind === "video" && (
-                <video
-                  ref={restoreStoredPreviewMediaVolume}
-                  src={previewUrl}
-                  controls
-                  onVolumeChange={handlePreviewMediaVolumeChange}
-                  className={
-                    isFullscreen ? "max-h-full max-w-full rounded" : STANDARD_VIDEO_CLASS_NAME
-                  }
-                />
+                <VideoPreview previewUrl={previewUrl} isFullscreen={isFullscreen} />
               )}
               {effectiveInfo.kind === "audio" && (
-                <div
-                  className={
-                    isFullscreen
-                      ? "flex h-full items-center justify-center"
-                      : "flex justify-center py-8"
-                  }
-                >
-                  <audio
-                    ref={restoreStoredPreviewMediaVolume}
-                    src={previewUrl}
-                    controls
-                    onVolumeChange={handlePreviewMediaVolumeChange}
-                    className={STANDARD_AUDIO_CLASS_NAME}
-                  />
-                </div>
+                <AudioPreview previewUrl={previewUrl} isFullscreen={isFullscreen} />
               )}
               {effectiveInfo.kind === "pdf" && (
                 <PdfPreview file={file} previewUrl={previewUrl} isFullscreen={isFullscreen} />

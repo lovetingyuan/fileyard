@@ -6,12 +6,12 @@ import MdiFilePlus from "~icons/mdi/file-plus";
 import MdiFolderPlus from "~icons/mdi/folder-plus";
 import MdiFolderUpload from "~icons/mdi/folder-upload";
 import MdiHomeOutline from "~icons/mdi/home-outline";
+import MdiInformationOutline from "~icons/mdi/information-outline";
 import MdiMagnify from "~icons/mdi/magnify";
 import MdiRefresh from "~icons/mdi/refresh";
 import MdiSwapVertical from "~icons/mdi/swap-vertical";
 import type { SortKey } from "../../../../types";
 import { useAppStore } from "../../../store";
-import { formatBytes } from "../../../utils/fileFormatters";
 import {
   openDirectoryStats,
   openNewTextFile,
@@ -84,7 +84,7 @@ export function FileToolbar() {
   const folderInputRef = useRef<HTMLInputElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const { breadcrumbs, currentPath, setPath } = useDashboardPath();
-  const { filteredFiles, getUniqueFolderName, isRefreshing, isSearchPending, refresh, searchInputValue, totalBytes } =
+  const { getUniqueFolderName, isRefreshing, isSearchPending, refresh, searchInputValue } =
     useDashboardFileView();
   const { creatingFolder, isCreatingNewFolder, renamingPath, savingTextFile, uploadQueue } =
     useAppStore();
@@ -156,14 +156,18 @@ export function FileToolbar() {
         </ul>
       </div>
 
-      <div className="ml-auto flex w-full min-w-0 flex-wrap items-center justify-end gap-3 sm:w-auto sm:flex-1 sm:gap-4">
+      <div className="tooltip shrink-0" data-tip="查看当前文件夹详情">
         <button
           type="button"
-          className="link link-hover mr-auto text-xs text-base-content/60 whitespace-nowrap sm:mr-0"
+          className="btn btn-ghost btn-square btn-sm"
           onClick={() => openDirectoryStats(currentPath)}
+          aria-label="查看当前文件夹详情"
         >
-          {filteredFiles.length} files, {formatBytes(totalBytes)}
+          <MdiInformationOutline className="w-5 h-5" />
         </button>
+      </div>
+
+      <div className="ml-auto flex w-full min-w-0 flex-wrap items-center justify-end gap-3 sm:w-auto sm:flex-1 sm:gap-4">
         <div className="flex items-center gap-2">
           <div className="tooltip" data-tip={isUploadingFile ? "继续添加上传文件" : "上传文件"}>
             <button
@@ -278,6 +282,7 @@ export function FileToolbar() {
               type="button"
               className={`btn btn-ghost btn-square btn-sm ${isRefreshing ? "loading w-8 scale-75" : ""}`}
               disabled={isRefreshing}
+              onMouseDown={(event) => event.preventDefault()}
               onClick={() => void refresh()}
               aria-label="刷新文件列表"
             >

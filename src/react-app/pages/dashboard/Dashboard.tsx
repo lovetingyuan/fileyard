@@ -103,7 +103,7 @@ export function Dashboard() {
         <section className="card bg-base-100 shadow-sm">
           <div
             className={`card-body gap-4 rounded-box border border-transparent transition-colors duration-150 ${
-              isDraggingUpload ? "border-primary/70 bg-primary/10 ring-2 ring-primary/20" : ""
+              isDraggingUpload ? "border-primary bg-primary/30 ring-2 ring-primary/40" : ""
             }`}
             onDragEnter={handleDragEnter}
             onDragLeave={handleDragLeave}
