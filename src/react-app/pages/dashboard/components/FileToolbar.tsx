@@ -6,8 +6,6 @@ import MdiFileUpload from "~icons/mdi/file-upload";
 import MdiFilePlus from "~icons/mdi/file-plus";
 import MdiFolderPlus from "~icons/mdi/folder-plus";
 import MdiFolderUpload from "~icons/mdi/folder-upload";
-import MdiHomeOutline from "~icons/mdi/home-outline";
-import MdiInformationOutline from "~icons/mdi/information-outline";
 import MdiMagnify from "~icons/mdi/magnify";
 import MdiRefresh from "~icons/mdi/refresh";
 import MdiSwapVertical from "~icons/mdi/swap-vertical";
@@ -15,7 +13,6 @@ import type { SortKey } from "../../../../types";
 import { useAppStore } from "../../../store";
 import { takeFileInputSelection } from "../../../utils/uploadInputSelection";
 import {
-  openDirectoryStats,
   openNewTextFile,
   setDashboardSearchInput,
   setUploadType,
@@ -23,9 +20,9 @@ import {
   toggleDashboardSort,
 } from "../actions";
 import { useDashboardFileView } from "../hooks/useDashboardFileView";
-import { useDashboardPath } from "../hooks/useDashboardPath";
 import { countUploadQueueStats } from "../hooks/useUploadQueue";
 import { uploadDashboardFiles } from "../uploadFiles";
+import { FileBreadcrumbs } from "./FileBreadcrumbs";
 
 const SORT_OPTIONS: Array<{ key: SortKey; label: string }> = [
   { key: "uploadedAt", label: "按时间排序" },
@@ -85,7 +82,6 @@ export function FileToolbar() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const folderInputRef = useRef<HTMLInputElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
-  const { breadcrumbs, currentPath, setPath } = useDashboardPath();
   const { getUniqueFolderName, isRefreshing, refresh, searchInputValue } = useDashboardFileView();
   const { creatingFolder, isCreatingNewFolder, renamingPath, savingTextFile, uploadQueue } =
     useAppStore();
@@ -136,41 +132,7 @@ export function FileToolbar() {
         onChange={(event) => handleUploadSelection(event, "folder")}
       />
 
-      <div className="max-w-full shrink-0 overflow-x-auto breadcrumbs text-sm">
-        <ul>
-          <li>
-            <button
-              type="button"
-              className="link link-hover inline-flex items-center gap-1"
-              onClick={() => setPath("")}
-            >
-              <MdiHomeOutline className="w-5 h-5" />
-              Home
-            </button>
-          </li>
-          {breadcrumbs.map((segment, index) => {
-            const path = breadcrumbs.slice(0, index + 1).join("/");
-            return (
-              <li key={path}>
-                <button type="button" className="link link-hover" onClick={() => setPath(path)}>
-                  {segment}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-
-      <div className="tooltip shrink-0" data-tip="查看当前文件夹详情">
-        <button
-          type="button"
-          className="btn btn-ghost btn-square btn-sm"
-          onClick={() => openDirectoryStats(currentPath)}
-          aria-label="查看当前文件夹详情"
-        >
-          <MdiInformationOutline className="w-5 h-5" />
-        </button>
-      </div>
+      <FileBreadcrumbs />
 
       <div className="ml-auto flex w-full min-w-0 flex-wrap items-center justify-end gap-3 sm:w-auto sm:flex-1 sm:gap-4">
         <div className="flex items-center gap-2">

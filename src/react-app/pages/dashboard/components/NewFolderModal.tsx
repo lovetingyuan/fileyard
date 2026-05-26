@@ -15,7 +15,7 @@ export function getCreateFolderErrorMessage(error: unknown): string {
 export function NewFolderModal() {
   const { addNewFolderName, creatingFolder, isCreatingNewFolder } = useAppStore();
   const { currentPath } = useDashboardPath();
-  const { addOptimisticFolder, refresh, removeOptimisticFolder } = useDashboardFileView();
+  const { refresh } = useDashboardFileView();
   const { createFolder } = useCreateFolderMutation();
   const [name, setName] = useState(addNewFolderName);
   const [createErrorMessage, setCreateErrorMessage] = useState<string | null>(null);
@@ -46,17 +46,14 @@ export function NewFolderModal() {
       return;
     }
 
-    const optimisticPath = addOptimisticFolder(trimmedName);
     setCreateErrorMessage(null);
     setCreatingFolder(true);
     try {
       await createFolder(currentPath, trimmedName);
       await refresh();
-      removeOptimisticFolder(optimisticPath);
       closeCreateFolder();
       toast.success("Folder created");
     } catch (error) {
-      removeOptimisticFolder(optimisticPath);
       setCreateErrorMessage(getCreateFolderErrorMessage(error));
     } finally {
       setCreatingFolder(false);

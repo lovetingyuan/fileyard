@@ -2,11 +2,9 @@ import useSWR from "swr";
 import type {
   DirectoryStatsResponse,
   FileListResponse,
-  OptimisticFolderEntry,
   SortKey,
   SortOrder,
 } from "../../types";
-import { getStoreMethods, useAppStore } from "../store";
 import { ApiError, apiRequest } from "../utils/apiRequest";
 import {
   FILES_ENDPOINT,
@@ -36,7 +34,7 @@ export function useDirectoryStats(path: string, enabled: boolean) {
   };
 }
 
-function useFileList(path: string, sort: SortKey, order: SortOrder) {
+export function useFileList(path: string, sort: SortKey, order: SortOrder) {
   const { data, error, isLoading, isValidating, mutate } = useSWR<FileListResponse, ApiError>(
     [FILES_ENDPOINT, path, sort, order] as FileListKey,
     (key) => {
@@ -59,44 +57,5 @@ function useFileList(path: string, sort: SortKey, order: SortOrder) {
     isLoading,
     isRefreshing: isValidating,
     refresh,
-  };
-}
-
-export function useFileListWithOptimistic(path: string, sort: SortKey, order: SortOrder) {
-  const { optimisticFolders } = useAppStore();
-  const { setOptimisticFolders } = getStoreMethods();
-  const result = useFileList(path, sort, order);
-
-  const addOptimisticFolder = (name: string) => {
-    const folderPath = path ? `${path}/${name}` : name;
-    setOptimisticFolders((prev: OptimisticFolderEntry[]) => [
-      ...prev,
-      { path: folderPath, name, createdAt: "", isOptimistic: true },
-    ]);
-    return folderPath;
-  };
-
-  const removeOptimisticFolder = (folderPath: string) => {
-    setOptimisticFolders((prev) => prev.filter((f) => f.path !== folderPath));
-  };
-
-  const clearOptimisticFolders = () => {
-    setOptimisticFolders([]);
-  };
-
-  const folders = [
-    ...optimisticFolders,
-    ...result.data.folders.filter((f) => !optimisticFolders.some((of) => of.path === f.path)),
-  ];
-
-  return {
-    ...result,
-    data: {
-      ...result.data,
-      folders,
-    },
-    addOptimisticFolder,
-    removeOptimisticFolder,
-    clearOptimisticFolders,
   };
 }

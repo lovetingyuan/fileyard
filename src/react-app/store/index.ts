@@ -3,7 +3,6 @@ import type {
   DeleteTarget,
   FileEntry,
   NewTextFileDraft,
-  OptimisticFolderEntry,
   RenameTarget,
   SortKey,
   SortOrder,
@@ -55,8 +54,6 @@ export const { useStore, getStoreMethods, getStoreState, getStateSnapshot, subsc
     creatingFolder: false,
     /** 新建文件夹弹窗的默认文件夹名称。 */
     addNewFolderName: '',
-    /** 本地乐观显示但尚未被文件列表接口确认的文件夹。 */
-    optimisticFolders: [] as OptimisticFolderEntry[],
     /** 正在新建文本文件的草稿内容；null 表示弹窗关闭。 */
     addNewTextFile: null as NewTextFileDraft | null,
     /** 当前正在进行新建或保存的文本文件上传操作。 */

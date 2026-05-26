@@ -62,10 +62,6 @@ export interface FileEntry {
   contentType: string | null;
 }
 
-export type OptimisticFolderEntry = FolderEntry & {
-  isOptimistic: true;
-};
-
 export type FileOperationTarget = {
   name: string;
   path: string;

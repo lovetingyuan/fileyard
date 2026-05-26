@@ -1,6 +1,6 @@
 import { useDeferredValue } from "react";
-import type { FileEntry, FolderEntry, OptimisticFolderEntry } from "../../../../types";
-import { useFileListWithOptimistic } from "../../../hooks/useFilesApi";
+import type { FileEntry, FolderEntry } from "../../../../types";
+import { useFileList } from "../../../hooks/useFilesApi";
 import { useAppStore } from "../../../store";
 import { findFuzzyMatchRanges } from "../utils/searchMatch";
 import type { SearchMatchRange } from "../utils/searchMatch";
@@ -10,7 +10,7 @@ export type SearchMatchedEntry<T> = T & {
   searchMatchRanges: SearchMatchRange[];
 };
 
-type DashboardFolderEntry = FolderEntry | OptimisticFolderEntry;
+type DashboardFolderEntry = FolderEntry;
 
 function getUniqueFolderName(folders: Array<FolderEntry>, baseName: string): string {
   const existingNames = new Set(folders.map((folder) => folder.name));
@@ -29,7 +29,7 @@ export function useDashboardFileView() {
   const { currentPath } = useDashboardPath();
   const { dashboardSortKey, dashboardSortOrder, searchInputValue, searchKeyword } = useAppStore();
   const deferredSearchQuery = useDeferredValue(searchKeyword);
-  const fileList = useFileListWithOptimistic(currentPath, dashboardSortKey, dashboardSortOrder);
+  const fileList = useFileList(currentPath, dashboardSortKey, dashboardSortOrder);
   const filteredFolders = fileList.data.folders.reduce<Array<SearchMatchedEntry<DashboardFolderEntry>>>(
     (folders, folder) => {
       const searchMatchRanges = findFuzzyMatchRanges(folder.name, deferredSearchQuery);

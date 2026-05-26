@@ -3,11 +3,10 @@ import MdiDeleteOutline from "~icons/mdi/delete-outline";
 import MdiDotsHorizontal from "~icons/mdi/dots-horizontal";
 import MdiDownload from "~icons/mdi/download";
 import MdiFolder from "~icons/mdi/folder";
-import MdiFolderSync from "~icons/mdi/folder-sync";
 import MdiInformationOutline from "~icons/mdi/information-outline";
 import MdiPencil from "~icons/mdi/pencil";
 import MdiShareVariantOutline from "~icons/mdi/share-variant-outline";
-import type { FileEntry, FolderEntry, OptimisticFolderEntry } from "../../../../types";
+import type { FileEntry, FolderEntry } from "../../../../types";
 import { getFileIcon } from "../../../constants/fileIcons";
 import { useAppStore } from "../../../store";
 import { formatBytes, formatDate, formatDetailedDate } from "../../../utils/fileFormatters";
@@ -28,7 +27,7 @@ import {
 import type { SearchMatchRange } from "../utils/searchMatch";
 
 type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
-type DashboardFolder = (FolderEntry | OptimisticFolderEntry) & {
+type DashboardFolder = FolderEntry & {
   searchMatchRanges?: SearchMatchRange[];
 };
 type DashboardFile = FileEntry & {
@@ -125,18 +124,15 @@ function RowActionsMenu({
 export function FolderRow({ folder }: { folder: DashboardFolder }) {
   const { setPath } = useDashboardPath();
   const { deletingFolderPath, renamingPath } = useAppStore();
-  const isOptimistic = "isOptimistic" in folder;
-  const FolderIcon = isOptimistic ? MdiFolderSync : MdiFolder;
   const rowKey = `folder:${folder.path}`;
   const isLoading = deletingFolderPath === folder.path || renamingPath === folder.path;
   const isActionDisabled = Boolean(renamingPath) || isLoading;
 
   return (
-    <tr className={isOptimistic ? "opacity-60" : ""}>
+    <tr>
       <td className="min-w-0">
         <span className="flex w-full min-w-0 items-center gap-1 sm:gap-2 align-middle">
-          <FolderIcon className="h-5 w-5 shrink-0 text-warning" />
-          {isOptimistic && <span className="loading loading-spinner loading-xs shrink-0"></span>}
+          <MdiFolder className="h-5 w-5 shrink-0 text-warning" />
           <button
             type="button"
             className="block min-w-0 truncate text-left font-bold link link-hover"
@@ -152,35 +148,33 @@ export function FolderRow({ folder }: { folder: DashboardFolder }) {
       </td>
       <td className="hidden text-base-content/50 sm:table-cell">-</td>
       <td className="hidden whitespace-nowrap text-base-content/50 sm:table-cell text-[13px]">
-        {isOptimistic ? "-" : formatDate(folder.createdAt)}
+        {formatDate(folder.createdAt)}
       </td>
       <td className="text-right">
-        {!isOptimistic && (
-          <RowActionsMenu
-            isActionDisabled={isActionDisabled}
-            isLoading={isLoading}
-            items={[
-              {
-                label: "重命名",
-                Icon: MdiPencil,
-                onClick: () =>
-                  requestRenameTarget({ type: "folder", path: folder.path, name: folder.name }),
-              },
-              {
-                label: "删除",
-                Icon: MdiDeleteOutline,
-                tone: "danger",
-                onClick: () =>
-                  requestDeleteTarget({ type: "folder", path: folder.path, name: folder.name }),
-              },
-              {
-                label: "查看详情",
-                Icon: MdiInformationOutline,
-                onClick: () => openDirectoryStats(folder.path),
-              },
-            ]}
-          />
-        )}
+        <RowActionsMenu
+          isActionDisabled={isActionDisabled}
+          isLoading={isLoading}
+          items={[
+            {
+              label: "重命名",
+              Icon: MdiPencil,
+              onClick: () =>
+                requestRenameTarget({ type: "folder", path: folder.path, name: folder.name }),
+            },
+            {
+              label: "删除",
+              Icon: MdiDeleteOutline,
+              tone: "danger",
+              onClick: () =>
+                requestDeleteTarget({ type: "folder", path: folder.path, name: folder.name }),
+            },
+            {
+              label: "查看详情",
+              Icon: MdiInformationOutline,
+              onClick: () => openDirectoryStats(folder.path),
+            },
+          ]}
+        />
       </td>
     </tr>
   );

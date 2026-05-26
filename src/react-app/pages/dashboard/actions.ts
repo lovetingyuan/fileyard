@@ -2,7 +2,6 @@ import type {
   DeleteTarget,
   FileEntry,
   NewTextFileDraft,
-  OptimisticFolderEntry,
   RenameTarget,
   SortKey,
   UploadQueueItem,
@@ -56,24 +55,6 @@ export function setCreatingFolder(isCreating: boolean) {
   const { setCreatingFolder } = getStoreMethods();
 
   setCreatingFolder(isCreating);
-}
-
-export function setOptimisticFolders(folders: OptimisticFolderEntry[]) {
-  const { setOptimisticFolders } = getStoreMethods();
-
-  setOptimisticFolders(folders);
-}
-
-export function addOptimisticFolder(folder: OptimisticFolderEntry) {
-  const { setOptimisticFolders } = getStoreMethods();
-
-  setOptimisticFolders((folders) => [...folders, folder]);
-}
-
-export function removeOptimisticFolder(path: string) {
-  const { setOptimisticFolders } = getStoreMethods();
-
-  setOptimisticFolders((folders) => folders.filter((folder) => folder.path !== path));
 }
 
 export function openNewTextFile() {
