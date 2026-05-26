@@ -222,73 +222,66 @@ export function FileToolbar() {
         </div>
         <SortMenu />
         <div
-          className={`group/search-actions flex h-8 min-w-0 shrink-0 items-center gap-3 focus-within:order-last focus-within:basis-full focus-within:w-full sm:focus-within:order-none sm:focus-within:basis-auto sm:focus-within:w-auto ${
+          className={`group/search relative h-8 max-w-full min-w-0 shrink-0 transition-[width] duration-200 ease-in-out focus-within:order-last focus-within:basis-full focus-within:w-full sm:focus-within:order-none sm:focus-within:basis-auto sm:focus-within:w-40 ${
             isSearchExpanded
-              ? "order-last basis-full w-full sm:order-none sm:basis-auto sm:w-auto"
-              : "basis-auto w-auto"
+              ? "order-last basis-full w-full sm:order-none sm:basis-auto sm:w-40"
+              : "basis-8 w-8"
           }`}
         >
-          <div
-            className={`group/search relative h-8 max-w-full min-w-0 shrink-0 transition-[width] duration-200 ease-in-out group-focus-within/search-actions:flex-1 sm:group-focus-within/search-actions:flex-none sm:group-focus-within/search-actions:w-40 ${
-              isSearchExpanded ? "flex-1 sm:flex-none sm:w-40" : "basis-8 w-8"
-            }`}
-          >
-            <div className="absolute inset-0 overflow-hidden rounded-field">
-              <input
-                ref={searchInputRef}
-                type="text"
-                className={`placeholder:text-[12px] input input-sm input-bordered absolute top-0 right-0 h-8 w-full min-w-0 transition-opacity duration-150 ease-in-out sm:w-40 group-focus-within/search:border-base-300 group-focus-within/search:bg-base-100 group-focus-within/search:opacity-100 group-focus-within/search:outline-none ${
-                  isSearchExpanded
-                    ? "border-base-300 bg-base-100 pr-9 opacity-100"
-                    : "border-transparent bg-transparent pr-9 opacity-0"
-                }`}
-                placeholder="Search current folder"
-                value={searchInputValue}
-                onChange={(event) => setDashboardSearchInput(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Escape") {
-                    setDashboardSearchInput("");
-                    event.currentTarget.blur();
-                  }
-                }}
-              />
-            </div>
-            <div className="pointer-events-none absolute inset-0 rounded-field transition-shadow duration-150 ease-in-out group-focus-within/search:ring-2 group-focus-within/search:ring-base-content/15" />
-            <div className="tooltip absolute inset-y-0 right-0 z-10" data-tip="Search">
-              <button
-                type="button"
-                className={`btn btn-ghost btn-square btn-sm h-8 w-8 transition-opacity duration-150 ease-in-out group-focus-within/search:pointer-events-none group-focus-within/search:opacity-0 ${
-                  isSearchExpanded ? "pointer-events-none opacity-0" : ""
-                }`}
-                onMouseDown={(event) => event.preventDefault()}
-                onClick={focusSearchInput}
-                aria-label="搜索文件"
-              >
-                <MdiMagnify className="w-5 h-5" />
-              </button>
-            </div>
-            {isSearchExpanded && (
-              <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-base-content/40">
-                {isSearchPending ? (
-                  <span className="loading loading-spinner loading-xs" />
-                ) : (
-                  <MdiMagnify className="h-4 w-4" />
-                )}
-              </div>
-            )}
+          <div className="absolute inset-0 overflow-hidden rounded-field">
+            <input
+              ref={searchInputRef}
+              type="text"
+              className={`placeholder:text-[12px] input input-sm input-bordered absolute top-0 right-0 h-8 w-full min-w-0 transition-opacity duration-150 ease-in-out sm:w-40 group-focus-within/search:border-base-300 group-focus-within/search:bg-base-100 group-focus-within/search:opacity-100 group-focus-within/search:outline-none ${
+                isSearchExpanded
+                  ? "border-base-300 bg-base-100 pr-9 opacity-100"
+                  : "border-transparent bg-transparent pr-9 opacity-0"
+              }`}
+              placeholder="Search current folder"
+              value={searchInputValue}
+              onChange={(event) => setDashboardSearchInput(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  setDashboardSearchInput("");
+                  event.currentTarget.blur();
+                }
+              }}
+            />
           </div>
-          <div className="tooltip shrink-0" data-tip="Refresh">
+          <div className="pointer-events-none absolute inset-0 rounded-field transition-shadow duration-150 ease-in-out group-focus-within/search:ring-2 group-focus-within/search:ring-base-content/15" />
+          <div className="tooltip absolute inset-y-0 right-0 z-10" data-tip="Search">
             <button
               type="button"
-              className={`btn btn-ghost btn-square btn-sm ${isRefreshing ? "loading w-8 scale-75" : ""}`}
-              disabled={isRefreshing}
+              className={`btn btn-ghost btn-square btn-sm h-8 w-8 transition-opacity duration-150 ease-in-out group-focus-within/search:pointer-events-none group-focus-within/search:opacity-0 ${
+                isSearchExpanded ? "pointer-events-none opacity-0" : ""
+              }`}
               onMouseDown={(event) => event.preventDefault()}
-              onClick={() => void refresh()}
-              aria-label="刷新文件列表"
+              onClick={focusSearchInput}
+              aria-label="搜索文件"
             >
-              {!isRefreshing && <MdiRefresh className="w-5 h-5" />}
+              <MdiMagnify className="w-5 h-5" />
             </button>
           </div>
+          {isSearchExpanded && (
+            <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-base-content/40">
+              {isSearchPending ? (
+                <span className="loading loading-spinner loading-xs" />
+              ) : (
+                <MdiMagnify className="h-4 w-4" />
+              )}
+            </div>
+          )}
+        </div>
+        <div className="tooltip shrink-0" data-tip="Refresh">
+          <button
+            type="button"
+            className={`btn btn-ghost btn-square btn-sm ${isRefreshing ? "loading w-8 scale-75" : ""}`}
+            disabled={isRefreshing}
+            onClick={() => void refresh()}
+            aria-label="刷新文件列表"
+          >
+            {!isRefreshing && <MdiRefresh className="w-5 h-5" />}
+          </button>
         </div>
       </div>
     </div>
