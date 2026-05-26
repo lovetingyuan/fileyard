@@ -12,6 +12,7 @@ import MdiRefresh from "~icons/mdi/refresh";
 import MdiSwapVertical from "~icons/mdi/swap-vertical";
 import type { SortKey } from "../../../../types";
 import { useAppStore } from "../../../store";
+import { takeFileInputSelection } from "../../../utils/uploadInputSelection";
 import {
   openDirectoryStats,
   openNewTextFile,
@@ -104,8 +105,7 @@ export function FileToolbar() {
     event: React.ChangeEvent<HTMLInputElement>,
     source: "file" | "folder",
   ) => {
-    const files = event.target.files ?? [];
-    event.target.value = "";
+    const files = takeFileInputSelection(event.target);
     void uploadDashboardFiles({ files, source, isFileMutationDisabled });
   };
 

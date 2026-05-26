@@ -1,267 +1,52 @@
-import { useCallback, useEffect, useRef } from "react";
-import type {
-  CreateFolderRequest,
-  FileUploadLimitsResponse,
-  UploadQueueItem,
-  UploadQueueStatus,
-} from "../../../../types";
+import { useCallback, useMemo, useRef } from "react";
+import type { UploadQueueItem } from "../../../../types";
 import { getStoreMethods, useAppStore } from "../../../store";
-import { ApiError, apiRequest } from "../../../utils/apiRequest";
-import { FileUploadError, UploadCanceledError, uploadFileWithProgress } from "../../../utils/fileUpload";
-import { FILE_UPLOAD_BATCH_LIMIT_BYTES, createUploadQueueItems } from "../../../utils/uploadSelection";
+import {
+  FILE_UPLOAD_BATCH_LIMIT_BYTES,
+  createUploadQueueItems,
+} from "../../../utils/uploadSelection";
+import { createFolder, fetchUploadLimits } from "./uploadQueueApi";
+import {
+  type UploadQueueControls,
+  useUploadQueueControlsRegistration,
+} from "./uploadQueueControls";
+import {
+  REMAINING_STATUSES,
+  appendUploadQueueItems,
+  countUploadQueueStats,
+  createFolderEnsureer,
+  getActiveUploadItemsInFolder,
+  getUploadQueuePanelState,
+  resetFailedUploadItem,
+} from "./uploadQueueUtils";
+import { useUploadQueuePanelDismiss } from "./useUploadQueuePanelDismiss";
+import { type UploadTask, useUploadQueueProcessor } from "./useUploadQueueProcessor";
 
-const FILE_UPLOAD_LIMITS_ENDPOINT = "/api/files/upload-limits";
-const FILE_FOLDERS_ENDPOINT = "/api/files/folders";
+export {
+  cancelDashboardUpload,
+  cancelDashboardUploadsInFolderAndWait,
+  cancelRemainingDashboardUploads,
+  closeDashboardUploadPanel,
+  enqueueDashboardUploadFiles,
+  minimizeDashboardUploadPanel,
+  restoreDashboardUploadPanel,
+  retryDashboardUpload,
+} from "./uploadQueueControls";
+export {
+  countUploadQueueStats,
+  getActiveUploadItemsInFolder,
+  getUploadQueueItemProgress,
+  getUploadQueuePanelState,
+  getUploadQueueSummary,
+} from "./uploadQueueUtils";
+export type { UploadQueuePanelState } from "./uploadQueueUtils";
+
 const MAX_CONCURRENT_UPLOADS = 3;
-const SUCCESS_PANEL_DISMISS_DELAY_MS = 1600;
-
-type UploadQueueStats = {
-  total: number;
-  remaining: number;
-  failed: number;
-  active: number;
-  hasVisibleStatus: boolean;
-};
-
-export type UploadQueuePanelState = UploadQueueStats & {
-  canceled: number;
-  completed: number;
-  totalProgress: number;
-  canCancelAll: boolean;
-  hasTerminalIssues: boolean;
-  isComplete: boolean;
-  shouldShowPanel: boolean;
-};
 
 type UseUploadQueueArgs = {
   currentPath: string;
   onUploadsComplete: () => Promise<void> | void;
 };
-
-type UploadTask = ReturnType<typeof uploadFileWithProgress>;
-type CreateFolder = (parentPath: string, name: string) => Promise<void>;
-type EnsureParentFolders = (parentPath: string, isCanceled: () => boolean) => Promise<void>;
-type UploadQueueControls = {
-  enqueueUploadFiles: (files: FileList | File[]) => Promise<void>;
-  cancelUpload: (id: string) => void;
-  cancelUploadsInFolderAndWait: (folderPath: string) => Promise<void>;
-  cancelRemainingUploads: () => void;
-  retryUpload: (id: string) => void;
-  minimizePanel: () => void;
-  restorePanel: () => void;
-  closePanel: () => void;
-};
-
-let activeUploadQueueControls: UploadQueueControls | null = null;
-
-function getActiveUploadQueueControls(): UploadQueueControls | null {
-  return activeUploadQueueControls;
-}
-
-export function enqueueDashboardUploadFiles(files: FileList | File[]) {
-  return getActiveUploadQueueControls()?.enqueueUploadFiles(files) ?? Promise.resolve();
-}
-
-export function cancelDashboardUpload(id: string) {
-  getActiveUploadQueueControls()?.cancelUpload(id);
-}
-
-export function retryDashboardUpload(id: string) {
-  getActiveUploadQueueControls()?.retryUpload(id);
-}
-
-export function cancelRemainingDashboardUploads() {
-  getActiveUploadQueueControls()?.cancelRemainingUploads();
-}
-
-export function minimizeDashboardUploadPanel() {
-  getActiveUploadQueueControls()?.minimizePanel();
-}
-
-export function restoreDashboardUploadPanel() {
-  getActiveUploadQueueControls()?.restorePanel();
-}
-
-export function closeDashboardUploadPanel() {
-  getActiveUploadQueueControls()?.closePanel();
-}
-
-export function cancelDashboardUploadsInFolderAndWait(folderPath: string) {
-  return getActiveUploadQueueControls()?.cancelUploadsInFolderAndWait(folderPath) ?? Promise.resolve();
-}
-
-const REMAINING_STATUSES = new Set<UploadQueueStatus>(["queued", "preparing", "uploading"]);
-const FAILED_STATUSES = new Set<UploadQueueStatus>(["failed", "oversized", "duplicate"]);
-
-function isFolderAlreadyExistsError(error: unknown): boolean {
-  return error instanceof ApiError && error.status === 409 && error.message.includes("folder");
-}
-
-function isDuplicateUploadError(error: unknown): boolean {
-  if (error instanceof FileUploadError) {
-    return error.status === 409;
-  }
-  return error instanceof ApiError && error.status === 409 && !error.message.includes("folder");
-}
-
-function toErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "上传失败";
-}
-
-async function fetchUploadLimits(): Promise<FileUploadLimitsResponse> {
-  return apiRequest<FileUploadLimitsResponse>(FILE_UPLOAD_LIMITS_ENDPOINT);
-}
-
-async function createFolder(parentPath: string, name: string): Promise<void> {
-  await apiRequest(FILE_FOLDERS_ENDPOINT, {
-    method: "POST",
-    body: JSON.stringify({ parentPath, name, ensure: true } satisfies CreateFolderRequest),
-  });
-}
-
-export function createFolderEnsureer(createFolderRequest: CreateFolder): EnsureParentFolders {
-  const folderCreationPromises = new Map<string, Promise<void>>();
-
-  return async function ensureParentFolders(parentPath, isCanceled) {
-    if (!parentPath) {
-      return;
-    }
-
-    const segments = parentPath.split("/");
-    let path = "";
-    for (const name of segments) {
-      if (isCanceled()) {
-        throw new UploadCanceledError();
-      }
-
-      const folderPath = path ? `${path}/${name}` : name;
-      let creationPromise = folderCreationPromises.get(folderPath);
-      if (!creationPromise) {
-        creationPromise = createFolderRequest(path, name).catch((error: unknown) => {
-          if (!isFolderAlreadyExistsError(error)) {
-            folderCreationPromises.delete(folderPath);
-            throw error;
-          }
-        });
-        folderCreationPromises.set(folderPath, creationPromise);
-      }
-
-      await creationPromise;
-      path = folderPath;
-    }
-  };
-}
-
-export function updateUploadQueueItem(
-  items: UploadQueueItem[],
-  id: string,
-  patch: Partial<UploadQueueItem>,
-): UploadQueueItem[] {
-  return items.map((item) => (item.id === id ? { ...item, ...patch } : item));
-}
-
-export function appendUploadQueueItems(
-  items: UploadQueueItem[],
-  nextItems: UploadQueueItem[],
-): UploadQueueItem[] {
-  return [...items, ...nextItems];
-}
-
-export function resetFailedUploadItem(item: UploadQueueItem): UploadQueueItem {
-  if (item.status !== "failed") {
-    return item;
-  }
-  return {
-    ...item,
-    progress: 0,
-    status: "queued",
-    errorMessage: null,
-  };
-}
-
-export function countUploadQueueStats(items: UploadQueueItem[]): UploadQueueStats {
-  const remaining = items.filter((item) => REMAINING_STATUSES.has(item.status)).length;
-  const failed = items.filter((item) => FAILED_STATUSES.has(item.status)).length;
-
-  return {
-    total: items.length,
-    remaining,
-    failed,
-    active: remaining,
-    hasVisibleStatus: remaining > 0 || failed > 0,
-  };
-}
-
-function isUploadTargetInFolder(targetPath: string, folderPath: string): boolean {
-  return targetPath === folderPath || targetPath.startsWith(`${folderPath}/`);
-}
-
-export function getActiveUploadItemsInFolder(
-  items: UploadQueueItem[],
-  folderPath: string,
-): UploadQueueItem[] {
-  return items.filter(
-    (item) => REMAINING_STATUSES.has(item.status) && isUploadTargetInFolder(item.targetPath, folderPath),
-  );
-}
-
-export function getUploadQueueSummary(items: UploadQueueItem[]): string | null {
-  const stats = countUploadQueueStats(items);
-  if (stats.active > 0) {
-    return "上传中，点击查看详情";
-  }
-  if (stats.failed > 0) {
-    return `${stats.failed} 文件上传失败`;
-  }
-  return null;
-}
-
-export function getUploadQueueItemProgress(item: UploadQueueItem): number {
-  if (item.status === "success") {
-    return 100;
-  }
-  if (item.status === "queued" || item.status === "preparing") {
-    return 0;
-  }
-  return Math.max(0, Math.min(100, Math.round(item.progress)));
-}
-
-export function getUploadQueueTotalProgress(items: UploadQueueItem[]): number {
-  if (items.length === 0) {
-    return 0;
-  }
-
-  const totalBytes = items.reduce((sum, item) => sum + item.size, 0);
-  if (totalBytes <= 0) {
-    const totalProgress = items.reduce((sum, item) => sum + getUploadQueueItemProgress(item), 0);
-    return Math.round(totalProgress / items.length);
-  }
-
-  const uploadedBytes = items.reduce(
-    (sum, item) => sum + item.size * (getUploadQueueItemProgress(item) / 100),
-    0,
-  );
-  return Math.max(0, Math.min(100, Math.round((uploadedBytes / totalBytes) * 100)));
-}
-
-export function getUploadQueuePanelState(items: UploadQueueItem[]): UploadQueuePanelState {
-  const stats = countUploadQueueStats(items);
-  const canceled = items.filter((item) => item.status === "canceled").length;
-  const completed = items.filter((item) => item.status === "success").length;
-  const hasTerminalIssues = stats.failed > 0 || canceled > 0;
-  const isComplete = items.length > 0 && stats.remaining === 0;
-
-  return {
-    ...stats,
-    canceled,
-    completed,
-    totalProgress: getUploadQueueTotalProgress(items),
-    canCancelAll: stats.remaining > 0,
-    hasTerminalIssues,
-    isComplete,
-    shouldShowPanel: stats.hasVisibleStatus,
-  };
-}
 
 export function useUploadQueue({ currentPath, onUploadsComplete }: UseUploadQueueArgs) {
   const { isUploadPanelMinimized, uploadQueue: items } = useAppStore();
@@ -272,44 +57,24 @@ export function useUploadQueue({ currentPath, onUploadsComplete }: UseUploadQueu
   const uploadTasksRef = useRef(new Map<string, UploadTask>());
   const ensureParentFoldersRef = useRef(createFolderEnsureer(createFolder));
   const uploadedSinceIdleRef = useRef(false);
-  const successDismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { clearSuccessDismissTimer, scheduleSuccessfulPanelDismiss } = useUploadQueuePanelDismiss({
+    itemsRef,
+    setIsUploadPanelMinimized,
+    setUploadQueue,
+  });
 
-  const clearSuccessDismissTimer = useCallback(() => {
-    if (!successDismissTimerRef.current) {
-      return;
-    }
-    clearTimeout(successDismissTimerRef.current);
-    successDismissTimerRef.current = null;
-  }, []);
-
-  const setItems = useCallback((updater: (items: UploadQueueItem[]) => UploadQueueItem[]) => {
-    const nextItems = updater(itemsRef.current);
-    itemsRef.current = nextItems;
-    setUploadQueue(nextItems);
-  }, [setUploadQueue]);
+  const setItems = useCallback(
+    (updater: (items: UploadQueueItem[]) => UploadQueueItem[]) => {
+      const nextItems = updater(itemsRef.current);
+      itemsRef.current = nextItems;
+      setUploadQueue(nextItems);
+    },
+    [setUploadQueue],
+  );
 
   const isItemCanceled = useCallback((id: string) => {
     return itemsRef.current.find((item) => item.id === id)?.status === "canceled";
   }, []);
-
-  const scheduleSuccessfulPanelDismiss = useCallback(() => {
-    const panelState = getUploadQueuePanelState(itemsRef.current);
-    if (!panelState.isComplete || panelState.hasTerminalIssues) {
-      return;
-    }
-
-    clearSuccessDismissTimer();
-    successDismissTimerRef.current = setTimeout(() => {
-      const latestPanelState = getUploadQueuePanelState(itemsRef.current);
-      if (!latestPanelState.isComplete || latestPanelState.hasTerminalIssues) {
-        return;
-      }
-      itemsRef.current = [];
-      setUploadQueue([]);
-      setIsUploadPanelMinimized(false);
-      successDismissTimerRef.current = null;
-    }, SUCCESS_PANEL_DISMISS_DELAY_MS);
-  }, [clearSuccessDismissTimer, setIsUploadPanelMinimized, setUploadQueue]);
 
   const finishIdleBatch = useCallback(() => {
     if (activeIdsRef.current.size > 0) {
@@ -326,7 +91,18 @@ export function useUploadQueue({ currentPath, onUploadsComplete }: UseUploadQueu
     scheduleSuccessfulPanelDismiss();
   }, [onUploadsComplete, scheduleSuccessfulPanelDismiss]);
 
-  const processQueueRef = useRef<() => void>(() => undefined);
+  const processQueueRef = useUploadQueueProcessor({
+    activeIdsRef,
+    activeItemPromisesRef,
+    ensureParentFoldersRef,
+    finishIdleBatch,
+    isItemCanceled,
+    itemsRef,
+    maxConcurrentUploads: MAX_CONCURRENT_UPLOADS,
+    setItems,
+    uploadTasksRef,
+    uploadedSinceIdleRef,
+  });
 
   const cancelUploadIds = useCallback(
     (ids: Set<string>) => {
@@ -355,100 +131,8 @@ export function useUploadQueue({ currentPath, onUploadsComplete }: UseUploadQueu
       processQueueRef.current();
       finishIdleBatch();
     },
-    [cancelUploadIds, finishIdleBatch],
+    [cancelUploadIds, finishIdleBatch, processQueueRef],
   );
-
-  const startItem = useCallback(
-    async (item: UploadQueueItem) => {
-      activeIdsRef.current.add(item.id);
-      setItems((currentItems) =>
-        updateUploadQueueItem(currentItems, item.id, {
-          status: "preparing",
-          errorMessage: null,
-        }),
-      );
-
-      try {
-        await ensureParentFoldersRef.current(item.parentPath, () => isItemCanceled(item.id));
-        if (isItemCanceled(item.id)) {
-          return;
-        }
-
-        setItems((currentItems) =>
-          updateUploadQueueItem(currentItems, item.id, {
-            status: "uploading",
-            progress: Math.max(item.progress, 1),
-          }),
-        );
-
-        const task = uploadFileWithProgress({
-          file: item.file,
-          parentPath: item.parentPath,
-          onProgress: (progress) => {
-            setItems((currentItems) => updateUploadQueueItem(currentItems, item.id, { progress }));
-          },
-        });
-        uploadTasksRef.current.set(item.id, task);
-        await task.promise;
-        uploadedSinceIdleRef.current = true;
-        setItems((currentItems) =>
-          updateUploadQueueItem(currentItems, item.id, {
-            status: "success",
-            progress: 100,
-            errorMessage: null,
-          }),
-        );
-      } catch (error) {
-        if (error instanceof UploadCanceledError || isItemCanceled(item.id)) {
-          setItems((currentItems) =>
-            updateUploadQueueItem(currentItems, item.id, {
-              status: "canceled",
-              errorMessage: null,
-            }),
-          );
-        } else if (isDuplicateUploadError(error)) {
-          setItems((currentItems) =>
-            updateUploadQueueItem(currentItems, item.id, {
-              status: "duplicate",
-              errorMessage: "名称重复",
-            }),
-          );
-        } else {
-          const message = toErrorMessage(error);
-          setItems((currentItems) =>
-            updateUploadQueueItem(currentItems, item.id, {
-              status: "failed",
-              errorMessage: message,
-            }),
-          );
-        }
-      } finally {
-        uploadTasksRef.current.delete(item.id);
-        activeIdsRef.current.delete(item.id);
-        processQueueRef.current();
-        finishIdleBatch();
-      }
-    },
-    [finishIdleBatch, isItemCanceled, setItems],
-  );
-
-  const processQueue = useCallback(() => {
-    while (activeIdsRef.current.size < MAX_CONCURRENT_UPLOADS) {
-      const nextItem = itemsRef.current.find(
-        (item) => item.status === "queued" && !activeIdsRef.current.has(item.id),
-      );
-      if (!nextItem) {
-        break;
-      }
-      const startPromise = startItem(nextItem);
-      activeItemPromisesRef.current.set(nextItem.id, startPromise);
-      void startPromise.finally(() => {
-        activeItemPromisesRef.current.delete(nextItem.id);
-      });
-    }
-  }, [startItem]);
-
-  processQueueRef.current = processQueue;
 
   const enqueueUploadFiles = useCallback(
     async (files: FileList | File[]) => {
@@ -475,7 +159,7 @@ export function useUploadQueue({ currentPath, onUploadsComplete }: UseUploadQueu
       uploadedSinceIdleRef.current = false;
       processQueueRef.current();
     },
-    [clearSuccessDismissTimer, currentPath, setIsUploadPanelMinimized, setItems],
+    [clearSuccessDismissTimer, currentPath, processQueueRef, setIsUploadPanelMinimized, setItems],
   );
 
   const cancelRemainingUploads = useCallback(() => {
@@ -501,7 +185,7 @@ export function useUploadQueue({ currentPath, onUploadsComplete }: UseUploadQueu
       }
       finishIdleBatch();
     },
-    [cancelUploadIds, finishIdleBatch],
+    [cancelUploadIds, finishIdleBatch, processQueueRef],
   );
 
   const retryUpload = useCallback(
@@ -512,7 +196,7 @@ export function useUploadQueue({ currentPath, onUploadsComplete }: UseUploadQueu
       );
       processQueueRef.current();
     },
-    [clearSuccessDismissTimer, setItems],
+    [clearSuccessDismissTimer, processQueueRef, setItems],
   );
 
   const minimizePanel = useCallback(() => {
@@ -530,14 +214,8 @@ export function useUploadQueue({ currentPath, onUploadsComplete }: UseUploadQueu
     setIsUploadPanelMinimized(false);
   }, [clearSuccessDismissTimer, setIsUploadPanelMinimized, setUploadQueue]);
 
-  const panelState = getUploadQueuePanelState(items);
-
-  useEffect(() => {
-    return clearSuccessDismissTimer;
-  }, [clearSuccessDismissTimer]);
-
-  useEffect(() => {
-    const controls = {
+  const controls = useMemo<UploadQueueControls>(
+    () => ({
       enqueueUploadFiles,
       cancelUpload,
       cancelUploadsInFolderAndWait,
@@ -546,38 +224,26 @@ export function useUploadQueue({ currentPath, onUploadsComplete }: UseUploadQueu
       minimizePanel,
       restorePanel,
       closePanel,
-    };
-
-    activeUploadQueueControls = controls;
-    return () => {
-      if (activeUploadQueueControls === controls) {
-        activeUploadQueueControls = null;
-      }
-    };
-  }, [
-    enqueueUploadFiles,
-    cancelUpload,
-    cancelUploadsInFolderAndWait,
-    cancelRemainingUploads,
-    retryUpload,
-    minimizePanel,
-    restorePanel,
-    closePanel,
-  ]);
+    }),
+    [
+      enqueueUploadFiles,
+      cancelUpload,
+      cancelUploadsInFolderAndWait,
+      cancelRemainingUploads,
+      retryUpload,
+      minimizePanel,
+      restorePanel,
+      closePanel,
+    ],
+  );
+  useUploadQueueControlsRegistration(controls);
 
   return {
     items,
     stats: countUploadQueueStats(items),
-    panelState,
+    panelState: getUploadQueuePanelState(items),
     isPanelMinimized: isUploadPanelMinimized,
     isUploading: countUploadQueueStats(items).active > 0,
-    enqueueUploadFiles,
-    cancelUpload,
-    cancelUploadsInFolderAndWait,
-    cancelRemainingUploads,
-    retryUpload,
-    minimizePanel,
-    restorePanel,
-    closePanel,
+    ...controls,
   };
 }

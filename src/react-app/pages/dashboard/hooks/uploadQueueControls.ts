@@ -1,4 +1,6 @@
-type UploadQueueControls = {
+import { useEffect } from "react";
+
+export type UploadQueueControls = {
   cancelRemainingUploads: () => void;
   cancelUpload: (id: string) => void;
   cancelUploadsInFolderAndWait: (folderPath: string) => Promise<void>;
@@ -22,6 +24,10 @@ export function registerUploadQueueControls(controls: UploadQueueControls): () =
       activeUploadQueueControls = null;
     }
   };
+}
+
+export function useUploadQueueControlsRegistration(controls: UploadQueueControls): void {
+  useEffect(() => registerUploadQueueControls(controls), [controls]);
 }
 
 export function enqueueDashboardUploadFiles(files: FileList | File[]) {
