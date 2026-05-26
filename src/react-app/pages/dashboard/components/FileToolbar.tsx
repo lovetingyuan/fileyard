@@ -1,6 +1,7 @@
 import { useCallback, useRef } from "react";
 import MdiArrowDown from "~icons/mdi/arrow-down";
 import MdiArrowUp from "~icons/mdi/arrow-up";
+import MdiClose from "~icons/mdi/close";
 import MdiFileUpload from "~icons/mdi/file-upload";
 import MdiFilePlus from "~icons/mdi/file-plus";
 import MdiFolderPlus from "~icons/mdi/folder-plus";
@@ -85,8 +86,7 @@ export function FileToolbar() {
   const folderInputRef = useRef<HTMLInputElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const { breadcrumbs, currentPath, setPath } = useDashboardPath();
-  const { getUniqueFolderName, isRefreshing, isSearchPending, refresh, searchInputValue } =
-    useDashboardFileView();
+  const { getUniqueFolderName, isRefreshing, refresh, searchInputValue } = useDashboardFileView();
   const { creatingFolder, isCreatingNewFolder, renamingPath, savingTextFile, uploadQueue } =
     useAppStore();
   const isSearchExpanded = searchInputValue.length > 0;
@@ -113,6 +113,11 @@ export function FileToolbar() {
     requestAnimationFrame(() => {
       searchInputRef.current?.focus();
     });
+  };
+
+  const clearSearchInput = () => {
+    setDashboardSearchInput("");
+    focusSearchInput();
   };
 
   return (
@@ -263,13 +268,15 @@ export function FileToolbar() {
             </button>
           </div>
           {isSearchExpanded && (
-            <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-base-content/40">
-              {isSearchPending ? (
-                <span className="loading loading-spinner loading-xs" />
-              ) : (
-                <MdiMagnify className="h-4 w-4" />
-              )}
-            </div>
+            <button
+              type="button"
+              className="btn btn-ghost btn-square btn-xs absolute inset-y-0 right-1 z-10 my-auto h-6 min-h-6 w-6 text-base-content/50 hover:text-base-content"
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={clearSearchInput}
+              aria-label="清空搜索"
+            >
+              <MdiClose className="h-4 w-4" />
+            </button>
           )}
         </div>
         <div className="tooltip shrink-0" data-tip="Refresh">

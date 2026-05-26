@@ -1,24 +1,16 @@
 import { useDeferredValue } from "react";
-import type { FileEntry, FolderEntry } from "../../../../types";
+import type { FileEntry, FolderEntry, OptimisticFolderEntry } from "../../../../types";
 import { useFileListWithOptimistic } from "../../../hooks/useFilesApi";
 import { useAppStore } from "../../../store";
+import { findFuzzyMatchRanges } from "../utils/searchMatch";
+import type { SearchMatchRange } from "../utils/searchMatch";
 import { useDashboardPath } from "./useDashboardPath";
 
-function fuzzyMatch(name: string, query: string) {
-  if (!query) {
-    return true;
-  }
+export type SearchMatchedEntry<T> = T & {
+  searchMatchRanges: SearchMatchRange[];
+};
 
-  const lowerName = name.toLowerCase();
-  const lowerQuery = query.toLowerCase();
-  let queryIndex = 0;
-  for (let index = 0; index < lowerName.length && queryIndex < lowerQuery.length; index++) {
-    if (lowerName[index] === lowerQuery[queryIndex]) {
-      queryIndex++;
-    }
-  }
-  return queryIndex === lowerQuery.length;
-}
+type DashboardFolderEntry = FolderEntry | OptimisticFolderEntry;
 
 function getUniqueFolderName(folders: Array<FolderEntry>, baseName: string): string {
   const existingNames = new Set(folders.map((folder) => folder.name));
@@ -38,11 +30,25 @@ export function useDashboardFileView() {
   const { dashboardSortKey, dashboardSortOrder, searchInputValue, searchKeyword } = useAppStore();
   const deferredSearchQuery = useDeferredValue(searchKeyword);
   const fileList = useFileListWithOptimistic(currentPath, dashboardSortKey, dashboardSortOrder);
-  const filteredFolders = fileList.data.folders.filter((folder) =>
-    fuzzyMatch(folder.name, deferredSearchQuery),
+  const filteredFolders = fileList.data.folders.reduce<Array<SearchMatchedEntry<DashboardFolderEntry>>>(
+    (folders, folder) => {
+      const searchMatchRanges = findFuzzyMatchRanges(folder.name, deferredSearchQuery);
+      if (searchMatchRanges) {
+        folders.push({ ...folder, searchMatchRanges });
+      }
+      return folders;
+    },
+    [],
   );
-  const filteredFiles = fileList.data.files.filter((file) =>
-    fuzzyMatch(file.name, deferredSearchQuery),
+  const filteredFiles = fileList.data.files.reduce<Array<SearchMatchedEntry<FileEntry>>>(
+    (files, file) => {
+      const searchMatchRanges = findFuzzyMatchRanges(file.name, deferredSearchQuery);
+      if (searchMatchRanges) {
+        files.push({ ...file, searchMatchRanges });
+      }
+      return files;
+    },
+    [],
   );
   const totalBytes = filteredFiles.reduce((sum, file: FileEntry) => sum + file.size, 0);
 
