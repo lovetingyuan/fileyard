@@ -3,7 +3,11 @@ import MdiInformationOutline from '~icons/mdi/information-outline'
 import { openDirectoryStats } from '../actions'
 import { useDashboardPath } from '../hooks/useDashboardPath'
 
-export function FileBreadcrumbs() {
+type FileBreadcrumbsProps = {
+  isCurrentPathMissing?: boolean
+}
+
+export function FileBreadcrumbs({ isCurrentPathMissing = false }: FileBreadcrumbsProps) {
   const { breadcrumbs, currentPath, setPath } = useDashboardPath()
 
   return (
@@ -41,10 +45,14 @@ export function FileBreadcrumbs() {
         </ul>
       </div>
 
-      <div className="tooltip shrink-0" data-tip="查看当前文件夹详情">
+      <div
+        className={isCurrentPathMissing ? 'shrink-0' : 'tooltip shrink-0'}
+        data-tip={isCurrentPathMissing ? undefined : '查看当前文件夹详情'}
+      >
         <button
           type="button"
           className="btn btn-ghost btn-square btn-xs"
+          disabled={isCurrentPathMissing}
           onClick={() => openDirectoryStats(currentPath)}
           aria-label="查看当前文件夹详情"
         >

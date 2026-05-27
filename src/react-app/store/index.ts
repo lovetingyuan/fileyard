@@ -94,11 +94,7 @@ export const { useStore, getStoreMethods, getStoreState, getStateSnapshot, subsc
     isUploadPanelMinimized: false,
   })
 
-export type AppStoreState = ReturnType<typeof getStoreState>
-export type AppStoreMethods = ReturnType<typeof getStoreMethods>
-export type AppStoreValue = AppStoreState & AppStoreMethods
-
-export function useAppStore(): AppStoreValue {
+export function useAppStore() {
   if (typeof document === 'undefined') {
     return {
       ...getStoreState(),
@@ -106,5 +102,5 @@ export function useAppStore(): AppStoreValue {
     }
   }
 
-  return useStore() as AppStoreValue
+  return useStore()
 }

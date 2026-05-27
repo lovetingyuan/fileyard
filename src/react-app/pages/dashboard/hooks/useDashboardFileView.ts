@@ -4,6 +4,7 @@ import { useFileList } from "../../../hooks/useFilesApi";
 import { useAppStore } from "../../../store";
 import { findFuzzyMatchRanges } from "../utils/searchMatch";
 import type { SearchMatchRange } from "../utils/searchMatch";
+import { isMissingCurrentPathError } from "../utils/fileListError";
 import { useDashboardPath } from "./useDashboardPath";
 
 export type SearchMatchedEntry<T> = T & {
@@ -30,6 +31,7 @@ export function useDashboardFileView() {
   const { dashboardSortKey, dashboardSortOrder, searchInputValue, searchKeyword } = useAppStore();
   const deferredSearchQuery = useDeferredValue(searchKeyword);
   const fileList = useFileList(currentPath, dashboardSortKey, dashboardSortOrder);
+  const isCurrentPathMissing = isMissingCurrentPathError(currentPath, fileList.error);
   const filteredFolders = fileList.data.folders.reduce<Array<SearchMatchedEntry<DashboardFolderEntry>>>(
     (folders, folder) => {
       const searchMatchRanges = findFuzzyMatchRanges(folder.name, deferredSearchQuery);
@@ -61,6 +63,7 @@ export function useDashboardFileView() {
     filteredFiles,
     filteredFolders,
     hasItems: filteredFiles.length > 0 || filteredFolders.length > 0,
+    isCurrentPathMissing,
     isSearchPending: searchInputValue !== deferredSearchQuery,
     searchInputValue,
     totalBytes,

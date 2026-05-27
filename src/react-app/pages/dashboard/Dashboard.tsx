@@ -1,25 +1,27 @@
-import { useRef, useState } from "react";
-import MdiAlertCircleOutline from "~icons/mdi/alert-circle-outline";
-import MdiFolderOpenOutline from "~icons/mdi/folder-open-outline";
-import MdiMagnifyRemoveOutline from "~icons/mdi/magnify-remove-outline";
-import toast from "react-hot-toast";
-import { useUploadUnloadProtection } from "../../hooks/useUploadUnloadProtection";
-import { useAppStore } from "../../store";
-import { getDroppedUploadFiles } from "../../utils/uploadDrop";
-import { DeleteConfirmModal } from "./components/DeleteConfirmModal";
-import { DirectoryStatsModal } from "./components/DirectoryStatsModal";
-import { FileDetailsModal } from "./components/FileDetailsModal";
-import { FileRow, FolderRow } from "./components/FileTableRows";
-import { FileToolbar } from "./components/FileToolbar";
-import { NewFolderModal } from "./components/NewFolderModal";
-import { NewTextFileModal } from "./components/NewTextFileModal";
-import { PreviewModal } from "./components/PreviewModal";
-import { RenameModal } from "./components/RenameModal";
-import { ShareFileModal } from "./components/ShareFileModal";
-import { UploadProgressPanel } from "./components/UploadProgressPanel";
-import { useDashboardFileView } from "./hooks/useDashboardFileView";
-import { useUploadQueue } from "./hooks/useUploadQueue";
-import { uploadDashboardFiles } from "./uploadFiles";
+import { useRef, useState } from 'react'
+import MdiAlertCircleOutline from '~icons/mdi/alert-circle-outline'
+import MdiFolderOpenOutline from '~icons/mdi/folder-open-outline'
+import MdiMagnifyRemoveOutline from '~icons/mdi/magnify-remove-outline'
+import toast from 'react-hot-toast'
+import { useUploadUnloadProtection } from '../../hooks/useUploadUnloadProtection'
+import { useAppStore } from '../../store'
+import { getDroppedUploadFiles } from '../../utils/uploadDrop'
+import { DeleteConfirmModal } from './components/DeleteConfirmModal'
+import { DirectoryStatsModal } from './components/DirectoryStatsModal'
+import { FileDetailsModal } from './components/FileDetailsModal'
+import { FileRow, FolderRow } from './components/FileTableRows'
+import { FileToolbar } from './components/FileToolbar'
+import { NewFolderModal } from './components/NewFolderModal'
+import { NewTextFileModal } from './components/NewTextFileModal'
+import { PreviewModal } from './components/PreviewModal'
+import { RenameModal } from './components/RenameModal'
+import { ShareFileModal } from './components/ShareFileModal'
+import { UploadProgressPanel } from './components/UploadProgressPanel'
+import { useDashboardFileView } from './hooks/useDashboardFileView'
+import { useUploadQueue } from './hooks/useUploadQueue'
+import { uploadDashboardFiles } from './uploadFiles'
+
+const MISSING_PATH_DISABLED_MESSAGE = '当前文件路径不存在，无法在此位置上传或新建文件'
 
 export function Dashboard() {
   const {
@@ -30,63 +32,78 @@ export function Dashboard() {
     renamingPath,
     savingTextFile,
     sharing,
-  } = useAppStore();
+  } = useAppStore()
   const {
     currentPath,
     error,
     filteredFiles,
     filteredFolders,
+    isCurrentPathMissing,
     isLoading,
     refresh,
     searchInputValue,
-  } = useDashboardFileView();
+  } = useDashboardFileView()
   const uploadQueue = useUploadQueue({
     currentPath,
     onUploadsComplete: refresh,
-  });
-  const [isDraggingUpload, setIsDraggingUpload] = useState(false);
-  const dragDepthRef = useRef(0);
-  const isFileUploadInProgress = savingTextFile || uploadQueue.isUploading;
-  const isFileMutationDisabled = Boolean(renamingPath);
-  const EmptyStateIcon = searchInputValue ? MdiMagnifyRemoveOutline : MdiFolderOpenOutline;
+  })
+  const [isDraggingUpload, setIsDraggingUpload] = useState(false)
+  const dragDepthRef = useRef(0)
+  const isFileUploadInProgress = savingTextFile || uploadQueue.isUploading
+  const isFileMutationDisabled = Boolean(renamingPath)
+  const EmptyStateIcon = searchInputValue ? MdiMagnifyRemoveOutline : MdiFolderOpenOutline
+  const isCurrentPathMutationDisabled = isFileMutationDisabled || isCurrentPathMissing
 
-  useUploadUnloadProtection(isFileUploadInProgress);
+  useUploadUnloadProtection(isFileUploadInProgress)
 
   const handleDragEnter = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    dragDepthRef.current += 1;
-    setIsDraggingUpload(true);
-  };
+    event.preventDefault()
+    dragDepthRef.current += 1
+    setIsDraggingUpload(!isCurrentPathMutationDisabled)
+  }
 
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
+    event.preventDefault()
     if (event.dataTransfer) {
-      event.dataTransfer.dropEffect = isFileMutationDisabled ? "none" : "copy";
+      event.dataTransfer.dropEffect = isCurrentPathMutationDisabled ? 'none' : 'copy'
     }
-  };
+  }
 
   const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+    event.preventDefault()
+    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1)
     if (dragDepthRef.current === 0) {
-      setIsDraggingUpload(false);
+      setIsDraggingUpload(false)
     }
-  };
+  }
 
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    dragDepthRef.current = 0;
-    setIsDraggingUpload(false);
+    event.preventDefault()
+    dragDepthRef.current = 0
+    setIsDraggingUpload(false)
 
     void (async () => {
       try {
-        const { files, source } = await getDroppedUploadFiles(event.dataTransfer);
-        await uploadDashboardFiles({ files, source, isFileMutationDisabled });
+        if (isCurrentPathMutationDisabled) {
+          toast.error(
+            isCurrentPathMissing
+              ? MISSING_PATH_DISABLED_MESSAGE
+              : 'Rename in progress, please wait',
+          )
+          return
+        }
+
+        const { files, source } = await getDroppedUploadFiles(event.dataTransfer)
+        await uploadDashboardFiles({
+          files,
+          source,
+          isFileMutationDisabled: false,
+        })
       } catch {
-        toast.error("Failed to read dropped files");
+        toast.error('Failed to read dropped files')
       }
-    })();
-  };
+    })()
+  }
 
   return (
     <div className="flex flex-1 flex-col">
@@ -103,16 +120,29 @@ export function Dashboard() {
         <section className="card bg-base-100 shadow-sm">
           <div
             className={`card-body gap-4 rounded-box border border-transparent transition-colors duration-150 ${
-              isDraggingUpload ? "border-primary bg-primary/30 ring-2 ring-primary/40" : ""
+              isDraggingUpload ? 'border-primary bg-primary/30 ring-2 ring-primary/40' : ''
             }`}
             onDragEnter={handleDragEnter}
             onDragLeave={handleDragLeave}
             onDragOver={handleDragOver}
             onDrop={handleDrop}
           >
-            <FileToolbar />
+            <FileToolbar isCurrentPathMissing={isCurrentPathMissing} />
 
-            {error ? (
+            {isCurrentPathMissing ? (
+              <div className="rounded-box border border-warning/30 bg-warning/10 p-10">
+                <div className="flex flex-col items-center gap-3 text-center text-base-content/70">
+                  <MdiAlertCircleOutline className="h-12 w-12 text-warning" />
+                  <div className="space-y-1">
+                    <h2 className="text-base font-medium text-base-content">当前文件路径不存在</h2>
+                    <p className="break-all text-sm">
+                      无法找到路径{' '}
+                      <span className="font-mono text-base-content">/{currentPath}</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : error ? (
               <div className="rounded-box border border-base-300 bg-base-200 p-10">
                 <div className="flex flex-col items-center gap-3 text-center text-base-content/60">
                   <MdiAlertCircleOutline className="h-12 w-12 text-error" />
@@ -143,27 +173,29 @@ export function Dashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredFolders.map((folder) => (
+                    {filteredFolders.map(folder => (
                       <FolderRow key={`folder:${folder.path}`} folder={folder} />
                     ))}
-                    {filteredFiles.map((file) => (
+                    {filteredFiles.map(file => (
                       <FileRow key={`file:${file.path}`} file={file} />
                     ))}
                     {filteredFolders.length === 0 && filteredFiles.length === 0 && (
                       <>
-                        <tr className={searchInputValue ? "sm:hidden" : "bg-base-100 sm:hidden"}>
+                        <tr className={searchInputValue ? 'sm:hidden' : 'bg-base-100 sm:hidden'}>
                           <td colSpan={2}>
                             <div className="flex flex-col items-center gap-2 py-15 text-base-content/60">
                               <EmptyStateIcon className="w-12 h-12" />
                               {searchInputValue
                                 ? `No results for "${searchInputValue}"`
-                                : "This folder is empty."}
+                                : 'This folder is empty.'}
                             </div>
                           </td>
                         </tr>
                         <tr
                           className={
-                            searchInputValue ? "hidden sm:table-row" : "hidden bg-base-100 sm:table-row"
+                            searchInputValue
+                              ? 'hidden sm:table-row'
+                              : 'hidden bg-base-100 sm:table-row'
                           }
                         >
                           <td colSpan={4}>
@@ -171,7 +203,7 @@ export function Dashboard() {
                               <EmptyStateIcon className="w-12 h-12" />
                               {searchInputValue
                                 ? `No results for "${searchInputValue}"`
-                                : "This folder is empty."}
+                                : 'This folder is empty.'}
                             </div>
                           </td>
                         </tr>
@@ -185,5 +217,5 @@ export function Dashboard() {
         </section>
       </main>
     </div>
-  );
+  )
 }

@@ -6,12 +6,14 @@ import {
 import { enqueueDashboardUploadFiles } from "./hooks/useUploadQueue";
 
 type UploadDashboardFilesArgs = {
+  disabledMessage?: string;
   files: FileList | File[];
   isFileMutationDisabled: boolean;
   source: UploadSelectionSource;
 };
 
 export async function uploadDashboardFiles({
+  disabledMessage,
   files,
   isFileMutationDisabled,
   source,
@@ -19,7 +21,7 @@ export async function uploadDashboardFiles({
   const selectedFiles = Array.from(files);
 
   if (isFileMutationDisabled) {
-    toast.error("Rename in progress, please wait");
+    toast.error(disabledMessage ?? "Rename in progress, please wait");
     return;
   }
 

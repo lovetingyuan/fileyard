@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { User } from "../../types";
-import { authClient, type BetterAuthSession } from "../lib/auth-client";
+import { authClient, type BetterAuthSession } from "../auth/client";
 
 export type { User } from "../../types";
 
