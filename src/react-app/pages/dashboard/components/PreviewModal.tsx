@@ -1,6 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import MdiFullscreen from "~icons/mdi/fullscreen";
-import MdiFullscreenExit from "~icons/mdi/fullscreen-exit";
 import MdiPencil from "~icons/mdi/pencil";
 import toast from "react-hot-toast";
 import { Dialog } from "../../../components/Dialog";
@@ -43,7 +41,6 @@ export function PreviewModal() {
   const { currentFile, previewing } = useAppStore();
   const { refresh } = useDashboardFileView();
   const { updateFile } = useUpdateFileMutation();
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState("");
   const [forceTextPreview, setForceTextPreview] = useState(false);
@@ -64,7 +61,6 @@ export function PreviewModal() {
 
   const handleClose = () => {
     clearCopyFeedbackTimeout();
-    setIsFullscreen(false);
     setIsEditing(false);
     setEditContent("");
     setForceTextPreview(false);
@@ -144,38 +140,18 @@ export function PreviewModal() {
 
   const sizeError = getPreviewSizeError(effectiveInfo.kind, file.size);
   const canCopyText = effectiveInfo.kind === "text" && !sizeError;
-  const previewContentWrapperClassName = getPreviewContentWrapperClassName(
-    effectiveInfo.kind,
-    isEditing,
-    isFullscreen,
-  );
-  const bodyClassName = isFullscreen
-    ? "flex-1 min-h-0 overflow-auto p-3 sm:p-4"
-    : "flex-1 min-h-0 overflow-auto p-1";
-  const FullscreenIcon = isFullscreen ? MdiFullscreenExit : MdiFullscreen;
 
   return (
     <Dialog
       isOpen
       title={<h3 className="truncate pr-4 font-bold text-base">{file.name}</h3>}
       onClose={handleClose}
-      widthMode={isFullscreen ? "default" : "content"}
-      boxClassName={getPreviewModalBoxClassName(isFullscreen)}
-      bodyClassName={bodyClassName}
+      supportFullscreen={!isEditing && effectiveInfo.kind !== "unsupported"}
+      widthMode="content"
+      boxClassName={getPreviewModalBoxClassName()}
+      bodyClassName="flex-1 min-h-0 overflow-auto p-1"
       closeButtonAriaLabel="关闭文件预览弹窗"
       headerClassName="items-center"
-      headerActions={
-        !isEditing && effectiveInfo.kind !== "unsupported" ? (
-          <button
-            type="button"
-            className="btn btn-ghost btn-sm btn-square"
-            onClick={() => setIsFullscreen((value) => !value)}
-            title={isFullscreen ? "退出全屏预览" : "全屏预览"}
-          >
-            <FullscreenIcon className="w-5 h-5" />
-          </button>
-        ) : undefined
-      }
       footer={
         (canCopyText || canEditTextFile) && !sizeError
           ? ({ confirm, isConfirming }) =>
@@ -223,56 +199,64 @@ export function PreviewModal() {
       showConfirmButton={false}
       onConfirm={isEditing ? handleSave : undefined}
     >
-      {({ isConfirming }) => (
-        <>
-          {sizeError ? (
-            <PreviewUnsupportedMessage reason={sizeError} />
-          ) : (
-            <div className={previewContentWrapperClassName}>
-              {effectiveInfo.kind === "image" && (
-                <ImagePreview file={file} previewUrl={previewUrl} isFullscreen={isFullscreen} />
-              )}
-              {effectiveInfo.kind === "video" && (
-                <VideoPreview previewUrl={previewUrl} isFullscreen={isFullscreen} />
-              )}
-              {effectiveInfo.kind === "audio" && (
-                <AudioPreview previewUrl={previewUrl} isFullscreen={isFullscreen} />
-              )}
-              {effectiveInfo.kind === "pdf" && (
-                <PdfPreview file={file} previewUrl={previewUrl} isFullscreen={isFullscreen} />
-              )}
-              {effectiveInfo.kind === "text" && (
-                <TextPreview
-                  file={file}
-                  previewUrl={previewUrl}
-                  isFullscreen={isFullscreen}
-                  isEditing={isEditing && effectiveInfo.kind === "text"}
-                  editContent={editContent}
-                  isBusy={isConfirming}
-                  onEditContentChange={setEditContent}
-                  onDataLoaded={handleDataLoaded}
-                />
-              )}
-              {effectiveInfo.kind === "unsupported" && (
-                <div className="flex flex-col items-center gap-4 py-12 text-center">
-                  <p className="text-sm text-base-content/70">
-                    此文件类型不支持预览，您可以下载后查看
-                  </p>
-                  {canForceTextPreview ? (
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-primary"
-                      onClick={() => setForceTextPreview(true)}
-                    >
-                      按文本打开
-                    </button>
-                  ) : null}
-                </div>
-              )}
-            </div>
-          )}
-        </>
-      )}
+      {({ isConfirming, isFullscreen }) => {
+        const previewContentWrapperClassName = getPreviewContentWrapperClassName(
+          effectiveInfo.kind,
+          isEditing,
+          isFullscreen,
+        );
+
+        return (
+          <>
+            {sizeError ? (
+              <PreviewUnsupportedMessage reason={sizeError} />
+            ) : (
+              <div className={previewContentWrapperClassName}>
+                {effectiveInfo.kind === "image" && (
+                  <ImagePreview file={file} previewUrl={previewUrl} isFullscreen={isFullscreen} />
+                )}
+                {effectiveInfo.kind === "video" && (
+                  <VideoPreview previewUrl={previewUrl} isFullscreen={isFullscreen} />
+                )}
+                {effectiveInfo.kind === "audio" && (
+                  <AudioPreview previewUrl={previewUrl} isFullscreen={isFullscreen} />
+                )}
+                {effectiveInfo.kind === "pdf" && (
+                  <PdfPreview file={file} previewUrl={previewUrl} isFullscreen={isFullscreen} />
+                )}
+                {effectiveInfo.kind === "text" && (
+                  <TextPreview
+                    file={file}
+                    previewUrl={previewUrl}
+                    isFullscreen={isFullscreen}
+                    isEditing={isEditing && effectiveInfo.kind === "text"}
+                    editContent={editContent}
+                    isBusy={isConfirming}
+                    onEditContentChange={setEditContent}
+                    onDataLoaded={handleDataLoaded}
+                  />
+                )}
+                {effectiveInfo.kind === "unsupported" && (
+                  <div className="flex flex-col items-center gap-4 py-12 text-center">
+                    <p className="text-sm text-base-content/70">
+                      此文件类型不支持预览，您可以下载后查看
+                    </p>
+                    {canForceTextPreview ? (
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-primary"
+                        onClick={() => setForceTextPreview(true)}
+                      >
+                        按文本打开
+                      </button>
+                    ) : null}
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        );
+      }}
     </Dialog>
   );
 }

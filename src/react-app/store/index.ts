@@ -1,7 +1,8 @@
-import { createStore } from 'react-atomic-store'
+import { createStore } from "react-atomic-store";
 import type {
   DeleteTarget,
   FileEntry,
+  MoveTarget,
   NewTextFileDraft,
   RenameTarget,
   SortKey,
@@ -9,27 +10,27 @@ import type {
   ThemePreference,
   UploadQueueItem,
   User,
-} from '../../types'
+} from "../../types";
 
 function getInitialThemePreference(): ThemePreference {
-  if (typeof window === 'undefined') {
-    return 'system'
+  if (typeof window === "undefined") {
+    return "system";
   }
 
   try {
-    const stored = window.localStorage.getItem('theme-preference')
-    if (stored === 'light' || stored === 'dark' || stored === 'system') {
-      return stored
+    const stored = window.localStorage.getItem("theme-preference");
+    if (stored === "light" || stored === "dark" || stored === "system") {
+      return stored;
     }
   } catch {
-    return 'system'
+    return "system";
   }
 
-  return 'system'
+  return "system";
 }
 
 export const { useStore, getStoreMethods, getStoreState, getStateSnapshot, subscribeStore } =
-  createStore('app-store', {
+  createStore("app-store", {
     /** Better Auth 当前会话映射出的用户信息，未登录时为 null。 */
     userInfo: null as User | null,
     /** Better Auth 会话是否仍在读取中。 */
@@ -41,19 +42,19 @@ export const { useStore, getStoreMethods, getStoreState, getStateSnapshot, subsc
     /** 用户选择的主题偏好，system 表示跟随系统外观。 */
     themePreference: getInitialThemePreference(),
     /** Dashboard 文件列表排序字段。 */
-    dashboardSortKey: 'uploadedAt' as SortKey,
+    dashboardSortKey: "uploadedAt" as SortKey,
     /** Dashboard 文件列表排序方向。 */
-    dashboardSortOrder: 'desc' as SortOrder,
+    dashboardSortOrder: "desc" as SortOrder,
     /** 搜索输入框当前正在编辑的内容。 */
-    searchInputValue: '',
+    searchInputValue: "",
     /** 已提交给 Dashboard 文件列表过滤逻辑的搜索关键字。 */
-    searchKeyword: '',
+    searchKeyword: "",
     /** 是否正在显示新建文件夹弹窗。 */
     isCreatingNewFolder: false,
     /** 新建文件夹请求是否正在提交。 */
     creatingFolder: false,
     /** 新建文件夹弹窗的默认文件夹名称。 */
-    addNewFolderName: '',
+    addNewFolderName: "",
     /** 正在新建文本文件的草稿内容；null 表示弹窗关闭。 */
     addNewTextFile: null as NewTextFileDraft | null,
     /** 当前正在进行新建或保存的文本文件上传操作。 */
@@ -74,33 +75,37 @@ export const { useStore, getStoreMethods, getStoreState, getStateSnapshot, subsc
     pendingDeleteTarget: null as DeleteTarget | null,
     /** 当前等待用户输入新名称的文件或文件夹目标。 */
     pendingRenameTarget: null as RenameTarget | null,
+    /** 当前等待用户选择移动目标目录的文件或文件夹目标。 */
+    pendingMoveTarget: null as MoveTarget | null,
     /** 当前正在删除的文件路径；null 表示没有文件删除任务。 */
     deletingFilePath: null as string | null,
     /** 当前正在删除的文件夹路径；null 表示没有文件夹删除任务。 */
     deletingFolderPath: null as string | null,
     /** 当前正在重命名的路径；null 表示没有重命名任务。 */
     renamingPath: null as string | null,
+    /** 当前正在移动的路径；null 表示没有移动任务。 */
+    movingPath: null as string | null,
     /** 是否正在展示文件详情弹窗。 */
     viewDetail: false,
     /** 是否正在展示目录统计弹窗。 */
     isDirectoryStatsModalOpen: false,
     /** 当前目录统计弹窗要展示的目录路径。 */
-    directoryStatsPath: '',
+    directoryStatsPath: "",
     /** 用户最近选择的上传入口类型，用于区分文件或文件夹上传。 */
-    uploadType: '' as 'file' | 'folder' | '',
+    uploadType: "" as "file" | "folder" | "",
     /** 当前上传队列的可渲染任务列表。 */
     uploadQueue: [] as UploadQueueItem[],
     /** 上传进度面板是否处于折叠状态。 */
     isUploadPanelMinimized: false,
-  })
+  });
 
 export function useAppStore() {
-  if (typeof document === 'undefined') {
+  if (typeof document === "undefined") {
     return {
       ...getStoreState(),
       ...getStoreMethods(),
-    }
+    };
   }
 
-  return useStore()
+  return useStore();
 }

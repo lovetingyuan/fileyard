@@ -2,11 +2,17 @@ import type { PreviewKind } from "../utils/previewInfo";
 
 export type DialogWidthMode = "default" | "content";
 const DOCUMENT_VIEWPORT_CLASS = "mx-auto w-[min(48rem,calc(95vw-4rem))] max-w-full";
+const DIALOG_FULLSCREEN_BOX_CLASS =
+  "flex h-[100dvh] w-screen !max-h-none !max-w-none flex-col rounded-none";
 
-export function getDialogBoxClassName(widthMode: DialogWidthMode, boxClassName = ""): string {
+export function getDialogBoxClassName(
+  widthMode: DialogWidthMode,
+  boxClassName = "",
+  isFullscreen = false,
+): string {
   const classes = ["modal-box"];
 
-  if (widthMode === "content") {
+  if (!isFullscreen && widthMode === "content") {
     classes.push("!w-fit");
   }
 
@@ -14,14 +20,14 @@ export function getDialogBoxClassName(widthMode: DialogWidthMode, boxClassName =
     classes.push(boxClassName);
   }
 
+  if (isFullscreen) {
+    classes.push(DIALOG_FULLSCREEN_BOX_CLASS);
+  }
+
   return classes.join(" ");
 }
 
-export function getPreviewModalBoxClassName(isFullscreen = false): string {
-  if (isFullscreen) {
-    return "flex h-[100dvh] w-screen !max-h-none !max-w-none flex-col rounded-none";
-  }
-
+export function getPreviewModalBoxClassName(): string {
   return "flex max-h-[95vh] min-w-[min(32rem,95vw)] !max-w-[95vw] flex-col";
 }
 

@@ -75,6 +75,10 @@ export type RenameTarget = FileOperationTarget & {
   type: "file" | "folder";
 };
 
+export type MoveTarget = FileOperationTarget & {
+  type: "file" | "folder";
+};
+
 export type NewTextFileDraft = {
   name: string;
   content: string;
@@ -88,6 +92,17 @@ export interface FileListResponse {
   path: string;
   folders: FolderEntry[];
   files: FileEntry[];
+}
+
+export interface FolderTreeNode {
+  name: string;
+  path: string;
+  children: FolderTreeNode[];
+}
+
+export interface FolderTreeResponse {
+  success: true;
+  root: FolderTreeNode;
 }
 
 export interface DirectoryStatsResponse {
@@ -167,6 +182,12 @@ export interface CreateFolderRequest {
 export interface RenameRequest {
   path: string;
   name: string;
+}
+
+export interface MoveRequest {
+  type: "file" | "folder";
+  path: string;
+  targetParentPath: string;
 }
 
 export interface FileMutationResponse {

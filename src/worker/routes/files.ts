@@ -8,6 +8,7 @@ import {
   uploadFile,
 } from "./fileObjectHandlers";
 import { getDirectoryStats, getUploadLimits, listFiles } from "./fileListHandlers";
+import { listFolderTree, moveEntry } from "./fileMoveHandlers";
 import { createFolder, deleteFolder, renameFolder } from "./folderHandlers";
 
 const files = new Hono<AppContext>();
@@ -15,6 +16,8 @@ const files = new Hono<AppContext>();
 files.get("/api/files/upload-limits", getUploadLimits);
 files.get("/api/files", listFiles);
 files.get("/api/files/stats", getDirectoryStats);
+files.get("/api/files/folder-tree", listFolderTree);
+files.patch("/api/files/move", moveEntry);
 files.post("/api/files/folders", createFolder);
 files.delete("/api/files/folders", deleteFolder);
 files.patch("/api/files/folders", renameFolder);

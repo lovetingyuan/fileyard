@@ -21,7 +21,7 @@ export async function uploadDashboardFiles({
   const selectedFiles = Array.from(files);
 
   if (isFileMutationDisabled) {
-    toast.error(disabledMessage ?? "Rename in progress, please wait");
+    toast.error(disabledMessage ?? "File operation in progress, please wait");
     return;
   }
 

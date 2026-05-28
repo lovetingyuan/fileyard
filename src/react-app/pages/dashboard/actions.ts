@@ -1,6 +1,7 @@
 import type {
   DeleteTarget,
   FileEntry,
+  MoveTarget,
   NewTextFileDraft,
   RenameTarget,
   SortKey,
@@ -154,6 +155,18 @@ export function closeRenameTarget() {
   setPendingRenameTarget(null);
 }
 
+export function requestMoveTarget(target: MoveTarget) {
+  const { setPendingMoveTarget } = getStoreMethods();
+
+  setPendingMoveTarget(target);
+}
+
+export function closeMoveTarget() {
+  const { setPendingMoveTarget } = getStoreMethods();
+
+  setPendingMoveTarget(null);
+}
+
 export function setDeletingFilePath(path: string | null) {
   const { setDeletingFilePath } = getStoreMethods();
 
@@ -170,6 +183,12 @@ export function setRenamingPath(path: string | null) {
   const { setRenamingPath } = getStoreMethods();
 
   setRenamingPath(path);
+}
+
+export function setMovingPath(path: string | null) {
+  const { setMovingPath } = getStoreMethods();
+
+  setMovingPath(path);
 }
 
 export function setDownloadingPath(path: string | null) {

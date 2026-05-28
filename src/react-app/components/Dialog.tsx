@@ -1,4 +1,6 @@
 import MdiClose from "~icons/mdi/close";
+import MdiFullscreen from "~icons/mdi/fullscreen";
+import MdiFullscreenExit from "~icons/mdi/fullscreen-exit";
 import { type ReactNode, useEffect, useState } from "react";
 import { useNativeDialog } from "../hooks/useNativeDialog";
 import { getDialogBoxClassName, type DialogWidthMode } from "./previewModalLayout";
@@ -7,6 +9,7 @@ type DialogAction = () => void | Promise<void>;
 
 interface DialogRenderState {
   isConfirming: boolean;
+  isFullscreen: boolean;
   isInteractionDisabled: boolean;
   requestClose: () => void;
   cancel: () => void;
@@ -35,6 +38,7 @@ interface DialogProps {
   cancelDisabled?: boolean;
   confirmDisabled?: boolean;
   confirmLoading?: boolean;
+  supportFullscreen?: boolean;
   widthMode?: DialogWidthMode;
   dialogClassName?: string;
   boxClassName?: string;
@@ -76,6 +80,7 @@ export function Dialog({
   cancelDisabled = false,
   confirmDisabled = false,
   confirmLoading = false,
+  supportFullscreen = false,
   widthMode = "default",
   dialogClassName = "",
   boxClassName = "",
@@ -89,13 +94,19 @@ export function Dialog({
   confirmButtonClassName = "",
 }: DialogProps) {
   const [isConfirming, setIsConfirming] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const isActiveFullscreen = supportFullscreen && isFullscreen;
   const isInteractionDisabled = isDismissDisabled || isConfirming;
 
   useEffect(() => {
     if (!isOpen) {
       setIsConfirming(false);
+      setIsFullscreen(false);
     }
-  }, [isOpen]);
+    if (!supportFullscreen) {
+      setIsFullscreen(false);
+    }
+  }, [isOpen, supportFullscreen]);
 
   const requestClose = () => {
     if (isInteractionDisabled) {
@@ -137,6 +148,7 @@ export function Dialog({
 
   const renderState: DialogRenderState = {
     isConfirming,
+    isFullscreen: isActiveFullscreen,
     isInteractionDisabled,
     requestClose,
     cancel,
@@ -153,8 +165,8 @@ export function Dialog({
 
   return (
     <dialog ref={dialogRef} className={`modal ${dialogClassName}`.trim()}>
-      <div className={getDialogBoxClassName(widthMode, boxClassName)}>
-        {(title || showCloseButton || headerActions !== undefined) && (
+      <div className={getDialogBoxClassName(widthMode, boxClassName, isActiveFullscreen)}>
+        {(title || supportFullscreen || showCloseButton || headerActions !== undefined) && (
           <div className={`mb-4 flex items-center justify-between gap-4 ${headerClassName}`.trim()}>
             <div className="min-w-0 flex-1">
               {typeof title === "string" ? (
@@ -165,6 +177,22 @@ export function Dialog({
             </div>
             <div className="flex items-center gap-2">
               {headerActions !== undefined ? renderSlot(headerActions, renderState) : null}
+              {supportFullscreen && (
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm btn-square"
+                  onClick={() => setIsFullscreen((value) => !value)}
+                  disabled={isInteractionDisabled}
+                  title={isActiveFullscreen ? "退出全屏" : "全屏"}
+                  aria-label={isActiveFullscreen ? "退出全屏" : "全屏"}
+                >
+                  {isActiveFullscreen ? (
+                    <MdiFullscreenExit className="h-5 w-5" />
+                  ) : (
+                    <MdiFullscreen className="h-5 w-5" />
+                  )}
+                </button>
+              )}
               {showCloseButton && (
                 <button
                   type="button"

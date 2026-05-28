@@ -2,12 +2,14 @@ import useSWR from "swr";
 import type {
   DirectoryStatsResponse,
   FileListResponse,
+  FolderTreeResponse,
   SortKey,
   SortOrder,
 } from "../../types";
 import { ApiError, apiRequest } from "../utils/apiRequest";
 import {
   FILES_ENDPOINT,
+  FILE_FOLDER_TREE_ENDPOINT,
   FILE_STATS_ENDPOINT,
   buildListUrl,
   buildStatsUrl,
@@ -31,6 +33,21 @@ export function useDirectoryStats(path: string, enabled: boolean) {
     stats: data ?? null,
     error,
     isLoading,
+  };
+}
+
+export function useFolderTree(enabled: boolean) {
+  const { data, error, isLoading, isValidating, mutate } = useSWR<FolderTreeResponse, ApiError>(
+    enabled ? FILE_FOLDER_TREE_ENDPOINT : null,
+    (url: string) => apiRequest<FolderTreeResponse>(url),
+  );
+
+  return {
+    tree: data?.root ?? null,
+    error,
+    isLoading,
+    isRefreshing: isValidating,
+    refresh: mutate,
   };
 }
 

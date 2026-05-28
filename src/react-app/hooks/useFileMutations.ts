@@ -3,12 +3,14 @@ import type {
   CreateFolderRequest,
   CreateShareLinkRequest,
   FileMutationResponse,
+  MoveRequest,
   RenameRequest,
   ShareLinkResponse,
 } from "../../types";
 import { ApiError, apiRequest } from "../utils/apiRequest";
 import {
   FILE_FOLDERS_ENDPOINT,
+  FILE_MOVE_ENDPOINT,
   FILE_OBJECT_ENDPOINT,
   FILE_SHARE_LINKS_ENDPOINT,
 } from "./filesApiUrls";
@@ -180,6 +182,33 @@ export function useRenameFolderMutation() {
 
   return {
     renameFolder,
+    isMutating,
+  };
+}
+
+export function useMoveEntryMutation() {
+  const { trigger, isMutating } = useSWRMutation<
+    FileMutationResponse,
+    ApiError,
+    string,
+    MoveRequest
+  >(
+    FILE_MOVE_ENDPOINT,
+    (url, { arg }) =>
+      apiRequest<FileMutationResponse>(url, {
+        method: "PATCH",
+        body: JSON.stringify(arg),
+      }),
+    {
+      throwOnError: true,
+    },
+  );
+
+  const moveEntry = (type: MoveRequest["type"], path: string, targetParentPath: string) =>
+    trigger({ type, path, targetParentPath });
+
+  return {
+    moveEntry,
     isMutating,
   };
 }

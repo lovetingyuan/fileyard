@@ -90,11 +90,17 @@ export function FileToolbar({ isCurrentPathMissing = false }: FileToolbarProps) 
   const folderInputRef = useRef<HTMLInputElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const { getUniqueFolderName, isRefreshing, refresh, searchInputValue } = useDashboardFileView();
-  const { creatingFolder, isCreatingNewFolder, renamingPath, savingTextFile, uploadQueue } =
-    useAppStore();
+  const {
+    creatingFolder,
+    isCreatingNewFolder,
+    movingPath,
+    renamingPath,
+    savingTextFile,
+    uploadQueue,
+  } = useAppStore();
   const isSearchExpanded = searchInputValue.length > 0;
   const isUploadingFile = countUploadQueueStats(uploadQueue).active > 0;
-  const isFileMutationDisabled = Boolean(renamingPath);
+  const isFileMutationDisabled = Boolean(renamingPath || movingPath);
   const uploadFileTooltip = isUploadingFile ? "继续添加上传文件" : "上传文件";
   const newFolderTooltip = creatingFolder ? "Creating..." : "New Folder";
 

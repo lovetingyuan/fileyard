@@ -3,6 +3,7 @@ import MdiDeleteOutline from "~icons/mdi/delete-outline";
 import MdiDotsHorizontal from "~icons/mdi/dots-horizontal";
 import MdiDownload from "~icons/mdi/download";
 import MdiFolder from "~icons/mdi/folder";
+import MdiFolderMoveOutline from "~icons/mdi/folder-move-outline";
 import MdiInformationOutline from "~icons/mdi/information-outline";
 import MdiPencil from "~icons/mdi/pencil";
 import MdiShareVariantOutline from "~icons/mdi/share-variant-outline";
@@ -16,6 +17,7 @@ import {
   openFilePreview,
   openFileShare,
   requestDeleteTarget,
+  requestMoveTarget,
   requestRenameTarget,
 } from "../actions";
 import { downloadDashboardFile } from "../fileOperations";
@@ -123,10 +125,13 @@ function RowActionsMenu({
 
 export function FolderRow({ folder }: { folder: DashboardFolder }) {
   const { setPath } = useDashboardPath();
-  const { deletingFolderPath, renamingPath } = useAppStore();
+  const { deletingFolderPath, movingPath, renamingPath } = useAppStore();
   const rowKey = `folder:${folder.path}`;
-  const isLoading = deletingFolderPath === folder.path || renamingPath === folder.path;
-  const isActionDisabled = Boolean(renamingPath) || isLoading;
+  const isLoading =
+    deletingFolderPath === folder.path ||
+    renamingPath === folder.path ||
+    movingPath === folder.path;
+  const isActionDisabled = Boolean(renamingPath || movingPath) || isLoading;
 
   return (
     <tr>
@@ -162,6 +167,12 @@ export function FolderRow({ folder }: { folder: DashboardFolder }) {
                 requestRenameTarget({ type: "folder", path: folder.path, name: folder.name }),
             },
             {
+              label: "移动",
+              Icon: MdiFolderMoveOutline,
+              onClick: () =>
+                requestMoveTarget({ type: "folder", path: folder.path, name: folder.name }),
+            },
+            {
               label: "删除",
               Icon: MdiDeleteOutline,
               tone: "danger",
@@ -181,13 +192,16 @@ export function FolderRow({ folder }: { folder: DashboardFolder }) {
 }
 
 export function FileRow({ file }: { file: DashboardFile }) {
-  const { deletingFilePath, downloadingPath, renamingPath } = useAppStore();
+  const { deletingFilePath, downloadingPath, movingPath, renamingPath } = useAppStore();
   const fileIcon = getFileIcon(file.name);
   const rowKey = `file:${file.path}`;
   const createdAtTooltip = `创建时间：${formatDetailedDate(file.createdAt)}`;
   const isLoading =
-    deletingFilePath === file.path || downloadingPath === file.path || renamingPath === file.path;
-  const isActionDisabled = Boolean(renamingPath) || isLoading;
+    deletingFilePath === file.path ||
+    downloadingPath === file.path ||
+    renamingPath === file.path ||
+    movingPath === file.path;
+  const isActionDisabled = Boolean(renamingPath || movingPath) || isLoading;
 
   return (
     <tr>
@@ -235,13 +249,20 @@ export function FileRow({ file }: { file: DashboardFile }) {
             {
               label: "重命名",
               Icon: MdiPencil,
-              onClick: () => requestRenameTarget({ type: "file", path: file.path, name: file.name }),
+              onClick: () =>
+                requestRenameTarget({ type: "file", path: file.path, name: file.name }),
+            },
+            {
+              label: "移动",
+              Icon: MdiFolderMoveOutline,
+              onClick: () => requestMoveTarget({ type: "file", path: file.path, name: file.name }),
             },
             {
               label: "删除",
               Icon: MdiDeleteOutline,
               tone: "danger",
-              onClick: () => requestDeleteTarget({ type: "file", path: file.path, name: file.name }),
+              onClick: () =>
+                requestDeleteTarget({ type: "file", path: file.path, name: file.name }),
             },
             {
               label: "查看详情",
