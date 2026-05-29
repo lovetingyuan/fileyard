@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { forwardRef, useCallback, useImperativeHandle, useRef } from "react";
 import MdiArrowDown from "~icons/mdi/arrow-down";
 import MdiArrowUp from "~icons/mdi/arrow-up";
 import MdiClose from "~icons/mdi/close";
@@ -85,7 +85,14 @@ type FileToolbarProps = {
   isCurrentPathMissing?: boolean;
 };
 
-export function FileToolbar({ isCurrentPathMissing = false }: FileToolbarProps) {
+export type FileToolbarHandle = {
+  focusSearchInput: () => void;
+};
+
+export const FileToolbar = forwardRef<FileToolbarHandle, FileToolbarProps>(function FileToolbar(
+  { isCurrentPathMissing = false },
+  ref,
+) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const folderInputRef = useRef<HTMLInputElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
@@ -120,11 +127,13 @@ export function FileToolbar({ isCurrentPathMissing = false }: FileToolbarProps) 
     void uploadDashboardFiles({ files, source, isFileMutationDisabled });
   };
 
-  const focusSearchInput = () => {
+  const focusSearchInput = useCallback(() => {
     requestAnimationFrame(() => {
       searchInputRef.current?.focus();
     });
-  };
+  }, []);
+
+  useImperativeHandle(ref, () => ({ focusSearchInput }), [focusSearchInput]);
 
   const clearSearchInput = () => {
     setDashboardSearchInput("");
@@ -272,4 +281,4 @@ export function FileToolbar({ isCurrentPathMissing = false }: FileToolbarProps) 
       ) : null}
     </div>
   );
-}
+});

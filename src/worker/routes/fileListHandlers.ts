@@ -21,6 +21,7 @@ import {
   getFolderCreatedAt,
   resolveFileCreatedAt,
 } from "./filesShared";
+import { getFileChecksumMetadata } from "./fileChecksumMetadata";
 
 type SortParams = {
   sort: "name" | "size" | "uploadedAt";
@@ -136,6 +137,7 @@ export async function listFiles(c: Context<AppContext>) {
           createdAt: resolveFileCreatedAt(object),
           uploadedAt: object.uploaded.toISOString(),
           contentType: object.httpMetadata?.contentType ?? null,
+          checksums: getFileChecksumMetadata(object.checksums),
         };
       });
 

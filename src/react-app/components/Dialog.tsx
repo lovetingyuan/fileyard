@@ -27,6 +27,7 @@ interface DialogProps {
   onClose: () => void;
   onCancel?: () => void;
   onConfirm?: DialogAction;
+  onAfterOpen?: () => void;
   cancelText?: string;
   confirmText?: string;
   confirmPendingText?: string;
@@ -69,6 +70,7 @@ export function Dialog({
   onClose,
   onCancel,
   onConfirm,
+  onAfterOpen,
   cancelText = "取消",
   confirmText = "确定",
   confirmPendingText,
@@ -140,6 +142,7 @@ export function Dialog({
     isOpen,
     isDismissDisabled: isInteractionDisabled,
     onCancel: requestClose,
+    onAfterOpen,
   });
 
   if (!isOpen) {

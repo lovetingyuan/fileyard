@@ -60,7 +60,16 @@ export interface FileEntry {
   createdAt: string;
   uploadedAt: string;
   contentType: string | null;
+  checksums: FileChecksumMetadata | null;
 }
+
+export type FileChecksumMetadata = {
+  md5?: string;
+  sha1?: string;
+  sha256?: string;
+  sha384?: string;
+  sha512?: string;
+};
 
 export type FileOperationTarget = {
   name: string;

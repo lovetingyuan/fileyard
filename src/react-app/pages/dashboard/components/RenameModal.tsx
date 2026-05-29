@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { Dialog } from "../../../components/Dialog";
 import { useRenameFileMutation, useRenameFolderMutation } from "../../../hooks/useFilesApi";
@@ -10,6 +10,17 @@ import {
 } from "../../../utils/renameValidation";
 import { closeRenameTarget, setRenamingPath } from "../actions";
 import { useDashboardFileView } from "../hooks/useDashboardFileView";
+import {
+  focusRenameInput,
+  getRenameConfirmButtonClassName,
+  getRenameConfirmText,
+  getRenameInputClassName,
+  getRenameInputInitialValue,
+  getRenameValidationMessageForInput,
+  getVisibleRenameValidationMessage,
+  isRenameConfirmDisabled,
+  shouldCloseRenameWithoutSaving,
+} from "../utils/renameModalInput";
 
 const UPLOAD_BLOCKED_MESSAGE = "该路径下有文件正在上传，请等待上传完成后再重命名。";
 
@@ -18,12 +29,14 @@ export function RenameModal() {
   const { data, refresh } = useDashboardFileView();
   const { renameFile } = useRenameFileMutation();
   const { renameFolder } = useRenameFolderMutation();
-  const [name, setName] = useState(pendingRenameTarget?.name ?? "");
-  const focusInputRef = useCallback((node: HTMLInputElement | null) => {
-    if (node) {
-      node.focus();
-      node.select();
-    }
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [name, setName] = useState(() => getRenameInputInitialValue(pendingRenameTarget?.name));
+  const [hasEditedName, setHasEditedName] = useState(false);
+  const setInputRef = useCallback((node: HTMLInputElement | null) => {
+    inputRef.current = node;
+  }, []);
+  const focusInputAfterOpen = useCallback(() => {
+    focusRenameInput(inputRef.current);
   }, []);
 
   if (!pendingRenameTarget) {
@@ -32,13 +45,22 @@ export function RenameModal() {
 
   const trimmedName = name.trim();
   const targetTypeLabel = pendingRenameTarget.type === "file" ? "文件" : "文件夹";
-  const validationMessage = getRenameValidationMessage({
+  const rawValidationMessage = getRenameValidationMessage({
     currentName: pendingRenameTarget.name,
     files: data.files,
     folders: data.folders,
     name,
     type: pendingRenameTarget.type,
   });
+  const validationMessage = getRenameValidationMessageForInput({
+    currentName: pendingRenameTarget.name,
+    name,
+    rawValidationMessage,
+  });
+  const visibleValidationMessage = getVisibleRenameValidationMessage(
+    validationMessage,
+    hasEditedName,
+  );
   const renamedPath = getRenamedPath(pendingRenameTarget.path, trimmedName);
   const isUploadBlocked =
     trimmedName.length > 0 &&
@@ -49,7 +71,21 @@ export function RenameModal() {
       uploadQueue,
     });
   const isRenaming = Boolean(renamingPath);
-  const confirmDisabled = Boolean(validationMessage) || isUploadBlocked || isRenaming;
+  const confirmDisabled = isRenameConfirmDisabled({
+    isRenaming,
+    isUploadBlocked,
+    validationMessage,
+  });
+  const confirmText = getRenameConfirmText({
+    currentName: pendingRenameTarget.name,
+    name,
+    type: pendingRenameTarget.type,
+  });
+  const confirmButtonClassName = getRenameConfirmButtonClassName({
+    currentName: pendingRenameTarget.name,
+    name,
+    type: pendingRenameTarget.type,
+  });
 
   const handleClose = () => {
     if (!isRenaming) {
@@ -59,6 +95,16 @@ export function RenameModal() {
 
   const handleSave = async () => {
     if (confirmDisabled) {
+      return;
+    }
+
+    if (
+      shouldCloseRenameWithoutSaving({
+        currentName: pendingRenameTarget.name,
+        name,
+      })
+    ) {
+      closeRenameTarget();
       return;
     }
 
@@ -86,13 +132,15 @@ export function RenameModal() {
       title="重命名"
       onClose={handleClose}
       onConfirm={handleSave}
-      confirmText="保存"
+      confirmText={confirmText}
+      confirmButtonClassName={confirmButtonClassName}
       confirmPendingText="保存中..."
       confirmDisabled={confirmDisabled}
       confirmLoading={isRenaming}
       isDismissDisabled={isRenaming}
       boxClassName="max-w-md border border-base-300/70 bg-base-100"
       closeButtonAriaLabel="关闭重命名弹窗"
+      onAfterOpen={focusInputAfterOpen}
     >
       {({ isInteractionDisabled }) => (
         <div className="space-y-4">
@@ -101,16 +149,22 @@ export function RenameModal() {
           </p>
           <label className="form-control gap-1.5">
             <input
-              ref={focusInputRef}
+              ref={setInputRef}
               type="text"
-              className={`input input-bordered w-full ${validationMessage || isUploadBlocked ? "input-error" : ""}`}
+              className={getRenameInputClassName({
+                isUploadBlocked,
+                visibleValidationMessage,
+              })}
               value={name}
-              onChange={(event) => setName(event.target.value)}
+              onChange={(event) => {
+                setHasEditedName(true);
+                setName(event.target.value);
+              }}
               disabled={isInteractionDisabled}
               autoFocus
             />
-            {validationMessage ? (
-              <span className="text-xs text-error">{validationMessage}</span>
+            {visibleValidationMessage ? (
+              <span className="text-xs text-error">{visibleValidationMessage}</span>
             ) : null}
             {isUploadBlocked ? (
               <span className="text-xs text-error">{UPLOAD_BLOCKED_MESSAGE}</span>

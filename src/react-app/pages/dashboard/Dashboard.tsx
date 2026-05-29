@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import MdiAlertCircleOutline from "~icons/mdi/alert-circle-outline";
 import MdiFolderOpenOutline from "~icons/mdi/folder-open-outline";
 import MdiMagnifyRemoveOutline from "~icons/mdi/magnify-remove-outline";
@@ -10,7 +10,7 @@ import { DeleteConfirmModal } from "./components/DeleteConfirmModal";
 import { DirectoryStatsModal } from "./components/DirectoryStatsModal";
 import { FileDetailsModal } from "./components/FileDetailsModal";
 import { FileRow, FolderRow } from "./components/FileTableRows";
-import { FileToolbar } from "./components/FileToolbar";
+import { FileToolbar, type FileToolbarHandle } from "./components/FileToolbar";
 import { MoveModal } from "./components/MoveModal";
 import { NewFolderModal } from "./components/NewFolderModal";
 import { NewTextFileModal } from "./components/NewTextFileModal";
@@ -21,6 +21,7 @@ import { UploadProgressPanel } from "./components/UploadProgressPanel";
 import { useDashboardFileView } from "./hooks/useDashboardFileView";
 import { useUploadQueue } from "./hooks/useUploadQueue";
 import { uploadDashboardFiles } from "./uploadFiles";
+import { shouldFocusDashboardSearchFromShortcut } from "./utils/searchShortcut";
 
 const MISSING_PATH_DISABLED_MESSAGE = "当前文件路径不存在，无法在此位置上传或新建文件";
 
@@ -52,12 +53,27 @@ export function Dashboard() {
   });
   const [isDraggingUpload, setIsDraggingUpload] = useState(false);
   const dragDepthRef = useRef(0);
+  const fileToolbarRef = useRef<FileToolbarHandle | null>(null);
   const isFileUploadInProgress = savingTextFile || uploadQueue.isUploading;
   const isFileMutationDisabled = Boolean(renamingPath || movingPath);
   const EmptyStateIcon = searchInputValue ? MdiMagnifyRemoveOutline : MdiFolderOpenOutline;
   const isCurrentPathMutationDisabled = isFileMutationDisabled || isCurrentPathMissing;
 
   useUploadUnloadProtection(isFileUploadInProgress);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!shouldFocusDashboardSearchFromShortcut(event, document.activeElement)) {
+        return;
+      }
+
+      event.preventDefault();
+      fileToolbarRef.current?.focusSearchInput();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const handleDragEnter = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -131,7 +147,7 @@ export function Dashboard() {
             onDragOver={handleDragOver}
             onDrop={handleDrop}
           >
-            <FileToolbar isCurrentPathMissing={isCurrentPathMissing} />
+            <FileToolbar ref={fileToolbarRef} isCurrentPathMissing={isCurrentPathMissing} />
 
             {isCurrentPathMissing ? (
               <div className="rounded-box border border-warning/30 bg-warning/10 p-10">
