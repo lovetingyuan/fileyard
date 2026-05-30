@@ -24,6 +24,29 @@ import { uploadDashboardFiles } from "./uploadFiles";
 import { shouldFocusDashboardSearchFromShortcut } from "./utils/searchShortcut";
 
 const MISSING_PATH_DISABLED_MESSAGE = "当前文件路径不存在，无法在此位置上传或新建文件";
+const DASHBOARD_LOADING_ROW_COUNT = 6;
+
+function DashboardLoadingRows() {
+  return Array.from({ length: DASHBOARD_LOADING_ROW_COUNT }, (_, index) => (
+    <tr key={index} data-dashboard-loading-row="true">
+      <td className="min-w-0">
+        <span className="flex w-full min-w-0 items-center gap-1 sm:gap-2 align-middle">
+          <span className="skeleton h-5 w-5 shrink-0 rounded-sm" />
+          <span className="skeleton h-4 w-36 max-w-[70%] sm:w-52" />
+        </span>
+      </td>
+      <td className="hidden sm:table-cell">
+        <span className="skeleton block h-4 w-12" />
+      </td>
+      <td className="hidden sm:table-cell">
+        <span className="skeleton block h-4 w-28" />
+      </td>
+      <td className="text-right">
+        <span className="skeleton ml-auto block h-5 w-8 rounded-sm" />
+      </td>
+    </tr>
+  ));
+}
 
 export function Dashboard() {
   const {
@@ -169,13 +192,12 @@ export function Dashboard() {
                   <p className="text-sm">Failed to load files</p>
                 </div>
               </div>
-            ) : isLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <span className="loading loading-spinner loading-lg text-primary"></span>
-              </div>
             ) : (
               <div>
-                <table className="table table-zebra table-md table-fixed w-full [&_td]:px-2 [&_th]:px-2 sm:[&_td]:px-4 sm:[&_th]:px-4">
+                <table
+                  className="table table-zebra table-md table-fixed w-full [&_td]:px-2 [&_th]:px-2 sm:[&_td]:px-4 sm:[&_th]:px-4"
+                  aria-busy={isLoading}
+                >
                   <thead className="bg-base-300">
                     <tr className="bg-base-200">
                       <th className="w-auto">
@@ -193,40 +215,48 @@ export function Dashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredFolders.map((folder) => (
-                      <FolderRow key={`folder:${folder.path}`} folder={folder} />
-                    ))}
-                    {filteredFiles.map((file) => (
-                      <FileRow key={`file:${file.path}`} file={file} />
-                    ))}
-                    {filteredFolders.length === 0 && filteredFiles.length === 0 && (
+                    {isLoading ? (
+                      <DashboardLoadingRows />
+                    ) : (
                       <>
-                        <tr className={searchInputValue ? "sm:hidden" : "bg-base-100 sm:hidden"}>
-                          <td colSpan={2}>
-                            <div className="flex flex-col items-center gap-2 py-15 text-base-content/60">
-                              <EmptyStateIcon className="w-12 h-12" />
-                              {searchInputValue
-                                ? `No results for "${searchInputValue}"`
-                                : "This folder is empty."}
-                            </div>
-                          </td>
-                        </tr>
-                        <tr
-                          className={
-                            searchInputValue
-                              ? "hidden sm:table-row"
-                              : "hidden bg-base-100 sm:table-row"
-                          }
-                        >
-                          <td colSpan={4}>
-                            <div className="flex flex-col items-center gap-2 py-15 text-base-content/60">
-                              <EmptyStateIcon className="w-12 h-12" />
-                              {searchInputValue
-                                ? `No results for "${searchInputValue}"`
-                                : "This folder is empty."}
-                            </div>
-                          </td>
-                        </tr>
+                        {filteredFolders.map((folder) => (
+                          <FolderRow key={`folder:${folder.path}`} folder={folder} />
+                        ))}
+                        {filteredFiles.map((file) => (
+                          <FileRow key={`file:${file.path}`} file={file} />
+                        ))}
+                        {filteredFolders.length === 0 && filteredFiles.length === 0 && (
+                          <>
+                            <tr
+                              className={searchInputValue ? "sm:hidden" : "bg-base-100 sm:hidden"}
+                            >
+                              <td colSpan={2}>
+                                <div className="flex flex-col items-center gap-2 py-15 text-base-content/60">
+                                  <EmptyStateIcon className="w-12 h-12" />
+                                  {searchInputValue
+                                    ? `No results for "${searchInputValue}"`
+                                    : "This folder is empty."}
+                                </div>
+                              </td>
+                            </tr>
+                            <tr
+                              className={
+                                searchInputValue
+                                  ? "hidden sm:table-row"
+                                  : "hidden bg-base-100 sm:table-row"
+                              }
+                            >
+                              <td colSpan={4}>
+                                <div className="flex flex-col items-center gap-2 py-15 text-base-content/60">
+                                  <EmptyStateIcon className="w-12 h-12" />
+                                  {searchInputValue
+                                    ? `No results for "${searchInputValue}"`
+                                    : "This folder is empty."}
+                                </div>
+                              </td>
+                            </tr>
+                          </>
+                        )}
                       </>
                     )}
                   </tbody>

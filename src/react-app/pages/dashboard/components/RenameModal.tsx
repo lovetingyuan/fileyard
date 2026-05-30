@@ -72,8 +72,10 @@ export function RenameModal() {
     });
   const isRenaming = Boolean(renamingPath);
   const confirmDisabled = isRenameConfirmDisabled({
+    currentName: pendingRenameTarget.name,
     isRenaming,
     isUploadBlocked,
+    name,
     validationMessage,
   });
   const confirmText = getRenameConfirmText({

@@ -86,15 +86,24 @@ export function getRenameInputClassName({
 }
 
 export function isRenameConfirmDisabled({
+  currentName,
   isRenaming,
   isUploadBlocked,
+  name,
   validationMessage,
 }: {
+  currentName: string;
   isRenaming: boolean;
   isUploadBlocked: boolean;
+  name: string;
   validationMessage: string | null;
 }): boolean {
-  return Boolean(validationMessage) || isUploadBlocked || isRenaming;
+  return (
+    shouldCloseRenameWithoutSaving({ currentName, name }) ||
+    Boolean(validationMessage) ||
+    isUploadBlocked ||
+    isRenaming
+  );
 }
 
 export function getRenameConfirmText({
