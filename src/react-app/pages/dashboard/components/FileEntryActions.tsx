@@ -1,14 +1,14 @@
-import type { ComponentType, SVGProps } from "react";
-import MdiDeleteOutline from "~icons/mdi/delete-outline";
-import MdiDotsHorizontal from "~icons/mdi/dots-horizontal";
-import MdiDotsVertical from "~icons/mdi/dots-vertical";
-import MdiDownload from "~icons/mdi/download";
-import MdiFolderMoveOutline from "~icons/mdi/folder-move-outline";
-import MdiInformationOutline from "~icons/mdi/information-outline";
-import MdiPencil from "~icons/mdi/pencil";
-import MdiShareVariantOutline from "~icons/mdi/share-variant-outline";
-import type { FileEntry, FolderEntry } from "../../../../types";
-import { useAppStore } from "../../../store";
+import type { ComponentType, SVGProps } from 'react'
+import MdiDeleteOutline from '~icons/mdi/delete-outline'
+import MdiDotsHorizontal from '~icons/mdi/dots-horizontal'
+import MdiDotsVertical from '~icons/mdi/dots-vertical'
+import MdiDownload from '~icons/mdi/download'
+import MdiFolderMoveOutline from '~icons/mdi/folder-move-outline'
+import MdiInformationOutline from '~icons/mdi/information-outline'
+import MdiPencil from '~icons/mdi/pencil'
+import MdiShareVariantOutline from '~icons/mdi/share-variant-outline'
+import type { FileEntry, FolderEntry } from '../../../../types'
+import { useAppStore } from '../../../store'
 import {
   openDirectoryStats,
   openFileDetails,
@@ -16,44 +16,44 @@ import {
   requestDeleteTarget,
   requestMoveTarget,
   requestRenameTarget,
-} from "../actions";
-import { downloadDashboardFile } from "../fileOperations";
+} from '../actions'
+import { downloadDashboardFile } from '../fileOperations'
 
-type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
-type RowActionsMenuVariant = "table" | "grid";
+type IconComponent = ComponentType<SVGProps<SVGSVGElement>>
+type RowActionsMenuVariant = 'table' | 'grid'
 
 type RowActionItem = {
-  label: string;
-  Icon: IconComponent;
-  tone?: "default" | "danger";
-  onClick: () => void;
-};
+  label: string
+  Icon: IconComponent
+  tone?: 'default' | 'danger'
+  onClick: () => void
+}
 
 export function RowActionsMenu({
   isActionDisabled,
   isLoading,
   items,
-  variant = "table",
+  variant = 'table',
 }: {
-  isActionDisabled: boolean;
-  isLoading?: boolean;
-  items: RowActionItem[];
-  variant?: RowActionsMenuVariant;
+  isActionDisabled: boolean
+  isLoading?: boolean
+  items: RowActionItem[]
+  variant?: RowActionsMenuVariant
 }) {
-  const DotsIcon = variant === "grid" ? MdiDotsVertical : MdiDotsHorizontal;
+  const DotsIcon = variant === 'grid' ? MdiDotsVertical : MdiDotsHorizontal
   const dropdownClassName =
-    variant === "grid" ? "dropdown dropdown-end" : "dropdown dropdown-top dropdown-end";
+    variant === 'grid' ? 'dropdown dropdown-end' : 'dropdown dropdown-top dropdown-end'
   const buttonClassName =
-    variant === "grid"
-      ? "flex h-7 min-h-7 w-7 items-center justify-center rounded-full border-0 bg-transparent p-0 text-base-content/75 shadow-none transition-colors hover:bg-transparent hover:text-base-content focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary/40 disabled:opacity-40"
-      : "btn btn-ghost btn-xs btn-square sm:btn-sm";
+    variant === 'grid'
+      ? 'flex h-7 min-h-7 w-7 items-center justify-center rounded-full border-0 bg-transparent p-0 text-base-content/75 shadow-none transition-colors hover:bg-base-content/10 hover:text-base-content focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary/40 disabled:opacity-40 disabled:hover:bg-transparent'
+      : 'btn btn-ghost btn-xs btn-square sm:btn-sm'
 
   return (
     <div className={dropdownClassName}>
       <button
         type="button"
         tabIndex={0}
-        className={`${buttonClassName} ${isLoading ? "loading" : ""}`}
+        className={`${buttonClassName} cursor-pointer ${isLoading ? 'loading' : ''}`}
         disabled={isActionDisabled}
         aria-label="更多操作"
       >
@@ -63,14 +63,14 @@ export function RowActionsMenu({
         tabIndex={0}
         className="dropdown-content menu menu-sm bg-base-200 rounded-box z-[100] mt-1 w-40 border border-base-300/60 p-2 shadow-lg space-y-1"
       >
-        {items.map((item) => (
+        {items.map(item => (
           <li key={item.label}>
             <button
               type="button"
-              className={`gap-2 ${item.tone === "danger" ? "text-error" : ""}`}
+              className={`gap-2 ${item.tone === 'danger' ? 'text-error' : ''}`}
               onClick={() => {
-                (document.activeElement as HTMLElement | null)?.blur();
-                item.onClick();
+                ;(document.activeElement as HTMLElement | null)?.blur()
+                item.onClick()
               }}
             >
               <item.Icon className="h-4 w-4" />
@@ -80,22 +80,20 @@ export function RowActionsMenu({
         ))}
       </ul>
     </div>
-  );
+  )
 }
 
 export function FolderActionsMenu({
   folder,
-  variant = "table",
+  variant = 'table',
 }: {
-  folder: FolderEntry;
-  variant?: RowActionsMenuVariant;
+  folder: FolderEntry
+  variant?: RowActionsMenuVariant
 }) {
-  const { deletingFolderPath, movingPath, renamingPath } = useAppStore();
+  const { deletingFolderPath, movingPath, renamingPath } = useAppStore()
   const isLoading =
-    deletingFolderPath === folder.path ||
-    renamingPath === folder.path ||
-    movingPath === folder.path;
-  const isActionDisabled = Boolean(renamingPath || movingPath) || isLoading;
+    deletingFolderPath === folder.path || renamingPath === folder.path || movingPath === folder.path
+  const isActionDisabled = Boolean(renamingPath || movingPath) || isLoading
 
   return (
     <RowActionsMenu
@@ -104,48 +102,48 @@ export function FolderActionsMenu({
       variant={variant}
       items={[
         {
-          label: "重命名",
+          label: '重命名',
           Icon: MdiPencil,
           onClick: () =>
-            requestRenameTarget({ type: "folder", path: folder.path, name: folder.name }),
+            requestRenameTarget({ type: 'folder', path: folder.path, name: folder.name }),
         },
         {
-          label: "移动",
+          label: '移动',
           Icon: MdiFolderMoveOutline,
           onClick: () =>
-            requestMoveTarget({ type: "folder", path: folder.path, name: folder.name }),
+            requestMoveTarget({ type: 'folder', path: folder.path, name: folder.name }),
         },
         {
-          label: "删除",
+          label: '删除',
           Icon: MdiDeleteOutline,
-          tone: "danger",
+          tone: 'danger',
           onClick: () =>
-            requestDeleteTarget({ type: "folder", path: folder.path, name: folder.name }),
+            requestDeleteTarget({ type: 'folder', path: folder.path, name: folder.name }),
         },
         {
-          label: "查看详情",
+          label: '查看详情',
           Icon: MdiInformationOutline,
           onClick: () => openDirectoryStats(folder.path),
         },
       ]}
     />
-  );
+  )
 }
 
 export function FileActionsMenu({
   file,
-  variant = "table",
+  variant = 'table',
 }: {
-  file: FileEntry;
-  variant?: RowActionsMenuVariant;
+  file: FileEntry
+  variant?: RowActionsMenuVariant
 }) {
-  const { deletingFilePath, downloadingPath, movingPath, renamingPath } = useAppStore();
+  const { deletingFilePath, downloadingPath, movingPath, renamingPath } = useAppStore()
   const isLoading =
     deletingFilePath === file.path ||
     downloadingPath === file.path ||
     renamingPath === file.path ||
-    movingPath === file.path;
-  const isActionDisabled = Boolean(renamingPath || movingPath) || isLoading;
+    movingPath === file.path
+  const isActionDisabled = Boolean(renamingPath || movingPath) || isLoading
 
   return (
     <RowActionsMenu
@@ -154,37 +152,37 @@ export function FileActionsMenu({
       variant={variant}
       items={[
         {
-          label: "下载",
+          label: '下载',
           Icon: MdiDownload,
           onClick: () => void downloadDashboardFile(file.path, file.name),
         },
         {
-          label: "分享",
+          label: '分享',
           Icon: MdiShareVariantOutline,
           onClick: () => openFileShare(file),
         },
         {
-          label: "重命名",
+          label: '重命名',
           Icon: MdiPencil,
-          onClick: () => requestRenameTarget({ type: "file", path: file.path, name: file.name }),
+          onClick: () => requestRenameTarget({ type: 'file', path: file.path, name: file.name }),
         },
         {
-          label: "移动",
+          label: '移动',
           Icon: MdiFolderMoveOutline,
-          onClick: () => requestMoveTarget({ type: "file", path: file.path, name: file.name }),
+          onClick: () => requestMoveTarget({ type: 'file', path: file.path, name: file.name }),
         },
         {
-          label: "删除",
+          label: '删除',
           Icon: MdiDeleteOutline,
-          tone: "danger",
-          onClick: () => requestDeleteTarget({ type: "file", path: file.path, name: file.name }),
+          tone: 'danger',
+          onClick: () => requestDeleteTarget({ type: 'file', path: file.path, name: file.name }),
         },
         {
-          label: "查看详情",
+          label: '查看详情',
           Icon: MdiInformationOutline,
           onClick: () => openFileDetails(file),
         },
       ]}
     />
-  );
+  )
 }

@@ -20,5 +20,5 @@ export function formatFileChecksumDetailValue(
     return value ? [`${label}: ${value}`] : []
   })
 
-  return lines.length > 0 ? lines : '无可用哈希'
+  return lines.length > 0 ? lines : '暂无'
 }

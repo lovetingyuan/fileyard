@@ -9,7 +9,10 @@ import type {
   UploadQueueItem,
 } from "../../../types";
 import { getStoreMethods } from "../../store";
-import { getNextDashboardLayoutMode } from "./utils/dashboardLayoutMode";
+import {
+  getNextDashboardLayoutMode,
+  persistDashboardLayoutMode,
+} from "./utils/dashboardLayoutMode";
 
 export function setDashboardSearchInput(value: string) {
   const { setSearchInputValue, setSearchKeyword } = getStoreMethods();
@@ -43,6 +46,7 @@ export function setDashboardLayoutMode(mode: DashboardLayoutMode) {
   const { setDashboardLayoutMode } = getStoreMethods();
 
   setDashboardLayoutMode(mode);
+  persistDashboardLayoutMode(mode);
 }
 
 export function toggleDashboardLayoutMode() {
