@@ -69,7 +69,7 @@ function DashboardLoadingGrid() {
       {Array.from({ length: DASHBOARD_LOADING_GRID_ITEM_COUNT }, (_, index) => (
         <div
           key={index}
-          className="flex min-h-30 flex-col items-center rounded-box border border-base-300/60 p-3 pt-5"
+          className="flex min-h-30 flex-col items-center rounded-box bg-base-100 p-3 pt-5"
         >
           <span className="skeleton h-10 w-10 rounded-sm" />
           <span className="skeleton mt-3 h-3 w-16 max-w-full" />

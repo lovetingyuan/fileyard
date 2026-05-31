@@ -45,7 +45,7 @@ export function RowActionsMenu({
     variant === "grid" ? "dropdown dropdown-end" : "dropdown dropdown-top dropdown-end";
   const buttonClassName =
     variant === "grid"
-      ? "btn btn-ghost btn-xs btn-square h-7 min-h-7 w-7 bg-base-100/85 shadow-sm hover:bg-base-200"
+      ? "flex h-7 min-h-7 w-7 items-center justify-center rounded-full border-0 bg-transparent p-0 text-base-content/75 shadow-none transition-colors hover:bg-transparent hover:text-base-content focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary/40 disabled:opacity-40"
       : "btn btn-ghost btn-xs btn-square sm:btn-sm";
 
   return (
@@ -61,7 +61,7 @@ export function RowActionsMenu({
       </button>
       <ul
         tabIndex={0}
-        className="dropdown-content menu menu-sm bg-base-200 rounded-box z-20 mt-1 w-40 border border-base-300/60 p-2 shadow-lg space-y-1"
+        className="dropdown-content menu menu-sm bg-base-200 rounded-box z-[100] mt-1 w-40 border border-base-300/60 p-2 shadow-lg space-y-1"
       >
         {items.map((item) => (
           <li key={item.label}>
