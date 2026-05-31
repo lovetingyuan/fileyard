@@ -1,0 +1,8 @@
+[
+  {
+    "tier": "default", // 使用限额的等级，默认是default，后续可能会扩展
+    "totalSize": 10, // 总的文件大小，单位为GB
+    "perFileSize": 1, // 单个文件的大小限制，单位为GB
+    "uploadFileCount": 100 // 单次上传的文件数量
+  }
+]

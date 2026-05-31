@@ -1,24 +1,24 @@
-import MdiFolder from "~icons/mdi/folder";
-import type { FileEntry, FolderEntry } from "../../../../types";
-import { getFileIcon } from "../../../constants/fileIcons";
-import { formatBytes, formatDate, formatDetailedDate } from "../../../utils/fileFormatters";
-import { openFilePreview } from "../actions";
-import { useDashboardPath } from "../hooks/useDashboardPath";
-import type { SearchMatchRange } from "../utils/searchMatch";
-import { FileActionsMenu, FolderActionsMenu } from "./FileEntryActions";
-import { FileEntryName } from "./FileEntryName";
+import MdiFolder from '~icons/mdi/folder'
+import type { FileEntry, FolderEntry } from '../../../../types'
+import { getFileIcon } from '../../../constants/fileIcons'
+import { formatBytes, formatDate, formatDetailedDate } from '../../../utils/fileFormatters'
+import { openFilePreview } from '../actions'
+import { useDashboardPath } from '../hooks/useDashboardPath'
+import type { SearchMatchRange } from '../utils/searchMatch'
+import { FileActionsMenu, FolderActionsMenu } from './FileEntryActions'
+import { FileEntryName } from './FileEntryName'
 
 type DashboardFolder = FolderEntry & {
-  searchMatchRanges?: SearchMatchRange[];
-};
+  searchMatchRanges?: SearchMatchRange[]
+}
 
 type DashboardFile = FileEntry & {
-  searchMatchRanges?: SearchMatchRange[];
-};
+  searchMatchRanges?: SearchMatchRange[]
+}
 
 export function FolderRow({ folder }: { folder: DashboardFolder }) {
-  const { setPath } = useDashboardPath();
-  const rowKey = `folder:${folder.path}`;
+  const { setPath } = useDashboardPath()
+  const rowKey = `folder:${folder.path}`
 
   return (
     <tr>
@@ -42,13 +42,13 @@ export function FolderRow({ folder }: { folder: DashboardFolder }) {
         <FolderActionsMenu folder={folder} />
       </td>
     </tr>
-  );
+  )
 }
 
 export function FileRow({ file }: { file: DashboardFile }) {
-  const fileIcon = getFileIcon(file.name);
-  const rowKey = `file:${file.path}`;
-  const createdAtTooltip = `创建时间：${formatDetailedDate(file.createdAt)}`;
+  const fileIcon = getFileIcon(file.name)
+  const rowKey = `file:${file.path}`
+  const createdAtTooltip = `创建时间：${formatDetailedDate(file.createdAt)}`
 
   return (
     <tr>
@@ -70,13 +70,13 @@ export function FileRow({ file }: { file: DashboardFile }) {
         </span>
       </td>
       <td className="hidden whitespace-nowrap text-base-content/50 sm:table-cell text-xs select-none">
-        <span className="tooltip" data-tip={createdAtTooltip}>
-          <span title={createdAtTooltip}>{formatDate(file.uploadedAt)}</span>
-        </span>
+        {/* <span className="tooltip" data-tip={createdAtTooltip}> */}
+        <span title={createdAtTooltip}>{formatDate(file.uploadedAt)}</span>
+        {/* </span> */}
       </td>
       <td className="text-right">
         <FileActionsMenu file={file} />
       </td>
     </tr>
-  );
+  )
 }
