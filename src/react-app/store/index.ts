@@ -5,6 +5,7 @@ import type {
   MoveTarget,
   NewTextFileDraft,
   RenameTarget,
+  DashboardLayoutMode,
   SortKey,
   SortOrder,
   ThemePreference,
@@ -45,6 +46,8 @@ export const { useStore, getStoreMethods, getStoreState, getStateSnapshot, subsc
     dashboardSortKey: "uploadedAt" as SortKey,
     /** Dashboard 文件列表排序方向。 */
     dashboardSortOrder: "desc" as SortOrder,
+    /** Dashboard 文件列表展示布局。 */
+    dashboardLayoutMode: "table" as DashboardLayoutMode,
     /** 搜索输入框当前正在编辑的内容。 */
     searchInputValue: "",
     /** 已提交给 Dashboard 文件列表过滤逻辑的搜索关键字。 */

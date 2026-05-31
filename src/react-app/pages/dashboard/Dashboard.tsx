@@ -1,15 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import MdiAlertCircleOutline from "~icons/mdi/alert-circle-outline";
-import MdiFolderOpenOutline from "~icons/mdi/folder-open-outline";
-import MdiMagnifyRemoveOutline from "~icons/mdi/magnify-remove-outline";
 import toast from "react-hot-toast";
 import { useUploadUnloadProtection } from "../../hooks/useUploadUnloadProtection";
 import { useAppStore } from "../../store";
 import { getDroppedUploadFiles } from "../../utils/uploadDrop";
+import { DashboardFileList } from "./components/DashboardFileList";
 import { DeleteConfirmModal } from "./components/DeleteConfirmModal";
 import { DirectoryStatsModal } from "./components/DirectoryStatsModal";
 import { FileDetailsModal } from "./components/FileDetailsModal";
-import { FileRow, FolderRow } from "./components/FileTableRows";
 import { FileToolbar, type FileToolbarHandle } from "./components/FileToolbar";
 import { MoveModal } from "./components/MoveModal";
 import { NewFolderModal } from "./components/NewFolderModal";
@@ -24,29 +22,6 @@ import { uploadDashboardFiles } from "./uploadFiles";
 import { shouldFocusDashboardSearchFromShortcut } from "./utils/searchShortcut";
 
 const MISSING_PATH_DISABLED_MESSAGE = "当前文件路径不存在，无法在此位置上传或新建文件";
-const DASHBOARD_LOADING_ROW_COUNT = 6;
-
-function DashboardLoadingRows() {
-  return Array.from({ length: DASHBOARD_LOADING_ROW_COUNT }, (_, index) => (
-    <tr key={index} data-dashboard-loading-row="true">
-      <td className="min-w-0">
-        <span className="flex w-full min-w-0 items-center gap-1 sm:gap-2 align-middle">
-          <span className="skeleton h-5 w-5 shrink-0 rounded-sm" />
-          <span className="skeleton h-4 w-36 max-w-[70%] sm:w-52" />
-        </span>
-      </td>
-      <td className="hidden sm:table-cell">
-        <span className="skeleton block h-4 w-12" />
-      </td>
-      <td className="hidden sm:table-cell">
-        <span className="skeleton block h-4 w-28" />
-      </td>
-      <td className="text-right">
-        <span className="skeleton ml-auto block h-5 w-8 rounded-sm" />
-      </td>
-    </tr>
-  ));
-}
 
 export function Dashboard() {
   const {
@@ -79,7 +54,6 @@ export function Dashboard() {
   const fileToolbarRef = useRef<FileToolbarHandle | null>(null);
   const isFileUploadInProgress = savingTextFile || uploadQueue.isUploading;
   const isFileMutationDisabled = Boolean(renamingPath || movingPath);
-  const EmptyStateIcon = searchInputValue ? MdiMagnifyRemoveOutline : MdiFolderOpenOutline;
   const isCurrentPathMutationDisabled = isFileMutationDisabled || isCurrentPathMissing;
 
   useUploadUnloadProtection(isFileUploadInProgress);
@@ -193,75 +167,12 @@ export function Dashboard() {
                 </div>
               </div>
             ) : (
-              <div>
-                <table
-                  className="table table-zebra table-md table-fixed w-full [&_td]:px-2 [&_th]:px-2 sm:[&_td]:px-4 sm:[&_th]:px-4"
-                  aria-busy={isLoading}
-                >
-                  <thead className="bg-base-300">
-                    <tr className="bg-base-200">
-                      <th className="w-auto">
-                        <span>Name</span>
-                      </th>
-                      <th className="hidden sm:table-cell sm:w-28">
-                        <span>Size</span>
-                      </th>
-                      <th className="hidden sm:table-cell sm:w-46">
-                        <span>Updated</span>
-                      </th>
-                      <th className="w-18 text-right sm:w-21">
-                        <span>Actions</span>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {isLoading ? (
-                      <DashboardLoadingRows />
-                    ) : (
-                      <>
-                        {filteredFolders.map((folder) => (
-                          <FolderRow key={`folder:${folder.path}`} folder={folder} />
-                        ))}
-                        {filteredFiles.map((file) => (
-                          <FileRow key={`file:${file.path}`} file={file} />
-                        ))}
-                        {filteredFolders.length === 0 && filteredFiles.length === 0 && (
-                          <>
-                            <tr
-                              className={searchInputValue ? "sm:hidden" : "bg-base-100 sm:hidden"}
-                            >
-                              <td colSpan={2}>
-                                <div className="flex flex-col items-center gap-2 py-15 text-base-content/60">
-                                  <EmptyStateIcon className="w-12 h-12" />
-                                  {searchInputValue
-                                    ? `No results for "${searchInputValue}"`
-                                    : "This folder is empty."}
-                                </div>
-                              </td>
-                            </tr>
-                            <tr
-                              className={
-                                searchInputValue
-                                  ? "hidden sm:table-row"
-                                  : "hidden bg-base-100 sm:table-row"
-                              }
-                            >
-                              <td colSpan={4}>
-                                <div className="flex flex-col items-center gap-2 py-15 text-base-content/60">
-                                  <EmptyStateIcon className="w-12 h-12" />
-                                  {searchInputValue
-                                    ? `No results for "${searchInputValue}"`
-                                    : "This folder is empty."}
-                                </div>
-                              </td>
-                            </tr>
-                          </>
-                        )}
-                      </>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+              <DashboardFileList
+                filteredFiles={filteredFiles}
+                filteredFolders={filteredFolders}
+                isLoading={isLoading}
+                searchInputValue={searchInputValue}
+              />
             )}
           </div>
         </section>

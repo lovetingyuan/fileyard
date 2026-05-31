@@ -1,4 +1,5 @@
 import type {
+  DashboardLayoutMode,
   DeleteTarget,
   FileEntry,
   MoveTarget,
@@ -8,6 +9,7 @@ import type {
   UploadQueueItem,
 } from "../../../types";
 import { getStoreMethods } from "../../store";
+import { getNextDashboardLayoutMode } from "./utils/dashboardLayoutMode";
 
 export function setDashboardSearchInput(value: string) {
   const { setSearchInputValue, setSearchKeyword } = getStoreMethods();
@@ -35,6 +37,18 @@ export function toggleDashboardSort(key: SortKey) {
 
   setDashboardSortKey(key);
   setDashboardSortOrder(key === "name" ? "asc" : "desc");
+}
+
+export function setDashboardLayoutMode(mode: DashboardLayoutMode) {
+  const { setDashboardLayoutMode } = getStoreMethods();
+
+  setDashboardLayoutMode(mode);
+}
+
+export function toggleDashboardLayoutMode() {
+  const { getDashboardLayoutMode } = getStoreMethods();
+
+  setDashboardLayoutMode(getNextDashboardLayoutMode(getDashboardLayoutMode()));
 }
 
 export function startCreateFolder(defaultName: string) {
