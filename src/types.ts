@@ -95,6 +95,7 @@ export type NewTextFileDraft = {
 
 export type SortKey = "name" | "size" | "uploadedAt";
 export type SortOrder = "asc" | "desc";
+export type DashboardLayoutMode = "table" | "grid";
 
 export interface FileListResponse {
   success: true;
