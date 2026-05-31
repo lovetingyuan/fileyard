@@ -16,8 +16,24 @@ const PREVIEW_SANDBOX_CSP = [
   "style-src 'unsafe-inline'",
 ].join("; ");
 
+const PREVIEW_FETCH_METADATA_VARY = "Sec-Fetch-Dest, Sec-Fetch-Mode";
+
+function isDirectBrowserPreviewNavigation(c: Context<AppContext>): boolean {
+  return (
+    c.req.header("sec-fetch-mode")?.toLowerCase() === "navigate" &&
+    c.req.header("sec-fetch-dest")?.toLowerCase() === "document"
+  );
+}
+
 export async function previewFile(c: Context<AppContext>) {
   try {
+    if (isDirectBrowserPreviewNavigation(c)) {
+      return jsonError(c, "Preview cannot be opened directly", 403, {
+        "Cache-Control": "private, no-store",
+        Vary: PREVIEW_FETCH_METADATA_VARY,
+      });
+    }
+
     const path = normalizeRelativePath(c.req.query("path"), { allowEmpty: false, label: "Path" });
     assertPathNotReserved(path);
     const { rootDirId } = await getFileContext(c);
@@ -38,6 +54,7 @@ export async function previewFile(c: Context<AppContext>) {
     headers.set("Last-Modified", object.uploaded.toUTCString());
     headers.set("Accept-Ranges", "bytes");
     headers.set("Content-Security-Policy", PREVIEW_SANDBOX_CSP);
+    headers.set("Vary", PREVIEW_FETCH_METADATA_VARY);
 
     if (object.range) {
       const r = object.range;

@@ -1,16 +1,16 @@
-import { useCallback, type ComponentType, type SVGProps } from "react";
-import MdiDeleteOutline from "~icons/mdi/delete-outline";
-import MdiDotsHorizontal from "~icons/mdi/dots-horizontal";
-import MdiDownload from "~icons/mdi/download";
-import MdiFolder from "~icons/mdi/folder";
-import MdiFolderMoveOutline from "~icons/mdi/folder-move-outline";
-import MdiInformationOutline from "~icons/mdi/information-outline";
-import MdiPencil from "~icons/mdi/pencil";
-import MdiShareVariantOutline from "~icons/mdi/share-variant-outline";
-import type { FileEntry, FolderEntry } from "../../../../types";
-import { getFileIcon } from "../../../constants/fileIcons";
-import { useAppStore } from "../../../store";
-import { formatBytes, formatDate, formatDetailedDate } from "../../../utils/fileFormatters";
+import { useCallback, type ComponentType, type SVGProps } from 'react'
+import MdiDeleteOutline from '~icons/mdi/delete-outline'
+import MdiDotsHorizontal from '~icons/mdi/dots-horizontal'
+import MdiDownload from '~icons/mdi/download'
+import MdiFolder from '~icons/mdi/folder'
+import MdiFolderMoveOutline from '~icons/mdi/folder-move-outline'
+import MdiInformationOutline from '~icons/mdi/information-outline'
+import MdiPencil from '~icons/mdi/pencil'
+import MdiShareVariantOutline from '~icons/mdi/share-variant-outline'
+import type { FileEntry, FolderEntry } from '../../../../types'
+import { getFileIcon } from '../../../constants/fileIcons'
+import { useAppStore } from '../../../store'
+import { formatBytes, formatDate, formatDetailedDate } from '../../../utils/fileFormatters'
 import {
   openDirectoryStats,
   openFileDetails,
@@ -19,64 +19,64 @@ import {
   requestDeleteTarget,
   requestMoveTarget,
   requestRenameTarget,
-} from "../actions";
-import { downloadDashboardFile } from "../fileOperations";
-import { useDashboardPath } from "../hooks/useDashboardPath";
+} from '../actions'
+import { downloadDashboardFile } from '../fileOperations'
+import { useDashboardPath } from '../hooks/useDashboardPath'
 import {
   clearDashboardSearchHighlightRanges,
   setDashboardSearchHighlightRanges,
-} from "../utils/dashboardSearchHighlight";
-import type { SearchMatchRange } from "../utils/searchMatch";
+} from '../utils/dashboardSearchHighlight'
+import type { SearchMatchRange } from '../utils/searchMatch'
 
-type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
+type IconComponent = ComponentType<SVGProps<SVGSVGElement>>
 type DashboardFolder = FolderEntry & {
-  searchMatchRanges?: SearchMatchRange[];
-};
+  searchMatchRanges?: SearchMatchRange[]
+}
 type DashboardFile = FileEntry & {
-  searchMatchRanges?: SearchMatchRange[];
-};
+  searchMatchRanges?: SearchMatchRange[]
+}
 
 type RowActionItem = {
-  label: string;
-  Icon: IconComponent;
-  tone?: "default" | "danger";
-  onClick: () => void;
-};
+  label: string
+  Icon: IconComponent
+  tone?: 'default' | 'danger'
+  onClick: () => void
+}
 
 function SearchHighlightedName({
   name,
   ranges,
   rowKey,
 }: {
-  name: string;
-  ranges: SearchMatchRange[];
-  rowKey: string;
+  name: string
+  ranges: SearchMatchRange[]
+  rowKey: string
 }) {
   const registerTextNode = useCallback(
     (node: HTMLSpanElement | null) => {
-      clearDashboardSearchHighlightRanges(rowKey);
+      clearDashboardSearchHighlightRanges(rowKey)
 
-      const textNode = node?.firstChild;
-      const textLength = textNode?.textContent?.length ?? 0;
+      const textNode = node?.firstChild
+      const textLength = textNode?.textContent?.length ?? 0
       if (!textNode || textNode.nodeType !== Node.TEXT_NODE || ranges.length === 0) {
-        return;
+        return
       }
 
       const highlightRanges = ranges
-        .filter((range) => range.start >= 0 && range.start < range.end && range.end <= textLength)
-        .map((matchRange) => {
-          const range = new Range();
-          range.setStart(textNode, matchRange.start);
-          range.setEnd(textNode, matchRange.end);
-          return range;
-        });
+        .filter(range => range.start >= 0 && range.start < range.end && range.end <= textLength)
+        .map(matchRange => {
+          const range = new Range()
+          range.setStart(textNode, matchRange.start)
+          range.setEnd(textNode, matchRange.end)
+          return range
+        })
 
-      setDashboardSearchHighlightRanges(rowKey, highlightRanges);
+      setDashboardSearchHighlightRanges(rowKey, highlightRanges)
     },
     [ranges, rowKey],
-  );
+  )
 
-  return <span ref={registerTextNode}>{name}</span>;
+  return <span ref={registerTextNode}>{name}</span>
 }
 
 function RowActionsMenu({
@@ -84,16 +84,16 @@ function RowActionsMenu({
   isLoading,
   items,
 }: {
-  isActionDisabled: boolean;
-  isLoading?: boolean;
-  items: RowActionItem[];
+  isActionDisabled: boolean
+  isLoading?: boolean
+  items: RowActionItem[]
 }) {
   return (
     <div className="dropdown dropdown-top dropdown-end">
       <button
         type="button"
         tabIndex={0}
-        className={`btn btn-ghost btn-xs btn-square sm:btn-sm ${isLoading ? "loading" : ""}`}
+        className={`btn btn-ghost btn-xs btn-square sm:btn-sm ${isLoading ? 'loading' : ''}`}
         disabled={isActionDisabled}
         aria-label="更多操作"
       >
@@ -103,14 +103,14 @@ function RowActionsMenu({
         tabIndex={0}
         className="dropdown-content menu menu-sm bg-base-200 rounded-box z-10 mt-1 w-40 border border-base-300/60 p-2 shadow-lg space-y-1"
       >
-        {items.map((item) => (
+        {items.map(item => (
           <li key={item.label}>
             <button
               type="button"
-              className={`gap-2 ${item.tone === "danger" ? "text-error" : ""}`}
+              className={`gap-2 ${item.tone === 'danger' ? 'text-error' : ''}`}
               onClick={() => {
-                (document.activeElement as HTMLElement | null)?.blur();
-                item.onClick();
+                ;(document.activeElement as HTMLElement | null)?.blur()
+                item.onClick()
               }}
             >
               <item.Icon className="h-4 w-4" />
@@ -120,18 +120,16 @@ function RowActionsMenu({
         ))}
       </ul>
     </div>
-  );
+  )
 }
 
 export function FolderRow({ folder }: { folder: DashboardFolder }) {
-  const { setPath } = useDashboardPath();
-  const { deletingFolderPath, movingPath, renamingPath } = useAppStore();
-  const rowKey = `folder:${folder.path}`;
+  const { setPath } = useDashboardPath()
+  const { deletingFolderPath, movingPath, renamingPath } = useAppStore()
+  const rowKey = `folder:${folder.path}`
   const isLoading =
-    deletingFolderPath === folder.path ||
-    renamingPath === folder.path ||
-    movingPath === folder.path;
-  const isActionDisabled = Boolean(renamingPath || movingPath) || isLoading;
+    deletingFolderPath === folder.path || renamingPath === folder.path || movingPath === folder.path
+  const isActionDisabled = Boolean(renamingPath || movingPath) || isLoading
 
   return (
     <tr>
@@ -151,8 +149,8 @@ export function FolderRow({ folder }: { folder: DashboardFolder }) {
           </button>
         </span>
       </td>
-      <td className="hidden text-base-content/50 sm:table-cell">-</td>
-      <td className="hidden whitespace-nowrap text-base-content/50 sm:table-cell text-[13px]">
+      <td className="hidden text-base-content/50 sm:table-cell select-none">-</td>
+      <td className="hidden whitespace-nowrap text-base-content/50 sm:table-cell text-xs select-none">
         {formatDate(folder.createdAt)}
       </td>
       <td className="text-right">
@@ -161,26 +159,26 @@ export function FolderRow({ folder }: { folder: DashboardFolder }) {
           isLoading={isLoading}
           items={[
             {
-              label: "重命名",
+              label: '重命名',
               Icon: MdiPencil,
               onClick: () =>
-                requestRenameTarget({ type: "folder", path: folder.path, name: folder.name }),
+                requestRenameTarget({ type: 'folder', path: folder.path, name: folder.name }),
             },
             {
-              label: "移动",
+              label: '移动',
               Icon: MdiFolderMoveOutline,
               onClick: () =>
-                requestMoveTarget({ type: "folder", path: folder.path, name: folder.name }),
+                requestMoveTarget({ type: 'folder', path: folder.path, name: folder.name }),
             },
             {
-              label: "删除",
+              label: '删除',
               Icon: MdiDeleteOutline,
-              tone: "danger",
+              tone: 'danger',
               onClick: () =>
-                requestDeleteTarget({ type: "folder", path: folder.path, name: folder.name }),
+                requestDeleteTarget({ type: 'folder', path: folder.path, name: folder.name }),
             },
             {
-              label: "查看详情",
+              label: '查看详情',
               Icon: MdiInformationOutline,
               onClick: () => openDirectoryStats(folder.path),
             },
@@ -188,20 +186,20 @@ export function FolderRow({ folder }: { folder: DashboardFolder }) {
         />
       </td>
     </tr>
-  );
+  )
 }
 
 export function FileRow({ file }: { file: DashboardFile }) {
-  const { deletingFilePath, downloadingPath, movingPath, renamingPath } = useAppStore();
-  const fileIcon = getFileIcon(file.name);
-  const rowKey = `file:${file.path}`;
-  const createdAtTooltip = `创建时间：${formatDetailedDate(file.createdAt)}`;
+  const { deletingFilePath, downloadingPath, movingPath, renamingPath } = useAppStore()
+  const fileIcon = getFileIcon(file.name)
+  const rowKey = `file:${file.path}`
+  const createdAtTooltip = `创建时间：${formatDetailedDate(file.createdAt)}`
   const isLoading =
     deletingFilePath === file.path ||
     downloadingPath === file.path ||
     renamingPath === file.path ||
-    movingPath === file.path;
-  const isActionDisabled = Boolean(renamingPath || movingPath) || isLoading;
+    movingPath === file.path
+  const isActionDisabled = Boolean(renamingPath || movingPath) || isLoading
 
   return (
     <tr>
@@ -221,12 +219,12 @@ export function FileRow({ file }: { file: DashboardFile }) {
           </button>
         </span>
       </td>
-      <td className="hidden text-base-content/50 sm:table-cell text-[13px]">
+      <td className="hidden text-base-content/50 sm:table-cell text-xs select-none">
         <span className="tooltip" data-tip={`${file.size.toLocaleString()} 字节`}>
           {formatBytes(file.size)}
         </span>
       </td>
-      <td className="hidden whitespace-nowrap text-base-content/50 sm:table-cell text-[13px]">
+      <td className="hidden whitespace-nowrap text-base-content/50 sm:table-cell text-xs select-none">
         <span className="tooltip" data-tip={createdAtTooltip}>
           <span title={createdAtTooltip}>{formatDate(file.uploadedAt)}</span>
         </span>
@@ -237,35 +235,35 @@ export function FileRow({ file }: { file: DashboardFile }) {
           isLoading={isLoading}
           items={[
             {
-              label: "下载",
+              label: '下载',
               Icon: MdiDownload,
               onClick: () => void downloadDashboardFile(file.path, file.name),
             },
             {
-              label: "分享",
+              label: '分享',
               Icon: MdiShareVariantOutline,
               onClick: () => openFileShare(file),
             },
             {
-              label: "重命名",
+              label: '重命名',
               Icon: MdiPencil,
               onClick: () =>
-                requestRenameTarget({ type: "file", path: file.path, name: file.name }),
+                requestRenameTarget({ type: 'file', path: file.path, name: file.name }),
             },
             {
-              label: "移动",
+              label: '移动',
               Icon: MdiFolderMoveOutline,
-              onClick: () => requestMoveTarget({ type: "file", path: file.path, name: file.name }),
+              onClick: () => requestMoveTarget({ type: 'file', path: file.path, name: file.name }),
             },
             {
-              label: "删除",
+              label: '删除',
               Icon: MdiDeleteOutline,
-              tone: "danger",
+              tone: 'danger',
               onClick: () =>
-                requestDeleteTarget({ type: "file", path: file.path, name: file.name }),
+                requestDeleteTarget({ type: 'file', path: file.path, name: file.name }),
             },
             {
-              label: "查看详情",
+              label: '查看详情',
               Icon: MdiInformationOutline,
               onClick: () => openFileDetails(file),
             },
@@ -273,5 +271,5 @@ export function FileRow({ file }: { file: DashboardFile }) {
         />
       </td>
     </tr>
-  );
+  )
 }
