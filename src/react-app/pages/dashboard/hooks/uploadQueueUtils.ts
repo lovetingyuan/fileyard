@@ -5,6 +5,16 @@ import { FileUploadError, UploadCanceledError } from "../../../utils/fileUpload"
 export const REMAINING_STATUSES = new Set<UploadQueueStatus>(["queued", "preparing", "uploading"]);
 const FAILED_STATUSES = new Set<UploadQueueStatus>(["failed", "oversized", "duplicate"]);
 
+type CancellableUploadTask = {
+  cancel: () => void;
+};
+
+type ClearUploadQueueTasksArgs = {
+  activeIds: Set<string>;
+  activeItemPromises: Map<string, Promise<void>>;
+  uploadTasks: Map<string, CancellableUploadTask>;
+};
+
 type UploadQueueStats = {
   active: number;
   failed: number;
@@ -101,6 +111,33 @@ export function resetFailedUploadItem(item: UploadQueueItem): UploadQueueItem {
   };
 }
 
+function clampUploadProgress(progress: number): number {
+  if (!Number.isFinite(progress)) {
+    return 0;
+  }
+  return Math.max(0, Math.min(100, Math.round(progress)));
+}
+
+export function getNextUploadQueueProgress(
+  currentProgress: number,
+  nextProgress: number,
+): number {
+  return Math.max(clampUploadProgress(currentProgress), clampUploadProgress(nextProgress));
+}
+
+export function clearUploadQueueTasks({
+  activeIds,
+  activeItemPromises,
+  uploadTasks,
+}: ClearUploadQueueTasksArgs): void {
+  for (const task of uploadTasks.values()) {
+    task.cancel();
+  }
+  uploadTasks.clear();
+  activeIds.clear();
+  activeItemPromises.clear();
+}
+
 export function countUploadQueueStats(items: UploadQueueItem[]): UploadQueueStats {
   const remaining = items.filter((item) => REMAINING_STATUSES.has(item.status)).length;
   const failed = items.filter((item) => FAILED_STATUSES.has(item.status)).length;
@@ -145,7 +182,11 @@ export function getUploadQueueItemProgress(item: UploadQueueItem): number {
   if (item.status === "queued" || item.status === "preparing") {
     return 0;
   }
-  return Math.max(0, Math.min(100, Math.round(item.progress)));
+  if (item.status === "duplicate") {
+    return 0;
+  }
+  const progress = clampUploadProgress(item.progress);
+  return progress;
 }
 
 export function getUploadQueueTotalProgress(items: UploadQueueItem[]): number {
@@ -181,6 +222,6 @@ export function getUploadQueuePanelState(items: UploadQueueItem[]): UploadQueueP
     canCancelAll: stats.remaining > 0,
     hasTerminalIssues,
     isComplete,
-    shouldShowPanel: stats.hasVisibleStatus,
+    shouldShowPanel: items.length > 0,
   };
 }

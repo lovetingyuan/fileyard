@@ -20,6 +20,7 @@ import {
 import { useDashboardFileView } from "../hooks/useDashboardFileView";
 import { countUploadQueueStats } from "../hooks/useUploadQueue";
 import { uploadDashboardFiles } from "../uploadFiles";
+import { ClipboardUploadButton } from "./ClipboardUploadButton";
 import { FileBreadcrumbs } from "./FileBreadcrumbs";
 import { FileSortMenu } from "./FileSortMenu";
 
@@ -152,6 +153,7 @@ export const FileToolbar = forwardRef<FileToolbarHandle, FileToolbarProps>(funct
                 <MdiFolderUpload className="w-5 h-5" />
               </button>
             </div>
+            <ClipboardUploadButton isFileMutationDisabled={isFileMutationDisabled} />
           </div>
           <div className="tooltip" data-tip="New Text File">
             <button

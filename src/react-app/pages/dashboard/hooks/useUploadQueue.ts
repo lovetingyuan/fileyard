@@ -1,9 +1,11 @@
 import { useCallback, useMemo, useRef } from "react";
+import toast from "react-hot-toast";
 import type { UploadQueueItem } from "../../../../types";
 import { getStoreMethods, useAppStore } from "../../../store";
 import {
   FILE_UPLOAD_BATCH_LIMIT_BYTES,
   createUploadQueueItems,
+  filterFilesAlreadyInUploadQueue,
 } from "../../../utils/uploadSelection";
 import { createFolder, fetchUploadLimits } from "./uploadQueueApi";
 import {
@@ -13,6 +15,7 @@ import {
 import {
   REMAINING_STATUSES,
   appendUploadQueueItems,
+  clearUploadQueueTasks,
   countUploadQueueStats,
   createFolderEnsureer,
   getActiveUploadItemsInFolder,
@@ -42,11 +45,18 @@ export {
 export type { UploadQueuePanelState } from "./uploadQueueUtils";
 
 const MAX_CONCURRENT_UPLOADS = 3;
+const DUPLICATE_UPLOAD_TOAST_ID = "dashboard-upload-duplicate-in-queue";
 
 type UseUploadQueueArgs = {
   currentPath: string;
   onUploadsComplete: () => Promise<void> | void;
 };
+
+function getDuplicateUploadToastMessage(ignoredCount: number): string {
+  return ignoredCount === 1
+    ? "该文件已在上传列表中，已忽略"
+    : `${ignoredCount} 个文件已在上传列表中，已忽略`;
+}
 
 export function useUploadQueue({ currentPath, onUploadsComplete }: UseUploadQueueArgs) {
   const { isUploadPanelMinimized, uploadQueue: items } = useAppStore();
@@ -141,6 +151,22 @@ export function useUploadQueue({ currentPath, onUploadsComplete }: UseUploadQueu
         return;
       }
 
+      const { acceptedFiles, ignoredCount } = filterFilesAlreadyInUploadQueue({
+        files: selectedFiles,
+        currentPath,
+        uploadQueue: itemsRef.current,
+      });
+
+      if (ignoredCount > 0) {
+        toast.error(getDuplicateUploadToastMessage(ignoredCount), {
+          id: DUPLICATE_UPLOAD_TOAST_ID,
+        });
+      }
+
+      if (acceptedFiles.length === 0) {
+        return;
+      }
+
       clearSuccessDismissTimer();
       const limits = await fetchUploadLimits().catch(() => ({
         success: true as const,
@@ -148,7 +174,7 @@ export function useUploadQueue({ currentPath, onUploadsComplete }: UseUploadQueu
         maxBatchBytes: FILE_UPLOAD_BATCH_LIMIT_BYTES,
       }));
       const nextItems = createUploadQueueItems({
-        files: selectedFiles,
+        files: acceptedFiles,
         currentPath,
         maxFileBytes: limits.maxFileBytes,
         maxBatchBytes: limits.maxBatchBytes,
@@ -209,6 +235,12 @@ export function useUploadQueue({ currentPath, onUploadsComplete }: UseUploadQueu
 
   const closePanel = useCallback(() => {
     clearSuccessDismissTimer();
+    clearUploadQueueTasks({
+      activeIds: activeIdsRef.current,
+      activeItemPromises: activeItemPromisesRef.current,
+      uploadTasks: uploadTasksRef.current,
+    });
+    uploadedSinceIdleRef.current = false;
     itemsRef.current = [];
     setUploadQueue([]);
     setIsUploadPanelMinimized(false);

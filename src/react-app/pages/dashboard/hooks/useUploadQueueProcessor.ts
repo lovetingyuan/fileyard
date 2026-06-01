@@ -2,6 +2,7 @@ import { useCallback, useRef } from "react";
 import type { UploadQueueItem } from "../../../../types";
 import { UploadCanceledError, uploadFileWithProgress } from "../../../utils/fileUpload";
 import {
+  getNextUploadQueueProgress,
   updateUploadQueueItem,
   isDuplicateUploadError,
   toErrorMessage,
@@ -61,7 +62,6 @@ export function useUploadQueueProcessor({
         setItems((currentItems) =>
           updateUploadQueueItem(currentItems, item.id, {
             status: "uploading",
-            progress: Math.max(item.progress, 1),
           }),
         );
 
@@ -69,7 +69,16 @@ export function useUploadQueueProcessor({
           file: item.file,
           parentPath: item.parentPath,
           onProgress: (progress) => {
-            setItems((currentItems) => updateUploadQueueItem(currentItems, item.id, { progress }));
+            setItems((currentItems) =>
+              currentItems.map((currentItem) =>
+                currentItem.id === item.id
+                  ? {
+                      ...currentItem,
+                      progress: getNextUploadQueueProgress(currentItem.progress, progress),
+                    }
+                  : currentItem,
+              ),
+            );
           },
         });
         uploadTasksRef.current.set(item.id, task);
@@ -94,6 +103,7 @@ export function useUploadQueueProcessor({
           setItems((currentItems) =>
             updateUploadQueueItem(currentItems, item.id, {
               status: "duplicate",
+              progress: 0,
               errorMessage: "名称重复",
             }),
           );

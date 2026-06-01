@@ -3,13 +3,24 @@ import type { UploadQueueItem, UploadQueueStatus } from "../../types";
 export const FILE_UPLOAD_BATCH_LIMIT_BYTES = 1024 * 1024 * 1024;
 export const EMPTY_FOLDER_UPLOAD_MESSAGE = "不允许上传空文件夹";
 
-export type UploadSelectionSource = "file" | "folder";
+export type UploadSelectionSource = "file" | "folder" | "clipboard";
 
 type CreateUploadQueueItemsArgs = {
   files: Iterable<File>;
   currentPath: string;
   maxFileBytes: number;
   maxBatchBytes: number;
+};
+
+type FilterFilesAlreadyInUploadQueueArgs = {
+  files: File[];
+  currentPath: string;
+  uploadQueue: UploadQueueItem[];
+};
+
+type FilterFilesAlreadyInUploadQueueResult = {
+  acceptedFiles: File[];
+  ignoredCount: number;
 };
 
 function normalizeSlashes(value: string): string {
@@ -60,6 +71,34 @@ function createItem(
   };
 }
 
+export function getUploadTargetPath(file: File, currentPath: string): string {
+  const relativePath = normalizeSlashes(file.webkitRelativePath || file.name);
+  return joinUploadPath(currentPath, relativePath || file.name);
+}
+
+export function filterFilesAlreadyInUploadQueue({
+  files,
+  currentPath,
+  uploadQueue,
+}: FilterFilesAlreadyInUploadQueueArgs): FilterFilesAlreadyInUploadQueueResult {
+  const queuedTargetPaths = new Set(uploadQueue.map((item) => item.targetPath));
+  const acceptedFiles: File[] = [];
+  let ignoredCount = 0;
+
+  for (const file of files) {
+    if (queuedTargetPaths.has(getUploadTargetPath(file, currentPath))) {
+      ignoredCount += 1;
+    } else {
+      acceptedFiles.push(file);
+    }
+  }
+
+  return {
+    acceptedFiles,
+    ignoredCount,
+  };
+}
+
 export function getUploadSelectionValidationMessage(
   files: FileList | File[],
   source: UploadSelectionSource,
@@ -87,10 +126,7 @@ export function createUploadQueueItems({
   maxBatchBytes,
 }: CreateUploadQueueItemsArgs): UploadQueueItem[] {
   const selectedFiles = [...files];
-  const targetPaths = selectedFiles.map((file) => {
-    const relativePath = normalizeSlashes(file.webkitRelativePath || file.name);
-    return joinUploadPath(currentPath, relativePath || file.name);
-  });
+  const targetPaths = selectedFiles.map((file) => getUploadTargetPath(file, currentPath));
   const pathCounts = new Map<string, number>();
   let queuedBytes = 0;
 

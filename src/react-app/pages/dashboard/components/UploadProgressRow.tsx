@@ -1,49 +1,53 @@
-import MdiCloseCircleOutline from "~icons/mdi/close-circle-outline";
-import MdiRefresh from "~icons/mdi/refresh";
-import type { UploadQueueItem, UploadQueueStatus } from "../../../../types";
+import MdiCloseCircleOutline from '~icons/mdi/close-circle-outline'
+import MdiRefresh from '~icons/mdi/refresh'
+import type { UploadQueueItem, UploadQueueStatus } from '../../../../types'
 import {
   cancelDashboardUpload,
   getUploadQueueItemProgress,
   retryDashboardUpload,
-} from "../hooks/useUploadQueue";
-import { formatBytes } from "../../../utils/fileFormatters";
+} from '../hooks/useUploadQueue'
+import { formatBytes } from '../../../utils/fileFormatters'
+import { getUploadProgressRowBackgroundStyle } from './uploadProgressRowStyle'
 
 interface UploadProgressRowProps {
-  item: UploadQueueItem;
+  item: UploadQueueItem
 }
 
 const STATUS_LABELS: Record<UploadQueueStatus, string> = {
-  queued: "等待中",
-  preparing: "准备中",
-  uploading: "上传中",
-  success: "已完成",
-  failed: "上传失败",
-  canceled: "已取消",
-  oversized: "文件过大",
-  duplicate: "名称重复",
-};
+  queued: '等待中',
+  preparing: '准备中',
+  uploading: '上传中',
+  success: '已完成',
+  failed: '上传失败',
+  canceled: '已取消',
+  oversized: '文件过大',
+  duplicate: '名称重复',
+}
 
 function canCancelItem(status: UploadQueueStatus): boolean {
-  return status === "queued" || status === "preparing" || status === "uploading";
+  return status === 'queued' || status === 'preparing' || status === 'uploading'
 }
 
 const STATUS_BADGE_CLASS_NAMES: Record<UploadQueueStatus, string> = {
-  queued: "border-slate-200 bg-slate-100 text-slate-700",
-  preparing: "border-sky-200 bg-sky-100 text-sky-700",
-  uploading: "border-cyan-200 bg-cyan-100 text-cyan-800",
-  success: "border-emerald-200 bg-emerald-100 text-emerald-700",
-  failed: "border-rose-200 bg-rose-100 text-rose-700",
-  canceled: "border-zinc-300 bg-zinc-200 text-zinc-700",
-  oversized: "border-amber-200 bg-amber-100 text-amber-800",
-  duplicate: "border-violet-200 bg-violet-100 text-violet-700",
-};
+  queued: 'border-slate-200 bg-slate-100 text-slate-700',
+  preparing: 'border-sky-200 bg-sky-100 text-sky-700',
+  uploading: 'border-cyan-200 bg-cyan-100 text-cyan-800',
+  success: 'border-emerald-200 bg-emerald-100 text-emerald-700',
+  failed: 'border-rose-200 bg-rose-100 text-rose-700',
+  canceled: 'border-zinc-300 bg-zinc-200 text-zinc-700',
+  oversized: 'border-amber-200 bg-amber-100 text-amber-800',
+  duplicate: 'border-violet-200 bg-violet-100 text-violet-700',
+}
 
 export function UploadProgressRow({ item }: UploadProgressRowProps) {
-  const progress = getUploadQueueItemProgress(item);
-  const statusMessage = item.errorMessage ?? STATUS_LABELS[item.status];
+  const progress = getUploadQueueItemProgress(item)
+  const statusMessage = item.errorMessage ?? STATUS_LABELS[item.status]
 
   return (
-    <li className="rounded-box bg-base-200/70 px-3 py-2">
+    <li
+      className="rounded-box bg-base-200/70 bg-[linear-gradient(to_right,var(--upload-row-progress-color),var(--upload-row-progress-color))] bg-no-repeat px-3 py-2 transition-[background-size] duration-200 ease-out [background-size:var(--upload-row-progress)_100%]"
+      style={getUploadProgressRowBackgroundStyle(progress, item.status)}
+    >
       <div className="flex min-w-0 items-center gap-2">
         <p className="min-w-0 flex-1 truncate text-sm font-medium" title={item.displayPath}>
           {item.displayPath}
@@ -56,7 +60,7 @@ export function UploadProgressRow({ item }: UploadProgressRowProps) {
           {STATUS_LABELS[item.status]}
         </span>
         <span className="shrink-0 text-xs font-medium tabular-nums">{progress}%</span>
-        {item.status === "failed" ? (
+        {item.status === 'failed' ? (
           <div className="tooltip tooltip-left shrink-0" data-tip="重试">
             <button
               type="button"
@@ -82,5 +86,5 @@ export function UploadProgressRow({ item }: UploadProgressRowProps) {
         ) : null}
       </div>
     </li>
-  );
+  )
 }

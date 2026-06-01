@@ -183,6 +183,14 @@ export interface UploadQueueItem {
   errorMessage: string | null;
 }
 
+export interface ClipboardUploadItem {
+  id: string;
+  file: File;
+  name: string;
+  size: number;
+  contentType: string;
+}
+
 export interface CreateFolderRequest {
   parentPath: string;
   name: string;
