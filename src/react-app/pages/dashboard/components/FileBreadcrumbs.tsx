@@ -2,13 +2,19 @@ import MdiHomeOutline from '~icons/mdi/home-outline'
 import MdiInformationOutline from '~icons/mdi/information-outline'
 import { openDirectoryStats } from '../actions'
 import { useDashboardPath } from '../hooks/useDashboardPath'
+import { getBreadcrumbButtonClassName } from './fileBreadcrumbsClasses'
 
 type FileBreadcrumbsProps = {
   isCurrentPathMissing?: boolean
+  isNavigationDisabled?: boolean
 }
 
-export function FileBreadcrumbs({ isCurrentPathMissing = false }: FileBreadcrumbsProps) {
+export function FileBreadcrumbs({
+  isCurrentPathMissing = false,
+  isNavigationDisabled = false,
+}: FileBreadcrumbsProps) {
   const { breadcrumbs, currentPath, setPath } = useDashboardPath()
+  const isActionDisabled = isCurrentPathMissing || isNavigationDisabled
 
   return (
     <>
@@ -17,7 +23,10 @@ export function FileBreadcrumbs({ isCurrentPathMissing = false }: FileBreadcrumb
           <li>
             <button
               type="button"
-              className="link link-hover inline-flex items-center gap-1"
+              className={`${getBreadcrumbButtonClassName(
+                isNavigationDisabled,
+              )} inline-flex items-center gap-1`}
+              disabled={isNavigationDisabled}
               onClick={() => setPath('')}
             >
               <MdiHomeOutline className="w-5 h-5" />
@@ -35,7 +44,12 @@ export function FileBreadcrumbs({ isCurrentPathMissing = false }: FileBreadcrumb
                     {segment}
                   </span>
                 ) : (
-                  <button type="button" className="link link-hover" onClick={() => setPath(path)}>
+                  <button
+                    type="button"
+                    className={getBreadcrumbButtonClassName(isNavigationDisabled)}
+                    disabled={isNavigationDisabled}
+                    onClick={() => setPath(path)}
+                  >
                     {segment}
                   </button>
                 )}
@@ -46,13 +60,13 @@ export function FileBreadcrumbs({ isCurrentPathMissing = false }: FileBreadcrumb
       </div>
 
       <div
-        className={isCurrentPathMissing ? 'shrink-0' : 'tooltip shrink-0'}
-        data-tip={isCurrentPathMissing ? undefined : '查看当前文件夹详情'}
+        className={isActionDisabled ? 'shrink-0' : 'tooltip shrink-0'}
+        data-tip={isActionDisabled ? undefined : '查看当前文件夹详情'}
       >
         <button
           type="button"
           className="btn btn-ghost btn-square btn-xs"
-          disabled={isCurrentPathMissing}
+          disabled={isActionDisabled}
           onClick={() => openDirectoryStats(currentPath)}
           aria-label="查看当前文件夹详情"
         >

@@ -1,5 +1,8 @@
 import useSWRMutation from "swr/mutation";
 import type {
+  BatchDeleteRequest,
+  BatchFileMutationResponse,
+  BatchMoveRequest,
   CreateFolderRequest,
   CreateShareLinkRequest,
   FileMutationResponse,
@@ -9,6 +12,8 @@ import type {
 } from "../../types";
 import { ApiError, apiRequest } from "../utils/apiRequest";
 import {
+  FILE_BATCH_DELETE_ENDPOINT,
+  FILE_BATCH_MOVE_ENDPOINT,
   FILE_FOLDERS_ENDPOINT,
   FILE_MOVE_ENDPOINT,
   FILE_OBJECT_ENDPOINT,
@@ -209,6 +214,61 @@ export function useMoveEntryMutation() {
 
   return {
     moveEntry,
+    isMutating,
+  };
+}
+
+export function useBatchDeleteEntriesMutation() {
+  const { trigger, isMutating } = useSWRMutation<
+    BatchFileMutationResponse,
+    ApiError,
+    string,
+    BatchDeleteRequest
+  >(
+    FILE_BATCH_DELETE_ENDPOINT,
+    (url, { arg }) =>
+      apiRequest<BatchFileMutationResponse>(url, {
+        method: "DELETE",
+        body: JSON.stringify(arg),
+      }),
+    {
+      throwOnError: true,
+    },
+  );
+
+  const batchDeleteEntries = (targets: BatchDeleteRequest["targets"]) => trigger({ targets });
+
+  return {
+    batchDeleteEntries,
+    isMutating,
+  };
+}
+
+export function useBatchMoveEntriesMutation() {
+  const { trigger, isMutating } = useSWRMutation<
+    BatchFileMutationResponse,
+    ApiError,
+    string,
+    BatchMoveRequest
+  >(
+    FILE_BATCH_MOVE_ENDPOINT,
+    (url, { arg }) =>
+      apiRequest<BatchFileMutationResponse>(url, {
+        method: "PATCH",
+        body: JSON.stringify(arg),
+      }),
+    {
+      throwOnError: true,
+    },
+  );
+
+  const batchMoveEntries = (
+    targets: BatchMoveRequest["targets"],
+    targetParentPath: string,
+  ) => trigger({ targets, targetParentPath });
+
+  return {
+    batchMoveEntries,
     isMutating,
   };
 }

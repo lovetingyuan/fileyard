@@ -1,5 +1,6 @@
 import { createStore } from "react-atomic-store";
 import type {
+  BatchOperationTarget,
   DeleteTarget,
   FileEntry,
   MoveTarget,
@@ -80,6 +81,16 @@ export const { useStore, getStoreMethods, getStoreState, getStateSnapshot, subsc
     pendingRenameTarget: null as RenameTarget | null,
     /** 当前等待用户选择移动目标目录的文件或文件夹目标。 */
     pendingMoveTarget: null as MoveTarget | null,
+    /** Dashboard 当前已多选的文件和文件夹。 */
+    selectedDashboardTargets: [] as BatchOperationTarget[],
+    /** 当前等待确认批量删除的文件和文件夹。 */
+    pendingBatchDeleteTargets: null as BatchOperationTarget[] | null,
+    /** 当前等待选择批量移动目标目录的文件和文件夹。 */
+    pendingBatchMoveTargets: null as BatchOperationTarget[] | null,
+    /** 是否正在执行批量删除。 */
+    batchDeleting: false,
+    /** 是否正在执行批量移动。 */
+    batchMoving: false,
     /** 当前正在删除的文件路径；null 表示没有文件删除任务。 */
     deletingFilePath: null as string | null,
     /** 当前正在删除的文件夹路径；null 表示没有文件夹删除任务。 */

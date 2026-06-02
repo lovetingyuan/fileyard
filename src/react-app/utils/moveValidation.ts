@@ -1,4 +1,4 @@
-import type { MoveTarget } from "../../types";
+import type { BatchOperationTarget, MoveTarget } from "../../types";
 
 export function getMoveParentPath(path: string): string {
   const separatorIndex = path.lastIndexOf("/");
@@ -18,6 +18,26 @@ export function getMoveDestinationDisabledReason(
   }
 
   if (target.type === "folder" && isFolderSelfOrDescendant(target.path, destinationPath)) {
+    return "不能移动到自身或子文件夹";
+  }
+
+  return null;
+}
+
+export function getBatchMoveDestinationDisabledReason(
+  destinationPath: string,
+  targets: BatchOperationTarget[],
+): string | null {
+  if (targets.some((target) => destinationPath === getMoveParentPath(target.path))) {
+    return "当前位置";
+  }
+
+  if (
+    targets.some(
+      (target) =>
+        target.type === "folder" && isFolderSelfOrDescendant(target.path, destinationPath),
+    )
+  ) {
     return "不能移动到自身或子文件夹";
   }
 

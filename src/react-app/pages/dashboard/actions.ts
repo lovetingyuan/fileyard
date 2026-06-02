@@ -1,4 +1,6 @@
 import type {
+  BatchFileOperationResult,
+  BatchOperationTarget,
   DashboardLayoutMode,
   DeleteTarget,
   FileEntry,
@@ -27,6 +29,7 @@ export function clearDashboardSearch() {
 
 export function resetDashboardPathState() {
   clearDashboardSearch();
+  clearDashboardSelection();
 }
 
 export function toggleDashboardSort(key: SortKey) {
@@ -183,6 +186,126 @@ export function closeMoveTarget() {
   const { setPendingMoveTarget } = getStoreMethods();
 
   setPendingMoveTarget(null);
+}
+
+function getDashboardSelectionKey(target: Pick<BatchOperationTarget, "path" | "type">): string {
+  return `${target.type}:${target.path}`;
+}
+
+export function toggleDashboardSelection(target: BatchOperationTarget) {
+  const {
+    getSelectedDashboardTargets,
+    setPendingBatchDeleteTargets,
+    setPendingBatchMoveTargets,
+    setSelectedDashboardTargets,
+  } = getStoreMethods();
+  const selectedTargets = getSelectedDashboardTargets();
+  const targetKey = getDashboardSelectionKey(target);
+  const isSelected = selectedTargets.some(
+    (selectedTarget) => getDashboardSelectionKey(selectedTarget) === targetKey,
+  );
+  const nextTargets = isSelected
+    ? selectedTargets.filter(
+        (selectedTarget) => getDashboardSelectionKey(selectedTarget) !== targetKey,
+      )
+    : [...selectedTargets, target];
+
+  setSelectedDashboardTargets(nextTargets);
+  if (nextTargets.length === 0) {
+    setPendingBatchDeleteTargets(null);
+    setPendingBatchMoveTargets(null);
+  }
+}
+
+export function clearDashboardSelection() {
+  const {
+    setBatchDeleting,
+    setBatchMoving,
+    setPendingBatchDeleteTargets,
+    setPendingBatchMoveTargets,
+    setSelectedDashboardTargets,
+  } = getStoreMethods();
+
+  setSelectedDashboardTargets([]);
+  setPendingBatchDeleteTargets(null);
+  setPendingBatchMoveTargets(null);
+  setBatchDeleting(false);
+  setBatchMoving(false);
+}
+
+export function requestBatchDeleteTargets() {
+  const { getSelectedDashboardTargets, setPendingBatchDeleteTargets } = getStoreMethods();
+  const targets = getSelectedDashboardTargets();
+
+  if (targets.length > 0) {
+    setPendingBatchDeleteTargets(targets);
+  }
+}
+
+export function closeBatchDeleteTargets() {
+  const { setBatchDeleting, setPendingBatchDeleteTargets } = getStoreMethods();
+
+  setPendingBatchDeleteTargets(null);
+  setBatchDeleting(false);
+}
+
+export function requestBatchMoveTargets() {
+  const { getSelectedDashboardTargets, setPendingBatchMoveTargets } = getStoreMethods();
+  const targets = getSelectedDashboardTargets();
+
+  if (targets.length > 0) {
+    setPendingBatchMoveTargets(targets);
+  }
+}
+
+export function closeBatchMoveTargets() {
+  const { setBatchMoving, setPendingBatchMoveTargets } = getStoreMethods();
+
+  setPendingBatchMoveTargets(null);
+  setBatchMoving(false);
+}
+
+export function setBatchDeleting(isDeleting: boolean) {
+  const { setBatchDeleting } = getStoreMethods();
+
+  setBatchDeleting(isDeleting);
+}
+
+export function setBatchMoving(isMoving: boolean) {
+  const { setBatchMoving } = getStoreMethods();
+
+  setBatchMoving(isMoving);
+}
+
+export function replaceDashboardSelectionWithFailedResults(
+  sourceTargets: BatchOperationTarget[],
+  results: BatchFileOperationResult[],
+) {
+  const {
+    getPendingBatchDeleteTargets,
+    getPendingBatchMoveTargets,
+    setPendingBatchDeleteTargets,
+    setPendingBatchMoveTargets,
+    setSelectedDashboardTargets,
+  } = getStoreMethods();
+  const sourceTargetsByKey = new Map(
+    sourceTargets.map((target) => [getDashboardSelectionKey(target), target]),
+  );
+  const failedTargets = results
+    .filter((result) => !result.success)
+    .map((result) => sourceTargetsByKey.get(getDashboardSelectionKey(result)))
+    .filter((target): target is BatchOperationTarget => Boolean(target));
+
+  setSelectedDashboardTargets(failedTargets);
+  if (getPendingBatchDeleteTargets()) {
+    setPendingBatchDeleteTargets(failedTargets.length > 0 ? failedTargets : null);
+  }
+  if (getPendingBatchMoveTargets()) {
+    setPendingBatchMoveTargets(failedTargets.length > 0 ? failedTargets : null);
+  }
+  if (failedTargets.length === 0) {
+    clearDashboardSelection();
+  }
 }
 
 export function setDeletingFilePath(path: string | null) {

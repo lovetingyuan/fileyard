@@ -88,6 +88,15 @@ export type MoveTarget = FileOperationTarget & {
   type: "file" | "folder";
 };
 
+export type BatchOperationTarget = FileOperationTarget & {
+  type: "file" | "folder";
+};
+
+export type BatchOperationRequestTarget = {
+  type: "file" | "folder";
+  path: string;
+};
+
 export type NewTextFileDraft = {
   name: string;
   content: string;
@@ -206,6 +215,30 @@ export interface MoveRequest {
   type: "file" | "folder";
   path: string;
   targetParentPath: string;
+}
+
+export interface BatchDeleteRequest {
+  targets: BatchOperationRequestTarget[];
+}
+
+export interface BatchMoveRequest {
+  targets: BatchOperationRequestTarget[];
+  targetParentPath: string;
+}
+
+export interface BatchFileOperationResult {
+  type: "file" | "folder";
+  path: string;
+  success: boolean;
+  message: string;
+}
+
+export interface BatchFileMutationResponse {
+  success: boolean;
+  message: string;
+  completedCount: number;
+  failedCount: number;
+  results: BatchFileOperationResult[];
 }
 
 export interface FileMutationResponse {

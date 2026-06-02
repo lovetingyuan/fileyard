@@ -2,6 +2,7 @@ import MdiFolder from '~icons/mdi/folder'
 import type { FileEntry, FolderEntry } from '../../../../types'
 import { getFileIcon } from '../../../constants/fileIcons'
 import { openFilePreview } from '../actions'
+import { useDashboardEntrySelection } from '../hooks/useDashboardEntrySelection'
 import { useDashboardPath } from '../hooks/useDashboardPath'
 import type { SearchMatchRange } from '../utils/searchMatch'
 import { FileActionsMenu, FolderActionsMenu } from './FileEntryActions'
@@ -23,20 +24,85 @@ const GRID_ITEM_NAME_CLASS =
   'mt-2 w-full overflow-hidden break-all text-center text-xs font-medium leading-4 text-base-content [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]'
 const GRID_ACTIONS_CLASS =
   'absolute right-1 top-1 z-20 opacity-100 transition-opacity focus-within:z-[90] [@media(hover:hover)]:pointer-events-none [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-focus-within:pointer-events-auto [@media(hover:hover)]:group-focus-within:opacity-100 [@media(hover:hover)]:group-hover:pointer-events-auto [@media(hover:hover)]:group-hover:opacity-100'
+const GRID_CHECKBOX_CLASS =
+  'checkbox checkbox-primary checkbox-sm absolute left-2 top-2 z-30 h-5 w-5 transition-opacity'
+const GRID_SELECTED_ITEM_CLASS = 'bg-primary/15 ring-1 ring-primary/40 hover:bg-primary/20'
+
+function GridEntryCheckbox({
+  ariaLabel,
+  checked,
+  isSelectionActive,
+  onChange,
+  onClick,
+}: {
+  ariaLabel: string
+  checked: boolean
+  isSelectionActive: boolean
+  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void
+  onClick: (event: React.MouseEvent<HTMLInputElement>) => void
+}) {
+  return (
+    <input
+      type="checkbox"
+      className={`${GRID_CHECKBOX_CLASS} ${
+        isSelectionActive
+          ? 'opacity-100'
+          : 'pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100'
+      }`.trim()}
+      checked={checked}
+      onChange={onChange}
+      onClick={onClick}
+      aria-label={ariaLabel}
+    />
+  )
+}
 
 export function FolderGridItem({ folder }: { folder: DashboardFolder }) {
   const { setPath } = useDashboardPath()
   const entryKey = `folder:${folder.path}`
+  const selection = useDashboardEntrySelection({
+    type: 'folder',
+    path: folder.path,
+    name: folder.name,
+  })
 
   return (
-    <div className={GRID_ITEM_CLASS} role="listitem">
-      <div className={GRID_ACTIONS_CLASS}>
+    <div
+      className={`${GRID_ITEM_CLASS} ${selection.isSelected ? GRID_SELECTED_ITEM_CLASS : ''}`.trim()}
+      role="listitem"
+      onClick={selection.handleActiveSelectionClick}
+      onPointerDown={selection.handlePointerDown}
+      onPointerUp={selection.handlePointerEnd}
+      onPointerLeave={selection.handlePointerEnd}
+      onPointerCancel={selection.handlePointerEnd}
+    >
+      <GridEntryCheckbox
+        ariaLabel={`选择文件夹 ${folder.name}`}
+        checked={selection.isSelected}
+        isSelectionActive={selection.isSelectionActive}
+        onChange={selection.handleSelectionChange}
+        onClick={selection.handleSelectionClick}
+      />
+      <div
+        className={`${GRID_ACTIONS_CLASS} ${
+          selection.isSelectionActive ? 'invisible pointer-events-none' : ''
+        }`.trim()}
+        aria-hidden={selection.isSelectionActive}
+      >
         <FolderActionsMenu folder={folder} variant="grid" />
       </div>
       <button
         type="button"
         className={GRID_ITEM_BUTTON_CLASS}
-        onClick={() => setPath(folder.path)}
+        onClick={event => {
+          if (selection.handleActiveSelectionClick(event)) {
+            return
+          }
+          if (selection.shouldIgnoreEntryOpen()) {
+            return
+          }
+          setPath(folder.path)
+        }}
         title={folder.name}
       >
         <MdiFolder className="h-10 w-10 shrink-0 text-warning" />
@@ -51,16 +117,49 @@ export function FolderGridItem({ folder }: { folder: DashboardFolder }) {
 export function FileGridItem({ file }: { file: DashboardFile }) {
   const fileIcon = getFileIcon(file.name)
   const entryKey = `file:${file.path}`
+  const selection = useDashboardEntrySelection({
+    type: 'file',
+    path: file.path,
+    name: file.name,
+  })
 
   return (
-    <div className={GRID_ITEM_CLASS} role="listitem">
-      <div className={GRID_ACTIONS_CLASS}>
+    <div
+      className={`${GRID_ITEM_CLASS} ${selection.isSelected ? GRID_SELECTED_ITEM_CLASS : ''}`.trim()}
+      role="listitem"
+      onClick={selection.handleActiveSelectionClick}
+      onPointerDown={selection.handlePointerDown}
+      onPointerUp={selection.handlePointerEnd}
+      onPointerLeave={selection.handlePointerEnd}
+      onPointerCancel={selection.handlePointerEnd}
+    >
+      <GridEntryCheckbox
+        ariaLabel={`选择文件 ${file.name}`}
+        checked={selection.isSelected}
+        isSelectionActive={selection.isSelectionActive}
+        onChange={selection.handleSelectionChange}
+        onClick={selection.handleSelectionClick}
+      />
+      <div
+        className={`${GRID_ACTIONS_CLASS} ${
+          selection.isSelectionActive ? 'invisible pointer-events-none' : ''
+        }`.trim()}
+        aria-hidden={selection.isSelectionActive}
+      >
         <FileActionsMenu file={file} variant="grid" />
       </div>
       <button
         type="button"
         className={GRID_ITEM_BUTTON_CLASS}
-        onClick={() => openFilePreview(file)}
+        onClick={event => {
+          if (selection.handleActiveSelectionClick(event)) {
+            return
+          }
+          if (selection.shouldIgnoreEntryOpen()) {
+            return
+          }
+          openFilePreview(file)
+        }}
         title={file.name}
       >
         <fileIcon.Icon className={`h-10 w-10 shrink-0 ${fileIcon.color}`} />

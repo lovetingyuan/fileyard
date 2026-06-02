@@ -5,6 +5,8 @@ import { useUploadUnloadProtection } from '../../hooks/useUploadUnloadProtection
 import { useAppStore } from '../../store'
 import { getDroppedUploadFiles } from '../../utils/uploadDrop'
 import { DashboardFileList } from './components/DashboardFileList'
+import { BatchDeleteConfirmModal } from './components/BatchDeleteConfirmModal'
+import { BatchMoveModal } from './components/BatchMoveModal'
 import { DeleteConfirmModal } from './components/DeleteConfirmModal'
 import { DirectoryStatsModal } from './components/DirectoryStatsModal'
 import { FileDetailsModal } from './components/FileDetailsModal'
@@ -30,9 +32,12 @@ export function Dashboard() {
     addNewFolderName,
     pendingRenameTarget,
     pendingMoveTarget,
+    pendingBatchDeleteTargets,
+    pendingBatchMoveTargets,
     movingPath,
     renamingPath,
     savingTextFile,
+    selectedDashboardTargets,
     sharing,
   } = useAppStore()
   const {
@@ -54,7 +59,9 @@ export function Dashboard() {
   const fileToolbarRef = useRef<FileToolbarHandle | null>(null)
   const isFileUploadInProgress = savingTextFile || uploadQueue.isUploading
   const isFileMutationDisabled = Boolean(renamingPath || movingPath)
-  const isCurrentPathMutationDisabled = isFileMutationDisabled || isCurrentPathMissing
+  const isBatchSelectionActive = selectedDashboardTargets.length > 0
+  const isCurrentPathMutationDisabled =
+    isFileMutationDisabled || isCurrentPathMissing || isBatchSelectionActive
 
   useUploadUnloadProtection(isFileUploadInProgress)
 
@@ -124,10 +131,12 @@ export function Dashboard() {
   return (
     <div className="flex flex-1 flex-col">
       <DeleteConfirmModal />
+      {pendingBatchDeleteTargets ? <BatchDeleteConfirmModal /> : null}
       <DirectoryStatsModal />
       <FileDetailsModal />
       {pendingRenameTarget ? <RenameModal key={pendingRenameTarget.path} /> : null}
       {pendingMoveTarget ? <MoveModal key={pendingMoveTarget.path} /> : null}
+      {pendingBatchMoveTargets ? <BatchMoveModal /> : null}
       {sharing && currentFile ? <ShareFileModal key={currentFile.path} /> : null}
       <PreviewModal />
       {isCreatingNewFolder ? <NewFolderModal key={addNewFolderName} /> : null}

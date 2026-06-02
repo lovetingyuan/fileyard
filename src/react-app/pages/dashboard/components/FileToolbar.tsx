@@ -21,6 +21,7 @@ import { useDashboardFileView } from "../hooks/useDashboardFileView";
 import { countUploadQueueStats } from "../hooks/useUploadQueue";
 import { uploadDashboardFiles } from "../uploadFiles";
 import { ClipboardUploadButton } from "./ClipboardUploadButton";
+import { BatchSelectionToolbar } from "./BatchSelectionToolbar";
 import { FileBreadcrumbs } from "./FileBreadcrumbs";
 import { FileSortMenu } from "./FileSortMenu";
 
@@ -67,8 +68,10 @@ export const FileToolbar = forwardRef<FileToolbarHandle, FileToolbarProps>(funct
     movingPath,
     renamingPath,
     savingTextFile,
+    selectedDashboardTargets,
     uploadQueue,
   } = useAppStore();
+  const isBatchSelectionActive = selectedDashboardTargets.length > 0;
   const isSearchExpanded = searchInputValue.length > 0;
   const isUploadingFile = countUploadQueueStats(uploadQueue).active > 0;
   const isFileMutationDisabled = Boolean(renamingPath || movingPath);
@@ -120,9 +123,14 @@ export const FileToolbar = forwardRef<FileToolbarHandle, FileToolbarProps>(funct
         onChange={(event) => handleUploadSelection(event, "folder")}
       />
 
-      <FileBreadcrumbs isCurrentPathMissing={isCurrentPathMissing} />
+      <FileBreadcrumbs
+        isCurrentPathMissing={isCurrentPathMissing}
+        isNavigationDisabled={isBatchSelectionActive}
+      />
 
-      {!isCurrentPathMissing ? (
+      {!isCurrentPathMissing && isBatchSelectionActive ? <BatchSelectionToolbar /> : null}
+
+      {!isCurrentPathMissing && !isBatchSelectionActive ? (
         <div className="ml-auto flex w-full min-w-0 flex-wrap items-center justify-end gap-3 sm:w-auto sm:flex-1 sm:gap-4">
           <div className="flex items-center gap-2">
             <div className="tooltip" data-tip={uploadFileTooltip}>
