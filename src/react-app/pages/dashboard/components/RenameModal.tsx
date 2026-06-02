@@ -3,13 +3,13 @@ import toast from "react-hot-toast";
 import { Dialog } from "../../../components/Dialog";
 import { useRenameFileMutation, useRenameFolderMutation } from "../../../hooks/useFilesApi";
 import { useAppStore } from "../../../store";
-import {
-  getRenamedPath,
-  getRenameValidationMessage,
-  isUploadBlockingRename,
-} from "../../../utils/renameValidation";
+import { getRenameValidationMessage } from "../../../utils/renameValidation";
 import { closeRenameTarget, setRenamingPath } from "../actions";
 import { useDashboardFileView } from "../hooks/useDashboardFileView";
+import {
+  FILE_OPERATION_UPLOAD_BLOCKED_MESSAGE,
+  isFolderOperationBlockedByActiveUpload,
+} from "../hooks/useUploadQueue";
 import {
   focusRenameInput,
   getRenameConfirmButtonClassName,
@@ -21,8 +21,6 @@ import {
   isRenameConfirmDisabled,
   shouldCloseRenameWithoutSaving,
 } from "../utils/renameModalInput";
-
-const UPLOAD_BLOCKED_MESSAGE = "该路径下有文件正在上传，请等待上传完成后再重命名。";
 
 export function RenameModal() {
   const { pendingRenameTarget, renamingPath, uploadQueue } = useAppStore();
@@ -61,20 +59,11 @@ export function RenameModal() {
     validationMessage,
     hasEditedName,
   );
-  const renamedPath = getRenamedPath(pendingRenameTarget.path, trimmedName);
-  const isUploadBlocked =
-    trimmedName.length > 0 &&
-    isUploadBlockingRename({
-      newPath: renamedPath,
-      oldPath: pendingRenameTarget.path,
-      targetType: pendingRenameTarget.type,
-      uploadQueue,
-    });
   const isRenaming = Boolean(renamingPath);
   const confirmDisabled = isRenameConfirmDisabled({
     currentName: pendingRenameTarget.name,
     isRenaming,
-    isUploadBlocked,
+    isUploadBlocked: false,
     name,
     validationMessage,
   });
@@ -97,6 +86,14 @@ export function RenameModal() {
 
   const handleSave = async () => {
     if (confirmDisabled) {
+      return;
+    }
+
+    if (
+      pendingRenameTarget.type === "folder" &&
+      isFolderOperationBlockedByActiveUpload(uploadQueue, pendingRenameTarget.path)
+    ) {
+      toast.error(FILE_OPERATION_UPLOAD_BLOCKED_MESSAGE);
       return;
     }
 
@@ -154,7 +151,7 @@ export function RenameModal() {
               ref={setInputRef}
               type="text"
               className={getRenameInputClassName({
-                isUploadBlocked,
+                isUploadBlocked: false,
                 visibleValidationMessage,
               })}
               value={name}
@@ -167,9 +164,6 @@ export function RenameModal() {
             />
             {visibleValidationMessage ? (
               <span className="text-xs text-error">{visibleValidationMessage}</span>
-            ) : null}
-            {isUploadBlocked ? (
-              <span className="text-xs text-error">{UPLOAD_BLOCKED_MESSAGE}</span>
             ) : null}
           </label>
         </div>

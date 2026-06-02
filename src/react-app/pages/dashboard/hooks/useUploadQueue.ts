@@ -36,11 +36,13 @@ export {
   retryDashboardUpload,
 } from "./uploadQueueControls";
 export {
+  FILE_OPERATION_UPLOAD_BLOCKED_MESSAGE,
   countUploadQueueStats,
   getActiveUploadItemsInFolder,
   getUploadQueueItemProgress,
   getUploadQueuePanelState,
   getUploadQueueSummary,
+  isFolderOperationBlockedByActiveUpload,
 } from "./uploadQueueUtils";
 export type { UploadQueuePanelState } from "./uploadQueueUtils";
 

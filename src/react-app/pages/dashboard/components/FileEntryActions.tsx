@@ -7,6 +7,7 @@ import MdiFolderMoveOutline from "~icons/mdi/folder-move-outline";
 import MdiInformationOutline from "~icons/mdi/information-outline";
 import MdiPencil from "~icons/mdi/pencil";
 import MdiShareVariantOutline from "~icons/mdi/share-variant-outline";
+import toast from "react-hot-toast";
 import type { FileEntry, FolderEntry } from "../../../../types";
 import { Dropdown } from "../../../components/Dropdown";
 import { useAppStore } from "../../../store";
@@ -19,6 +20,10 @@ import {
   requestRenameTarget,
 } from "../actions";
 import { downloadDashboardFile } from "../fileOperations";
+import {
+  FILE_OPERATION_UPLOAD_BLOCKED_MESSAGE,
+  isFolderOperationBlockedByActiveUpload,
+} from "../hooks/useUploadQueue";
 
 type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
 type RowActionsMenuVariant = "table" | "grid";
@@ -82,12 +87,20 @@ export function FolderActionsMenu({
   folder: FolderEntry;
   variant?: RowActionsMenuVariant;
 }) {
-  const { deletingFolderPath, movingPath, renamingPath } = useAppStore();
+  const { deletingFolderPath, movingPath, renamingPath, uploadQueue } = useAppStore();
   const isLoading =
     deletingFolderPath === folder.path ||
     renamingPath === folder.path ||
     movingPath === folder.path;
   const isActionDisabled = Boolean(renamingPath || movingPath) || isLoading;
+  const blockIfUploading = () => {
+    if (!isFolderOperationBlockedByActiveUpload(uploadQueue, folder.path)) {
+      return false;
+    }
+
+    toast.error(FILE_OPERATION_UPLOAD_BLOCKED_MESSAGE);
+    return true;
+  };
 
   return (
     <RowActionsMenu
@@ -98,21 +111,36 @@ export function FolderActionsMenu({
         {
           label: "重命名",
           Icon: MdiPencil,
-          onClick: () =>
-            requestRenameTarget({ type: "folder", path: folder.path, name: folder.name }),
+          onClick: () => {
+            if (blockIfUploading()) {
+              return;
+            }
+
+            requestRenameTarget({ type: "folder", path: folder.path, name: folder.name });
+          },
         },
         {
           label: "移动",
           Icon: MdiFolderMoveOutline,
-          onClick: () =>
-            requestMoveTarget({ type: "folder", path: folder.path, name: folder.name }),
+          onClick: () => {
+            if (blockIfUploading()) {
+              return;
+            }
+
+            requestMoveTarget({ type: "folder", path: folder.path, name: folder.name });
+          },
         },
         {
           label: "删除",
           Icon: MdiDeleteOutline,
           tone: "danger",
-          onClick: () =>
-            requestDeleteTarget({ type: "folder", path: folder.path, name: folder.name }),
+          onClick: () => {
+            if (blockIfUploading()) {
+              return;
+            }
+
+            requestDeleteTarget({ type: "folder", path: folder.path, name: folder.name });
+          },
         },
         {
           label: "查看详情",

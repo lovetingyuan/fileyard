@@ -11,6 +11,10 @@ import { ApiError } from '../../../utils/apiRequest'
 import { getMoveDestinationDisabledReason } from '../../../utils/moveValidation'
 import { closeMoveTarget, setMovingPath } from '../actions'
 import { useDashboardFileView } from '../hooks/useDashboardFileView'
+import {
+  FILE_OPERATION_UPLOAD_BLOCKED_MESSAGE,
+  isFolderOperationBlockedByActiveUpload,
+} from '../hooks/useUploadQueue'
 
 const MOVE_CONFLICT_MESSAGE = '目标文件夹已存在重名文件或文件夹'
 
@@ -109,7 +113,7 @@ function FolderTreePicker({
 }
 
 export function MoveModal() {
-  const { movingPath, pendingMoveTarget } = useAppStore()
+  const { movingPath, pendingMoveTarget, uploadQueue } = useAppStore()
   const { tree, error, isLoading } = useFolderTree(Boolean(pendingMoveTarget))
   const { moveEntry } = useMoveEntryMutation()
   const { refresh } = useDashboardFileView()
@@ -139,6 +143,14 @@ export function MoveModal() {
 
   const handleMove = async () => {
     if (confirmDisabled || selectedPath === null) {
+      return
+    }
+
+    if (
+      pendingMoveTarget.type === 'folder' &&
+      isFolderOperationBlockedByActiveUpload(uploadQueue, pendingMoveTarget.path)
+    ) {
+      toast.error(FILE_OPERATION_UPLOAD_BLOCKED_MESSAGE)
       return
     }
 

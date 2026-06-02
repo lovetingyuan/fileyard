@@ -3,6 +3,7 @@ import { ApiError } from "../../../utils/apiRequest";
 import { FileUploadError, UploadCanceledError } from "../../../utils/fileUpload";
 
 export const REMAINING_STATUSES = new Set<UploadQueueStatus>(["queued", "preparing", "uploading"]);
+export const FILE_OPERATION_UPLOAD_BLOCKED_MESSAGE = "有文件在上传，请稍候再试";
 const FAILED_STATUSES = new Set<UploadQueueStatus>(["failed", "oversized", "duplicate"]);
 
 type CancellableUploadTask = {
@@ -162,6 +163,13 @@ export function getActiveUploadItemsInFolder(
   return items.filter(
     (item) => REMAINING_STATUSES.has(item.status) && isUploadTargetInFolder(item.targetPath, folderPath),
   );
+}
+
+export function isFolderOperationBlockedByActiveUpload(
+  items: UploadQueueItem[],
+  folderPath: string,
+): boolean {
+  return getActiveUploadItemsInFolder(items, folderPath).length > 0;
 }
 
 export function getUploadQueueSummary(items: UploadQueueItem[]): string | null {
