@@ -27,6 +27,12 @@ import {
   hasObjectBody,
   resolveFileCreatedAt,
 } from "./filesShared";
+import {
+  getValidatedJson,
+  getValidatedQuery,
+  type PathQuery,
+  type UploadObjectQuery,
+} from "../validation";
 export { previewFile } from "./filePreviewHandler";
 
 function parseUploadContentLength(c: Context<AppContext>): number | Response {
@@ -45,12 +51,13 @@ function parseUploadContentLength(c: Context<AppContext>): number | Response {
 
 export async function uploadFile(c: Context<AppContext>) {
   try {
-    const parentPath = normalizeRelativePath(c.req.query("parentPath"), {
+    const query = getValidatedQuery<UploadObjectQuery>(c);
+    const parentPath = normalizeRelativePath(query.parentPath, {
       allowEmpty: true,
       label: "Parent path",
     });
     assertPathNotReserved(parentPath);
-    const name = normalizeName(c.req.query("name"), "File name");
+    const name = normalizeName(query.name, "File name");
     const filePath = joinRelativePath(parentPath, name);
     assertPathNotReserved(filePath);
     const { rootDirId } = await getFileContext(c);
@@ -84,7 +91,7 @@ export async function uploadFile(c: Context<AppContext>) {
     const fileKey = getFileKey(rootDirId, filePath);
     const contentType = c.req.header("content-type") ?? "application/octet-stream";
 
-    const allowOverwrite = c.req.query("overwrite") === "true";
+    const allowOverwrite = query.overwrite;
     const existingObject = allowOverwrite ? await c.env.FILES_BUCKET.head(fileKey) : null;
     const createdAt = existingObject
       ? resolveFileCreatedAt(existingObject)
@@ -122,7 +129,7 @@ export async function renameFile(c: Context<AppContext>) {
   let copiedKey: string | null = null;
 
   try {
-    const body = await c.req.json<RenameRequest>();
+    const body = getValidatedJson<RenameRequest>(c);
     const path = normalizeRelativePath(body.path, { allowEmpty: false, label: "Path" });
     assertPathNotReserved(path);
     const name = normalizeName(body.name, "File name");
@@ -192,7 +199,8 @@ export async function renameFile(c: Context<AppContext>) {
 
 export async function downloadFile(c: Context<AppContext>) {
   try {
-    const path = normalizeRelativePath(c.req.query("path"), { allowEmpty: false, label: "Path" });
+    const query = getValidatedQuery<PathQuery>(c);
+    const path = normalizeRelativePath(query.path, { allowEmpty: false, label: "Path" });
     assertPathNotReserved(path);
     const { rootDirId } = await getFileContext(c);
     const object = await c.env.FILES_BUCKET.get(getFileKey(rootDirId, path));
@@ -225,7 +233,8 @@ export async function downloadFile(c: Context<AppContext>) {
 
 export async function deleteFile(c: Context<AppContext>) {
   try {
-    const path = normalizeRelativePath(c.req.query("path"), { allowEmpty: false, label: "Path" });
+    const query = getValidatedQuery<PathQuery>(c);
+    const path = normalizeRelativePath(query.path, { allowEmpty: false, label: "Path" });
     assertPathNotReserved(path);
     const { rootDirId } = await getFileContext(c);
     const fileKey = getFileKey(rootDirId, path);

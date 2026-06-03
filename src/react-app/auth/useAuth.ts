@@ -1,5 +1,3 @@
-import { useEffect } from "react";
-import type { User } from "../../types";
 import {
   useAuthUser,
   useGoogleLoginMutation,
@@ -8,7 +6,8 @@ import {
   useRegisterMutation,
 } from "../hooks/useAuthApi";
 import { useAppStore } from "../store";
-import { clearAuthError, setAuthError, setAuthMutating, setAuthSessionState } from "./actions";
+import { clearAuthError, setAuthError, setAuthMutating } from "./actions";
+import { deriveAuthState } from "./state";
 
 type AuthResult = Promise<{ success: boolean; error?: string; message?: string }>;
 
@@ -17,8 +16,13 @@ function getErrorMessage(error: unknown, fallback: string) {
 }
 
 export function useAuth() {
-  const { authError, authLoading, authMutating, userInfo } = useAppStore();
-  const { user, error: sessionError, isLoading: isSessionLoading, mutate: mutateAuth } = useAuthUser();
+  const { authError, authMutating } = useAppStore();
+  const {
+    user,
+    error: sessionError,
+    isLoading: isSessionLoading,
+    mutate: mutateAuth,
+  } = useAuthUser();
   const { login: triggerLogin, isMutating: isLoggingIn } = useLoginMutation();
   const { loginWithGoogle: triggerGoogleLogin, isMutating: isGoogleLoggingIn } =
     useGoogleLoginMutation();
@@ -26,15 +30,7 @@ export function useAuth() {
   const { register: triggerRegister, isMutating: isRegistering } = useRegisterMutation();
   const isMutationLoading = isLoggingIn || isGoogleLoggingIn || isRegistering || isLoggingOut;
 
-  useEffect(() => {
-    setAuthSessionState({ user, isLoading: isSessionLoading, error: sessionError });
-  }, [user, isSessionLoading, sessionError]);
-
-  useEffect(() => {
-    setAuthMutating(isMutationLoading);
-  }, [isMutationLoading]);
-
-  const runAuthAction = async <T,>(
+  const runAuthAction = async <T>(
     action: () => Promise<T>,
     fallback: string,
     onSuccess?: (data: T) => Promise<void> | void,
@@ -93,15 +89,17 @@ export function useAuth() {
   const register = (email: string, password: string) =>
     runAuthAction(() => triggerRegister(email, password), "Registration failed");
 
-  const currentUser: User | null = userInfo ?? user;
-  const currentAuthLoading = authLoading || isSessionLoading;
-  const loading = currentAuthLoading || authMutating || isMutationLoading;
+  const authState = deriveAuthState({
+    authError,
+    authMutating,
+    isMutationLoading,
+    sessionError,
+    sessionLoading: isSessionLoading,
+    user,
+  });
 
   return {
-    user: currentUser,
-    authLoading: currentAuthLoading,
-    loading,
-    error: authError ?? sessionError?.message ?? null,
+    ...authState,
     login,
     loginWithGoogle,
     logout,

@@ -6,10 +6,11 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "fileyard",
   "main": "./src/worker/index.ts",
-  "compatibility_date": "2025-10-08",
+  "compatibility_date": "2026-06-03",
   "compatibility_flags": ["nodejs_compat"],
   "observability": {
     "enabled": true,
+    "head_sampling_rate": 1,
   },
   "vars": {
     // Set to your production domain before deploying if you need a fixed origin.

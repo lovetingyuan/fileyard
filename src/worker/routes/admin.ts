@@ -6,6 +6,7 @@ import { createDb } from "../db/client";
 import { session, user } from "../db/schema";
 import { jsonError } from "../utils/response";
 import { isAdminUser } from "../utils/adminAuth";
+import { adminUsersQueryValidator, getValidatedQuery, type AdminUsersQuery } from "../validation";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 20;
@@ -40,7 +41,7 @@ adminRoutes.get("/admin/users", (c) => {
   return Response.redirect(url.toString(), 308);
 });
 
-adminRoutes.get("/api/admin/users", async (c) => {
+adminRoutes.get("/api/admin/users", adminUsersQueryValidator, async (c) => {
   const currentUser = c.get("user");
   if (!currentUser) {
     return jsonError(c, "Unauthorized", 401);
@@ -50,11 +51,9 @@ adminRoutes.get("/api/admin/users", async (c) => {
     return jsonError(c, "Forbidden", 403);
   }
 
-  const page = parsePositiveInt(c.req.query("page"), DEFAULT_PAGE);
-  const pageSize = Math.min(
-    parsePositiveInt(c.req.query("pageSize"), DEFAULT_PAGE_SIZE),
-    MAX_PAGE_SIZE,
-  );
+  const query = getValidatedQuery<AdminUsersQuery>(c);
+  const page = parsePositiveInt(query.page, DEFAULT_PAGE);
+  const pageSize = Math.min(parsePositiveInt(query.pageSize, DEFAULT_PAGE_SIZE), MAX_PAGE_SIZE);
   const offset = (page - 1) * pageSize;
   const db = createDb(c.env);
 

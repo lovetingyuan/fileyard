@@ -5,6 +5,7 @@ import { folderExists, getFileContext } from "../utils/appHelpers";
 import { FilePathValidationError, getFileKey, normalizeRelativePath } from "../utils/fileManager";
 import { handlePathValidationError, jsonError } from "../utils/response";
 import { assertPathNotReserved, listAllObjects } from "./filesShared";
+import { getValidatedJson } from "../validation";
 import {
   MOVE_CONFLICT_MESSAGE,
   assertFolderMoveDestinationAllowed,
@@ -48,7 +49,7 @@ export async function listFolderTree(c: Context<AppContext>) {
 
 export async function moveEntry(c: Context<AppContext>) {
   try {
-    const body = await c.req.json<MoveRequest>();
+    const body = getValidatedJson<MoveRequest>(c);
     const type = normalizeMoveType(body.type);
     const path = normalizeRelativePath(body.path, { allowEmpty: false, label: "Path" });
     const targetParentPath = normalizeRelativePath(body.targetParentPath, {

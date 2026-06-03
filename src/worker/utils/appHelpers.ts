@@ -26,7 +26,7 @@ function appendVary(currentValue: string | null, nextValue: string): string {
 
 function getAllowedOrigins(c: Context<AppContext>): Set<string> {
   const allowedOrigins = new Set<string>([new URL(c.req.url).origin]);
-  if (c.env.APP_URL) {
+  if (c.env?.APP_URL) {
     try {
       allowedOrigins.add(new URL(c.env.APP_URL).origin);
     } catch (error) {
@@ -44,7 +44,7 @@ export function applyCorsHeaders(headers: Headers, origin: string): void {
   headers.set("Access-Control-Allow-Origin", origin);
   headers.set("Access-Control-Allow-Credentials", "true");
   headers.set("Access-Control-Allow-Headers", "Content-Type");
-  headers.set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+  headers.set("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
   headers.set("Vary", appendVary(headers.get("Vary"), "Origin"));
 }
 

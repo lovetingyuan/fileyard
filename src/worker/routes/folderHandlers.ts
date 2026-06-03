@@ -24,10 +24,11 @@ import {
   hasObjectSetChanged,
   listAllObjects,
 } from "./filesShared";
+import { getValidatedJson, getValidatedQuery, type PathQuery } from "../validation";
 
 export async function createFolder(c: Context<AppContext>) {
   try {
-    const body = await c.req.json<CreateFolderRequest>();
+    const body = getValidatedJson<CreateFolderRequest>(c);
     const parentPath = normalizeRelativePath(body.parentPath, {
       allowEmpty: true,
       label: "Parent path",
@@ -94,7 +95,8 @@ export async function createFolder(c: Context<AppContext>) {
 
 export async function deleteFolder(c: Context<AppContext>) {
   try {
-    const path = normalizeRelativePath(c.req.query("path"), { allowEmpty: false, label: "Path" });
+    const query = getValidatedQuery<PathQuery>(c);
+    const path = normalizeRelativePath(query.path, { allowEmpty: false, label: "Path" });
     assertPathNotReserved(path);
     const { rootDirId } = await getFileContext(c);
 
@@ -135,7 +137,7 @@ export async function renameFolder(c: Context<AppContext>) {
   const copiedKeys: string[] = [];
 
   try {
-    const body = await c.req.json<RenameRequest>();
+    const body = getValidatedJson<RenameRequest>(c);
     const path = normalizeRelativePath(body.path, { allowEmpty: false, label: "Path" });
     assertPathNotReserved(path);
     const name = normalizeName(body.name, "Folder name");
@@ -192,7 +194,10 @@ export async function renameFolder(c: Context<AppContext>) {
       throw error;
     }
 
-    await deleteKeysInBatches(c.env.FILES_BUCKET, sourceObjects.map((object) => object.key));
+    await deleteKeysInBatches(
+      c.env.FILES_BUCKET,
+      sourceObjects.map((object) => object.key),
+    );
 
     const response: FileMutationResponse = {
       success: true,

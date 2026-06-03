@@ -1,5 +1,6 @@
 import type { Context } from "hono";
 import type { AppContext } from "../context";
+import { getValidatedQuery, type PathQuery } from "../validation";
 import { getFileContext } from "../utils/appHelpers";
 import { getFileKey, normalizeRelativePath } from "../utils/fileManager";
 import { handlePathValidationError, jsonError } from "../utils/response";
@@ -34,7 +35,8 @@ export async function previewFile(c: Context<AppContext>) {
       });
     }
 
-    const path = normalizeRelativePath(c.req.query("path"), { allowEmpty: false, label: "Path" });
+    const query = getValidatedQuery<PathQuery>(c);
+    const path = normalizeRelativePath(query.path, { allowEmpty: false, label: "Path" });
     assertPathNotReserved(path);
     const { rootDirId } = await getFileContext(c);
 

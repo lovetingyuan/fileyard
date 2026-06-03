@@ -25,6 +25,13 @@ import {
   resolveAppOrigin,
   verifyShareToken,
 } from "../utils/shareLinks";
+import {
+  createShareLinkJsonValidator,
+  getValidatedJson,
+  getValidatedParam,
+  shareTokenParamValidator,
+  type ShareTokenParam,
+} from "../validation";
 
 const shares = new Hono<AppContext>();
 
@@ -55,9 +62,9 @@ function assertPathNotReserved(path: string): void {
   }
 }
 
-shares.post("/api/files/share-links", async (c) => {
+shares.post("/api/files/share-links", createShareLinkJsonValidator, async (c) => {
   try {
-    const body = await c.req.json<CreateShareLinkRequest>();
+    const body = getValidatedJson<CreateShareLinkRequest>(c);
     const path = normalizeRelativePath(body.path, { allowEmpty: false, label: "Path" });
     assertPathNotReserved(path);
 
@@ -102,9 +109,9 @@ shares.post("/api/files/share-links", async (c) => {
   }
 });
 
-shares.get("/api/share-links/:token", async (c) => {
+shares.get("/api/share-links/:token", shareTokenParamValidator, async (c) => {
   try {
-    const token = c.req.param("token");
+    const { token } = getValidatedParam<ShareTokenParam>(c);
     const payload = await verifyShareToken(c.env, token);
     if (!payload) {
       return jsonShareError("Invalid share link", 403);
@@ -145,9 +152,9 @@ shares.get("/api/share-links/:token", async (c) => {
   }
 });
 
-shares.get("/api/share-links/:token/download", async (c) => {
+shares.get("/api/share-links/:token/download", shareTokenParamValidator, async (c) => {
   try {
-    const token = c.req.param("token");
+    const { token } = getValidatedParam<ShareTokenParam>(c);
     const payload = await verifyShareToken(c.env, token);
     if (!payload) {
       return jsonShareError("Invalid share link", 403);

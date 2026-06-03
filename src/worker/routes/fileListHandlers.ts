@@ -22,16 +22,17 @@ import {
   resolveFileCreatedAt,
 } from "./filesShared";
 import { getFileChecksumMetadata } from "./fileChecksumMetadata";
+import { getValidatedQuery, type FileListQuery, type OptionalPathQuery } from "../validation";
 
 type SortParams = {
   sort: "name" | "size" | "uploadedAt";
   order: "asc" | "desc";
 };
 
-function getSortParams(c: Context<AppContext>): SortParams {
+function getSortParams(query: FileListQuery): SortParams {
   return {
-    sort: (c.req.query("sort") ?? "uploadedAt") as SortParams["sort"],
-    order: (c.req.query("order") ?? "desc") as SortParams["order"],
+    sort: query.sort,
+    order: query.order,
   };
 }
 
@@ -80,7 +81,8 @@ export function getUploadLimits(c: Context<AppContext>) {
 
 export async function listFiles(c: Context<AppContext>) {
   try {
-    const path = normalizeRelativePath(c.req.query("path"), { allowEmpty: true, label: "Path" });
+    const query = getValidatedQuery<FileListQuery>(c);
+    const path = normalizeRelativePath(query.path, { allowEmpty: true, label: "Path" });
     assertPathNotReserved(path);
     const { rootDirId } = await getFileContext(c);
 
@@ -88,7 +90,7 @@ export async function listFiles(c: Context<AppContext>) {
       return jsonError(c, "Folder not found", 404);
     }
 
-    const sortParams = getSortParams(c);
+    const sortParams = getSortParams(query);
     const prefix = getFolderPrefix(rootDirId, path);
     const allObjects: R2Object[] = [];
     const allPrefixes = new Set<string>();
@@ -161,7 +163,8 @@ export async function listFiles(c: Context<AppContext>) {
 
 export async function getDirectoryStats(c: Context<AppContext>) {
   try {
-    const path = normalizeRelativePath(c.req.query("path"), { allowEmpty: true, label: "Path" });
+    const query = getValidatedQuery<OptionalPathQuery>(c);
+    const path = normalizeRelativePath(query.path, { allowEmpty: true, label: "Path" });
     assertPathNotReserved(path);
     const { rootDirId } = await getFileContext(c);
 

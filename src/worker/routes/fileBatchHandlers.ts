@@ -10,6 +10,7 @@ import {
 } from "../utils/fileManager";
 import { handlePathValidationError, jsonError } from "../utils/response";
 import { assertPathNotReserved, deleteKeysInBatches } from "./filesShared";
+import { getValidatedJson } from "../validation";
 import {
   assertMoveTargetAvailable,
   getMoveTargetPath,
@@ -35,7 +36,7 @@ function getOperationErrorMessage(error: unknown, fallbackMessage: string): stri
 
 export async function batchDeleteEntries(c: Context<AppContext>) {
   try {
-    const body = await c.req.json<BatchDeleteRequest>();
+    const body = getValidatedJson<BatchDeleteRequest>(c);
     const targets = normalizeBatchTargets(body.targets);
     for (const target of targets) {
       assertPathNotReserved(target.path);
@@ -102,7 +103,7 @@ export async function batchDeleteEntries(c: Context<AppContext>) {
 
 export async function batchMoveEntries(c: Context<AppContext>) {
   try {
-    const body = await c.req.json<BatchMoveRequest>();
+    const body = getValidatedJson<BatchMoveRequest>(c);
     const targets = normalizeBatchTargets(body.targets);
     const targetParentPath = normalizeRelativePath(body.targetParentPath, {
       allowEmpty: true,

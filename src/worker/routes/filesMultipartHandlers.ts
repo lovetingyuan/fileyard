@@ -28,6 +28,12 @@ import {
   validateCompleteParts,
   type MultipartUploadSession,
 } from "./filesMultipartSession";
+import {
+  getValidatedJson,
+  getValidatedQuery,
+  type MultipartPartQuery,
+  type UploadIdQuery,
+} from "../validation";
 
 function assertPathNotReserved(path: string): void {
   if (isReservedSystemPath(path)) {
@@ -73,7 +79,7 @@ function getParentPath(path: string): string {
 
 export async function createMultipartUpload(c: Context<AppContext>) {
   try {
-    const body = await c.req.json<MultipartUploadCreateRequest>();
+    const body = getValidatedJson<MultipartUploadCreateRequest>(c);
     const parentPath = normalizeRelativePath(body.parentPath, {
       allowEmpty: true,
       label: "Parent path",
@@ -149,16 +155,14 @@ export async function createMultipartUpload(c: Context<AppContext>) {
 
 export async function uploadMultipartPart(c: Context<AppContext>) {
   try {
-    const uploadId = c.req.query("uploadId");
-    if (!uploadId) {
-      return jsonError(c, "Upload ID is required", 400);
-    }
+    const query = getValidatedQuery<MultipartPartQuery>(c);
+    const uploadId = query.uploadId;
     const session = await requireOwnedMultipartSession(c, uploadId);
     if (session instanceof Response) {
       return session;
     }
 
-    const partNumber = parsePositiveInteger(c.req.query("partNumber"), "Part number");
+    const partNumber = parsePositiveInteger(query.partNumber, "Part number");
     const expectedBytes = resolveExpectedPartBytes(session, partNumber);
     const contentLength = parseContentLength(c.req.header("content-length"));
     if (contentLength !== expectedBytes) {
@@ -193,7 +197,7 @@ export async function uploadMultipartPart(c: Context<AppContext>) {
 
 export async function completeMultipartUpload(c: Context<AppContext>) {
   try {
-    const body = await c.req.json<MultipartUploadCompleteRequest>();
+    const body = getValidatedJson<MultipartUploadCompleteRequest>(c);
     const uploadId = body.uploadId;
     if (!uploadId) {
       return jsonError(c, "Upload ID is required", 400);
@@ -244,10 +248,8 @@ export async function completeMultipartUpload(c: Context<AppContext>) {
 
 export async function abortMultipartUpload(c: Context<AppContext>) {
   try {
-    const uploadId = c.req.query("uploadId");
-    if (!uploadId) {
-      return jsonError(c, "Upload ID is required", 400);
-    }
+    const query = getValidatedQuery<UploadIdQuery>(c);
+    const uploadId = query.uploadId;
 
     const session = await requireOwnedMultipartSession(c, uploadId);
     if (session instanceof Response) {
