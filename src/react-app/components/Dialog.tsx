@@ -3,6 +3,7 @@ import MdiFullscreen from "~icons/mdi/fullscreen";
 import MdiFullscreenExit from "~icons/mdi/fullscreen-exit";
 import { type ReactNode, useEffect, useState } from "react";
 import { useNativeDialog } from "../hooks/useNativeDialog";
+import { getDialogClosedBy } from "./dialogDismissal";
 import { getDialogBoxClassName, type DialogWidthMode } from "./previewModalLayout";
 
 type DialogAction = () => void | Promise<void>;
@@ -167,7 +168,11 @@ export function Dialog({
       : confirmText;
 
   return (
-    <dialog ref={dialogRef} className={`modal ${dialogClassName}`.trim()}>
+    <dialog
+      ref={dialogRef}
+      closedby={getDialogClosedBy(isInteractionDisabled)}
+      className={`modal ${dialogClassName}`.trim()}
+    >
       <div className={getDialogBoxClassName(widthMode, boxClassName, isActiveFullscreen)}>
         {(title || supportFullscreen || showCloseButton || headerActions !== undefined) && (
           <div className={`mb-4 flex items-center justify-between gap-4 ${headerClassName}`.trim()}>

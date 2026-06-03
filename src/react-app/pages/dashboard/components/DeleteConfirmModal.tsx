@@ -97,6 +97,8 @@ export function DeleteConfirmModal() {
       onConfirm={handleConfirm}
       confirmText="确认删除"
       confirmPendingText="删除中..."
+      confirmLoading={isBusy}
+      isDismissDisabled={isBusy}
       boxClassName="max-w-md border border-error/10 bg-base-100"
       closeButtonAriaLabel="关闭删除确认弹窗"
       confirmButtonClassName="btn btn-sm btn-error text-error-content"
