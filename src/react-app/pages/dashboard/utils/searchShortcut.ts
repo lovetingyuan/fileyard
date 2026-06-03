@@ -8,6 +8,13 @@ type EditableShortcutTarget = EventTarget & {
 
 type DashboardSearchShortcutEvent = Pick<KeyboardEvent, "altKey" | "ctrlKey" | "key" | "metaKey">;
 
+type DashboardSelectionEscapeEvent = Pick<KeyboardEvent, "key" | "target">;
+
+type DialogShortcutTarget = EventTarget & {
+  closest?: (selector: string) => Element | null;
+  tagName?: string;
+};
+
 export function isEditableShortcutTarget(target: EventTarget | null) {
   if (!target) {
     return false;
@@ -44,4 +51,33 @@ export function shouldFocusDashboardSearchFromShortcut(
     !event.metaKey &&
     !isEditableShortcutTarget(activeElement)
   );
+}
+
+function isDialogShortcutTarget(target: EventTarget | null) {
+  if (!target) {
+    return false;
+  }
+
+  const element = target as DialogShortcutTarget;
+  if (element.tagName?.toUpperCase() === "DIALOG") {
+    return true;
+  }
+
+  return Boolean(element.closest?.("dialog"));
+}
+
+export function shouldClearDashboardSelectionFromEscape(
+  event: DashboardSelectionEscapeEvent,
+  isSelectionActive: boolean,
+  root: Pick<Document, "querySelector">,
+) {
+  if (event.key !== "Escape" || !isSelectionActive) {
+    return false;
+  }
+
+  if (root.querySelector("dialog[open]")) {
+    return false;
+  }
+
+  return !isDialogShortcutTarget(event.target);
 }

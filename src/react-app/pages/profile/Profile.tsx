@@ -197,10 +197,12 @@ export function Profile() {
                 onChange={handleUploadSelection}
                 disabled={busy}
               />
-              <div className="group tooltip tooltip-top tooltip-info shrink-0">
+              <div className="group tooltip tooltip-right tooltip-info shrink-0">
                 <div className="tooltip-content">
                   <span className="inline-block max-w-45 text-xs">
-                    头像要求：支持 PNG、JPG、JPEG、WebP，原图不超过 500KB
+                    点击可更换头像
+                    <br />
+                    （支持 PNG、JPG、JPEG、WebP，原图不超过 500KB）
                   </span>
                 </div>
                 <button
@@ -217,9 +219,9 @@ export function Profile() {
                     className="h-full w-full"
                     textClassName="text-xl"
                   />
-                  <span className="absolute inset-0 flex items-center justify-center bg-base-content/65 text-xs font-medium text-base-100 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+                  {/* <span className="absolute inset-0 flex items-center justify-center bg-base-content/65 text-xs font-medium text-base-100 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
                     {busy ? '处理中...' : '更换头像'}
-                  </span>
+                  </span> */}
                 </button>
               </div>
               <div className="min-w-0">

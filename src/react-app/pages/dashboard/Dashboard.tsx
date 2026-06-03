@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import MdiAlertCircleOutline from '~icons/mdi/alert-circle-outline'
 import toast from 'react-hot-toast'
 import { useUploadUnloadProtection } from '../../hooks/useUploadUnloadProtection'
@@ -20,8 +20,12 @@ import { ShareFileModal } from './components/ShareFileModal'
 import { UploadProgressPanel } from './components/UploadProgressPanel'
 import { useDashboardFileView } from './hooks/useDashboardFileView'
 import { useUploadQueue } from './hooks/useUploadQueue'
+import { clearDashboardSelection } from './actions'
 import { uploadDashboardFiles } from './uploadFiles'
-import { shouldFocusDashboardSearchFromShortcut } from './utils/searchShortcut'
+import {
+  shouldClearDashboardSelectionFromEscape,
+  shouldFocusDashboardSearchFromShortcut,
+} from './utils/searchShortcut'
 
 const MISSING_PATH_DISABLED_MESSAGE = '当前文件路径不存在，无法在此位置上传或新建文件'
 
@@ -65,14 +69,30 @@ export function Dashboard() {
 
   useUploadUnloadProtection(isFileUploadInProgress)
 
+  const handleDashboardKeyDown = useEffectEvent((event: KeyboardEvent) => {
+    if (
+      shouldClearDashboardSelectionFromEscape(
+        event,
+        selectedDashboardTargets.length > 0,
+        document,
+      )
+    ) {
+      event.preventDefault()
+      clearDashboardSelection()
+      return
+    }
+
+    if (!shouldFocusDashboardSearchFromShortcut(event, document.activeElement)) {
+      return
+    }
+
+    event.preventDefault()
+    fileToolbarRef.current?.focusSearchInput()
+  })
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (!shouldFocusDashboardSearchFromShortcut(event, document.activeElement)) {
-        return
-      }
-
-      event.preventDefault()
-      fileToolbarRef.current?.focusSearchInput()
+      handleDashboardKeyDown(event)
     }
 
     window.addEventListener('keydown', handleKeyDown)

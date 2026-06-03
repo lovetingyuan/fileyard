@@ -109,9 +109,7 @@ export function FolderRow({ folder }: { folder: DashboardFolder }) {
           <button
             type="button"
             className={`block min-w-0 truncate text-left font-bold ${
-              selection.isSelectionActive
-                ? 'cursor-pointer text-base-content'
-                : 'link link-hover'
+              selection.isSelectionActive ? 'cursor-pointer text-base-content' : 'link link-hover'
             }`.trim()}
             onClick={event => {
               if (selection.handleActiveSelectionClick(event)) {
@@ -207,9 +205,7 @@ export function FileRow({ file }: { file: DashboardFile }) {
         </span>
       </td>
       <td className="hidden text-base-content/50 sm:table-cell text-xs select-none">
-        <span className="tooltip" data-tip={`${file.size.toLocaleString()} 字节`}>
-          {formatBytes(file.size)}
-        </span>
+        <span>{formatBytes(file.size)}</span>
       </td>
       <td className="hidden whitespace-nowrap text-base-content/50 sm:table-cell text-xs select-none">
         {/* <span className="tooltip" data-tip={createdAtTooltip}> */}
