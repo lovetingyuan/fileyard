@@ -2,14 +2,14 @@ import { useRef } from "react";
 import type { BatchOperationTarget } from "../../../../types";
 import { useAppStore } from "../../../store";
 import { toggleDashboardSelection } from "../actions";
+import { getDashboardSelectionKey } from "../utils/dashboardSelectionRange";
 
 const LONG_PRESS_SELECTION_MS = 500;
 
-function getDashboardSelectionKey(target: Pick<BatchOperationTarget, "path" | "type">): string {
-  return `${target.type}:${target.path}`;
-}
-
-export function useDashboardEntrySelection(target: BatchOperationTarget) {
+export function useDashboardEntrySelection(
+  target: BatchOperationTarget,
+  visibleTargets: BatchOperationTarget[],
+) {
   const { selectedDashboardTargets } = useAppStore();
   const longPressTimerRef = useRef<number | null>(null);
   const shouldIgnoreNextOpenRef = useRef(false);
@@ -49,13 +49,12 @@ export function useDashboardEntrySelection(target: BatchOperationTarget) {
     clearLongPressTimer();
   };
 
-  const handleSelectionChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    event.stopPropagation();
-    toggleDashboardSelection(target);
-  };
-
   const handleSelectionClick = (event: React.MouseEvent<HTMLInputElement>) => {
     event.stopPropagation();
+    toggleDashboardSelection(target, {
+      isRangeSelection: event.shiftKey,
+      visibleTargets,
+    });
   };
 
   const consumeIgnoredClick = () => {
@@ -74,7 +73,10 @@ export function useDashboardEntrySelection(target: BatchOperationTarget) {
 
     event.stopPropagation();
     if (!consumeIgnoredClick()) {
-      toggleDashboardSelection(target);
+      toggleDashboardSelection(target, {
+        isRangeSelection: event.shiftKey,
+        visibleTargets,
+      });
     }
     return true;
   };
@@ -96,7 +98,6 @@ export function useDashboardEntrySelection(target: BatchOperationTarget) {
     handleActiveSelectionClick,
     handlePointerDown,
     handlePointerEnd,
-    handleSelectionChange,
     handleSelectionClick,
     isSelected,
     isSelectionActive,

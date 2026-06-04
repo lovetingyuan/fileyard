@@ -1,8 +1,9 @@
 import MdiFolderOpenOutline from "~icons/mdi/folder-open-outline";
 import MdiMagnifyRemoveOutline from "~icons/mdi/magnify-remove-outline";
-import type { FileEntry, FolderEntry } from "../../../../types";
+import type { BatchOperationTarget, FileEntry, FolderEntry } from "../../../../types";
 import { useAppStore } from "../../../store";
 import { createDashboardGridSections } from "../utils/dashboardLayoutMode";
+import { createDashboardSelectionTargets } from "../utils/dashboardSelectionRange";
 import type { SearchMatchRange } from "../utils/searchMatch";
 import { FileGridItem, FolderGridItem } from "./FileGridItems";
 import { FileRow, FolderRow } from "./FileTableRows";
@@ -24,6 +25,10 @@ type DashboardFileListProps = {
   filteredFolders: DashboardFolder[];
   isLoading: boolean;
   searchInputValue: string;
+};
+
+type DashboardResolvedFileListProps = DashboardFileListProps & {
+  visibleTargets: BatchOperationTarget[];
 };
 
 function getEmptyStateMessage(searchInputValue: string): string {
@@ -102,7 +107,8 @@ function DashboardTable({
   filteredFolders,
   isLoading,
   searchInputValue,
-}: DashboardFileListProps) {
+  visibleTargets,
+}: DashboardResolvedFileListProps) {
   return (
     <div>
       <table
@@ -131,10 +137,14 @@ function DashboardTable({
           ) : (
             <>
               {filteredFolders.map((folder) => (
-                <FolderRow key={`folder:${folder.path}`} folder={folder} />
+                <FolderRow
+                  key={`folder:${folder.path}`}
+                  folder={folder}
+                  visibleTargets={visibleTargets}
+                />
               ))}
               {filteredFiles.map((file) => (
-                <FileRow key={`file:${file.path}`} file={file} />
+                <FileRow key={`file:${file.path}`} file={file} visibleTargets={visibleTargets} />
               ))}
               {filteredFolders.length === 0 && filteredFiles.length === 0 && (
                 <DashboardTableEmptyRows searchInputValue={searchInputValue} />
@@ -152,7 +162,8 @@ function DashboardGrid({
   filteredFolders,
   isLoading,
   searchInputValue,
-}: DashboardFileListProps) {
+  visibleTargets,
+}: DashboardResolvedFileListProps) {
   const sections = createDashboardGridSections(filteredFolders, filteredFiles);
 
   if (isLoading) {
@@ -170,7 +181,11 @@ function DashboardGrid({
           return (
             <div key={section.kind} className={GRID_CLASS} role="list" aria-label="文件夹">
               {section.entries.map((folder) => (
-                <FolderGridItem key={`folder:${folder.path}`} folder={folder} />
+                <FolderGridItem
+                  key={`folder:${folder.path}`}
+                  folder={folder}
+                  visibleTargets={visibleTargets}
+                />
               ))}
             </div>
           );
@@ -179,7 +194,7 @@ function DashboardGrid({
         return (
           <div key={section.kind} className={GRID_CLASS} role="list" aria-label="文件">
             {section.entries.map((file) => (
-              <FileGridItem key={`file:${file.path}`} file={file} />
+              <FileGridItem key={`file:${file.path}`} file={file} visibleTargets={visibleTargets} />
             ))}
           </div>
         );
@@ -190,10 +205,11 @@ function DashboardGrid({
 
 export function DashboardFileList(props: DashboardFileListProps) {
   const { dashboardLayoutMode } = useAppStore();
+  const visibleTargets = createDashboardSelectionTargets(props.filteredFolders, props.filteredFiles);
 
   if (dashboardLayoutMode === "grid") {
-    return <DashboardGrid {...props} />;
+    return <DashboardGrid {...props} visibleTargets={visibleTargets} />;
   }
 
-  return <DashboardTable {...props} />;
+  return <DashboardTable {...props} visibleTargets={visibleTargets} />;
 }

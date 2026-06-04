@@ -15,6 +15,10 @@ import {
   getNextDashboardLayoutMode,
   persistDashboardLayoutMode,
 } from "./utils/dashboardLayoutMode";
+import {
+  getDashboardSelectionKey,
+  getNextDashboardSelection,
+} from "./utils/dashboardSelectionRange";
 
 export function setDashboardSearchInput(value: string) {
   const { setSearchInputValue, setSearchKeyword } = getStoreMethods();
@@ -188,29 +192,34 @@ export function closeMoveTarget() {
   setPendingMoveTarget(null);
 }
 
-function getDashboardSelectionKey(target: Pick<BatchOperationTarget, "path" | "type">): string {
-  return `${target.type}:${target.path}`;
-}
+type DashboardSelectionOptions = {
+  isRangeSelection?: boolean;
+  visibleTargets?: BatchOperationTarget[];
+};
 
-export function toggleDashboardSelection(target: BatchOperationTarget) {
+export function toggleDashboardSelection(
+  target: BatchOperationTarget,
+  options: DashboardSelectionOptions = {},
+) {
   const {
+    getDashboardSelectionAnchorKey,
     getSelectedDashboardTargets,
+    setDashboardSelectionAnchorKey,
     setPendingBatchDeleteTargets,
     setPendingBatchMoveTargets,
     setSelectedDashboardTargets,
   } = getStoreMethods();
-  const selectedTargets = getSelectedDashboardTargets();
-  const targetKey = getDashboardSelectionKey(target);
-  const isSelected = selectedTargets.some(
-    (selectedTarget) => getDashboardSelectionKey(selectedTarget) === targetKey,
-  );
-  const nextTargets = isSelected
-    ? selectedTargets.filter(
-        (selectedTarget) => getDashboardSelectionKey(selectedTarget) !== targetKey,
-      )
-    : [...selectedTargets, target];
+  const result = getNextDashboardSelection({
+    anchorKey: getDashboardSelectionAnchorKey(),
+    isRangeSelection: options.isRangeSelection ?? false,
+    selectedTargets: getSelectedDashboardTargets(),
+    target,
+    visibleTargets: options.visibleTargets ?? [],
+  });
+  const nextTargets = result.selectedTargets;
 
   setSelectedDashboardTargets(nextTargets);
+  setDashboardSelectionAnchorKey(result.anchorKey);
   if (nextTargets.length === 0) {
     setPendingBatchDeleteTargets(null);
     setPendingBatchMoveTargets(null);
@@ -221,12 +230,14 @@ export function clearDashboardSelection() {
   const {
     setBatchDeleting,
     setBatchMoving,
+    setDashboardSelectionAnchorKey,
     setPendingBatchDeleteTargets,
     setPendingBatchMoveTargets,
     setSelectedDashboardTargets,
   } = getStoreMethods();
 
   setSelectedDashboardTargets([]);
+  setDashboardSelectionAnchorKey(null);
   setPendingBatchDeleteTargets(null);
   setPendingBatchMoveTargets(null);
   setBatchDeleting(false);
@@ -282,6 +293,7 @@ export function replaceDashboardSelectionWithFailedResults(
   results: BatchFileOperationResult[],
 ) {
   const {
+    setDashboardSelectionAnchorKey,
     getPendingBatchDeleteTargets,
     getPendingBatchMoveTargets,
     setPendingBatchDeleteTargets,
@@ -297,6 +309,9 @@ export function replaceDashboardSelectionWithFailedResults(
     .filter((target): target is BatchOperationTarget => Boolean(target));
 
   setSelectedDashboardTargets(failedTargets);
+  setDashboardSelectionAnchorKey(
+    failedTargets.length > 0 ? getDashboardSelectionKey(failedTargets[0]) : null,
+  );
   if (getPendingBatchDeleteTargets()) {
     setPendingBatchDeleteTargets(failedTargets.length > 0 ? failedTargets : null);
   }

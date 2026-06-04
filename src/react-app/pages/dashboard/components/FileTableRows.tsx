@@ -1,5 +1,5 @@
 import MdiFolder from '~icons/mdi/folder'
-import type { FileEntry, FolderEntry } from '../../../../types'
+import type { BatchOperationTarget, FileEntry, FolderEntry } from '../../../../types'
 import { getFileIcon } from '../../../constants/fileIcons'
 import { formatBytes, formatDate, formatDetailedDate } from '../../../utils/fileFormatters'
 import { openFilePreview } from '../actions'
@@ -16,13 +16,11 @@ function TableEntryCheckbox({
   ariaLabel,
   checked,
   className = '',
-  onChange,
   onClick,
 }: {
   ariaLabel: string
   checked: boolean
   className?: string
-  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void
   onClick: (event: React.MouseEvent<HTMLInputElement>) => void
 }) {
   return (
@@ -30,7 +28,7 @@ function TableEntryCheckbox({
       type="checkbox"
       className={`${ENTRY_CHECKBOX_CLASS} ${className}`.trim()}
       checked={checked}
-      onChange={onChange}
+      readOnly
       onClick={onClick}
       aria-label={ariaLabel}
     />
@@ -62,14 +60,23 @@ type DashboardFile = FileEntry & {
   searchMatchRanges?: SearchMatchRange[]
 }
 
-export function FolderRow({ folder }: { folder: DashboardFolder }) {
+export function FolderRow({
+  folder,
+  visibleTargets,
+}: {
+  folder: DashboardFolder
+  visibleTargets: BatchOperationTarget[]
+}) {
   const { setPath } = useDashboardPath()
   const rowKey = `folder:${folder.path}`
-  const selection = useDashboardEntrySelection({
-    type: 'folder',
-    path: folder.path,
-    name: folder.name,
-  })
+  const selection = useDashboardEntrySelection(
+    {
+      type: 'folder',
+      path: folder.path,
+      name: folder.name,
+    },
+    visibleTargets,
+  )
 
   return (
     <tr
@@ -89,7 +96,6 @@ export function FolderRow({ folder }: { folder: DashboardFolder }) {
               <TableEntryCheckbox
                 ariaLabel={`选择文件夹 ${folder.name}`}
                 checked={selection.isSelected}
-                onChange={selection.handleSelectionChange}
                 onClick={selection.handleSelectionClick}
               />
               <MdiFolder className="h-5 w-5 shrink-0 text-warning" />
@@ -101,7 +107,6 @@ export function FolderRow({ folder }: { folder: DashboardFolder }) {
                 ariaLabel={`选择文件夹 ${folder.name}`}
                 checked={selection.isSelected}
                 className="pointer-events-none absolute inset-0 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100"
-                onChange={selection.handleSelectionChange}
                 onClick={selection.handleSelectionClick}
               />
             </span>
@@ -138,15 +143,24 @@ export function FolderRow({ folder }: { folder: DashboardFolder }) {
   )
 }
 
-export function FileRow({ file }: { file: DashboardFile }) {
+export function FileRow({
+  file,
+  visibleTargets,
+}: {
+  file: DashboardFile
+  visibleTargets: BatchOperationTarget[]
+}) {
   const fileIcon = getFileIcon(file.name)
   const rowKey = `file:${file.path}`
   const createdAtTooltip = `创建时间：${formatDetailedDate(file.createdAt)}`
-  const selection = useDashboardEntrySelection({
-    type: 'file',
-    path: file.path,
-    name: file.name,
-  })
+  const selection = useDashboardEntrySelection(
+    {
+      type: 'file',
+      path: file.path,
+      name: file.name,
+    },
+    visibleTargets,
+  )
 
   return (
     <tr
@@ -166,7 +180,6 @@ export function FileRow({ file }: { file: DashboardFile }) {
               <TableEntryCheckbox
                 ariaLabel={`选择文件 ${file.name}`}
                 checked={selection.isSelected}
-                onChange={selection.handleSelectionChange}
                 onClick={selection.handleSelectionClick}
               />
               <fileIcon.Icon className={`h-5 w-5 shrink-0 ${fileIcon.color}`} />
@@ -180,7 +193,6 @@ export function FileRow({ file }: { file: DashboardFile }) {
                 ariaLabel={`选择文件 ${file.name}`}
                 checked={selection.isSelected}
                 className="pointer-events-none absolute inset-0 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100"
-                onChange={selection.handleSelectionChange}
                 onClick={selection.handleSelectionClick}
               />
             </span>

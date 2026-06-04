@@ -83,6 +83,8 @@ export const { useStore, getStoreMethods, getStoreState, getStateSnapshot, subsc
     pendingMoveTarget: null as MoveTarget | null,
     /** Dashboard 当前已多选的文件和文件夹。 */
     selectedDashboardTargets: [] as BatchOperationTarget[],
+    /** Dashboard 多选区间选择的锚点 key。 */
+    dashboardSelectionAnchorKey: null as string | null,
     /** 当前等待确认批量删除的文件和文件夹。 */
     pendingBatchDeleteTargets: null as BatchOperationTarget[] | null,
     /** 当前等待选择批量移动目标目录的文件和文件夹。 */

@@ -1,5 +1,5 @@
 import MdiFolder from '~icons/mdi/folder'
-import type { FileEntry, FolderEntry } from '../../../../types'
+import type { BatchOperationTarget, FileEntry, FolderEntry } from '../../../../types'
 import { getFileIcon } from '../../../constants/fileIcons'
 import { openFilePreview } from '../actions'
 import { useDashboardEntrySelection } from '../hooks/useDashboardEntrySelection'
@@ -32,13 +32,11 @@ function GridEntryCheckbox({
   ariaLabel,
   checked,
   isSelectionActive,
-  onChange,
   onClick,
 }: {
   ariaLabel: string
   checked: boolean
   isSelectionActive: boolean
-  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void
   onClick: (event: React.MouseEvent<HTMLInputElement>) => void
 }) {
   return (
@@ -50,21 +48,30 @@ function GridEntryCheckbox({
           : 'pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100'
       }`.trim()}
       checked={checked}
-      onChange={onChange}
+      readOnly
       onClick={onClick}
       aria-label={ariaLabel}
     />
   )
 }
 
-export function FolderGridItem({ folder }: { folder: DashboardFolder }) {
+export function FolderGridItem({
+  folder,
+  visibleTargets,
+}: {
+  folder: DashboardFolder
+  visibleTargets: BatchOperationTarget[]
+}) {
   const { setPath } = useDashboardPath()
   const entryKey = `folder:${folder.path}`
-  const selection = useDashboardEntrySelection({
-    type: 'folder',
-    path: folder.path,
-    name: folder.name,
-  })
+  const selection = useDashboardEntrySelection(
+    {
+      type: 'folder',
+      path: folder.path,
+      name: folder.name,
+    },
+    visibleTargets,
+  )
 
   return (
     <div
@@ -80,7 +87,6 @@ export function FolderGridItem({ folder }: { folder: DashboardFolder }) {
         ariaLabel={`选择文件夹 ${folder.name}`}
         checked={selection.isSelected}
         isSelectionActive={selection.isSelectionActive}
-        onChange={selection.handleSelectionChange}
         onClick={selection.handleSelectionClick}
       />
       <div
@@ -114,14 +120,23 @@ export function FolderGridItem({ folder }: { folder: DashboardFolder }) {
   )
 }
 
-export function FileGridItem({ file }: { file: DashboardFile }) {
+export function FileGridItem({
+  file,
+  visibleTargets,
+}: {
+  file: DashboardFile
+  visibleTargets: BatchOperationTarget[]
+}) {
   const fileIcon = getFileIcon(file.name)
   const entryKey = `file:${file.path}`
-  const selection = useDashboardEntrySelection({
-    type: 'file',
-    path: file.path,
-    name: file.name,
-  })
+  const selection = useDashboardEntrySelection(
+    {
+      type: 'file',
+      path: file.path,
+      name: file.name,
+    },
+    visibleTargets,
+  )
 
   return (
     <div
@@ -137,7 +152,6 @@ export function FileGridItem({ file }: { file: DashboardFile }) {
         ariaLabel={`选择文件 ${file.name}`}
         checked={selection.isSelected}
         isSelectionActive={selection.isSelectionActive}
-        onChange={selection.handleSelectionChange}
         onClick={selection.handleSelectionClick}
       />
       <div
