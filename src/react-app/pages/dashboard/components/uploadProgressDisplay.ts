@@ -1,10 +1,6 @@
 import type { UploadQueueItem } from "../../../../types";
-import {
-  REMAINING_STATUSES,
-  getUploadQueueTotalProgress,
-} from "../hooks/uploadQueueUtils";
+import { REMAINING_STATUSES, getUploadQueueTotalProgress } from "../hooks/uploadQueueUtils";
 
-const HIDDEN_FILE_ROW_STATUSES = new Set(["success", "canceled"]);
 const FAILED_FILE_ROW_STATUSES = new Set(["failed", "oversized", "duplicate"]);
 
 type FolderUploadRoot = {
@@ -117,7 +113,7 @@ export function getUploadProgressDisplayRows(items: UploadQueueItem[]): UploadPr
   const orderedEntries: OrderedUploadEntry[] = [];
   const folderGroups = new Map<string, FolderUploadGroup>();
 
-  for (const item of items) {
+  for (const item of items.filter((uploadItem) => uploadItem.status !== "canceled")) {
     const folderRoot = getFolderUploadRoot(item);
     if (!folderRoot) {
       orderedEntries.push({ kind: "file", item });
@@ -139,7 +135,7 @@ export function getUploadProgressDisplayRows(items: UploadQueueItem[]): UploadPr
 
   return orderedEntries.flatMap((entry): UploadProgressDisplayRow[] => {
     if (entry.kind === "file") {
-      return HIDDEN_FILE_ROW_STATUSES.has(entry.item.status) ? [] : [entry];
+      return [entry];
     }
 
     const group = folderGroups.get(entry.key);
@@ -148,6 +144,6 @@ export function getUploadProgressDisplayRows(items: UploadQueueItem[]): UploadPr
     }
 
     const folderRow = createFolderDisplayRow(group);
-    return folderRow.remaining > 0 ? [folderRow] : getFailedFileRows(group.items);
+    return folderRow.failed > 0 ? [folderRow, ...getFailedFileRows(group.items)] : [folderRow];
   });
 }

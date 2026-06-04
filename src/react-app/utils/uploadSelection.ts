@@ -2,6 +2,7 @@ import type { UploadQueueItem, UploadQueueStatus } from "../../types";
 
 export const FILE_UPLOAD_BATCH_LIMIT_BYTES = 1024 * 1024 * 1024;
 export const EMPTY_FOLDER_UPLOAD_MESSAGE = "不允许上传空文件夹";
+const ACTIVE_UPLOAD_STATUSES = new Set<UploadQueueStatus>(["queued", "preparing", "uploading"]);
 
 export type UploadSelectionSource = "file" | "folder" | "clipboard";
 
@@ -81,7 +82,11 @@ export function filterFilesAlreadyInUploadQueue({
   currentPath,
   uploadQueue,
 }: FilterFilesAlreadyInUploadQueueArgs): FilterFilesAlreadyInUploadQueueResult {
-  const queuedTargetPaths = new Set(uploadQueue.map((item) => item.targetPath));
+  const queuedTargetPaths = new Set(
+    uploadQueue
+      .filter((item) => ACTIVE_UPLOAD_STATUSES.has(item.status))
+      .map((item) => item.targetPath),
+  );
   const acceptedFiles: File[] = [];
   let ignoredCount = 0;
 

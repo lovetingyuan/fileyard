@@ -119,10 +119,7 @@ function clampUploadProgress(progress: number): number {
   return Math.max(0, Math.min(100, Math.round(progress)));
 }
 
-export function getNextUploadQueueProgress(
-  currentProgress: number,
-  nextProgress: number,
-): number {
+export function getNextUploadQueueProgress(currentProgress: number, nextProgress: number): number {
   return Math.max(clampUploadProgress(currentProgress), clampUploadProgress(nextProgress));
 }
 
@@ -139,12 +136,17 @@ export function clearUploadQueueTasks({
   activeItemPromises.clear();
 }
 
+function getRetainedUploadQueueItems(items: UploadQueueItem[]): UploadQueueItem[] {
+  return items.filter((item) => item.status !== "canceled");
+}
+
 export function countUploadQueueStats(items: UploadQueueItem[]): UploadQueueStats {
-  const remaining = items.filter((item) => REMAINING_STATUSES.has(item.status)).length;
-  const failed = items.filter((item) => FAILED_STATUSES.has(item.status)).length;
+  const retainedItems = getRetainedUploadQueueItems(items);
+  const remaining = retainedItems.filter((item) => REMAINING_STATUSES.has(item.status)).length;
+  const failed = retainedItems.filter((item) => FAILED_STATUSES.has(item.status)).length;
 
   return {
-    total: items.length,
+    total: retainedItems.length,
     remaining,
     failed,
     active: remaining,
@@ -161,7 +163,8 @@ export function getActiveUploadItemsInFolder(
   folderPath: string,
 ): UploadQueueItem[] {
   return items.filter(
-    (item) => REMAINING_STATUSES.has(item.status) && isUploadTargetInFolder(item.targetPath, folderPath),
+    (item) =>
+      REMAINING_STATUSES.has(item.status) && isUploadTargetInFolder(item.targetPath, folderPath),
   );
 }
 
@@ -198,17 +201,21 @@ export function getUploadQueueItemProgress(item: UploadQueueItem): number {
 }
 
 export function getUploadQueueTotalProgress(items: UploadQueueItem[]): number {
-  if (items.length === 0) {
+  const retainedItems = getRetainedUploadQueueItems(items);
+  if (retainedItems.length === 0) {
     return 0;
   }
 
-  const totalBytes = items.reduce((sum, item) => sum + item.size, 0);
+  const totalBytes = retainedItems.reduce((sum, item) => sum + item.size, 0);
   if (totalBytes <= 0) {
-    const totalProgress = items.reduce((sum, item) => sum + getUploadQueueItemProgress(item), 0);
-    return Math.round(totalProgress / items.length);
+    const totalProgress = retainedItems.reduce(
+      (sum, item) => sum + getUploadQueueItemProgress(item),
+      0,
+    );
+    return Math.round(totalProgress / retainedItems.length);
   }
 
-  const uploadedBytes = items.reduce(
+  const uploadedBytes = retainedItems.reduce(
     (sum, item) => sum + item.size * (getUploadQueueItemProgress(item) / 100),
     0,
   );
@@ -216,11 +223,12 @@ export function getUploadQueueTotalProgress(items: UploadQueueItem[]): number {
 }
 
 export function getUploadQueuePanelState(items: UploadQueueItem[]): UploadQueuePanelState {
-  const stats = countUploadQueueStats(items);
-  const canceled = items.filter((item) => item.status === "canceled").length;
-  const completed = items.filter((item) => item.status === "success").length;
-  const hasTerminalIssues = stats.failed > 0 || canceled > 0;
-  const isComplete = items.length > 0 && stats.remaining === 0;
+  const retainedItems = getRetainedUploadQueueItems(items);
+  const stats = countUploadQueueStats(retainedItems);
+  const canceled = 0;
+  const completed = retainedItems.filter((item) => item.status === "success").length;
+  const hasTerminalIssues = stats.failed > 0;
+  const isComplete = retainedItems.length > 0 && stats.remaining === 0;
 
   return {
     ...stats,
@@ -230,6 +238,6 @@ export function getUploadQueuePanelState(items: UploadQueueItem[]): UploadQueueP
     canCancelAll: stats.remaining > 0,
     hasTerminalIssues,
     isComplete,
-    shouldShowPanel: items.length > 0,
+    shouldShowPanel: retainedItems.length > 0,
   };
 }
