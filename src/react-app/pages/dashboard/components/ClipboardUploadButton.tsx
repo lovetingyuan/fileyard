@@ -57,7 +57,7 @@ function ClipboardUploadFileRow({ item }: { item: ClipboardUploadItem }) {
   );
 }
 
-export function ClipboardUploadButton({ isFileMutationDisabled }: ClipboardUploadButtonProps) {
+export function useClipboardUploadDialog({ isFileMutationDisabled }: ClipboardUploadButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isReadingClipboard, setIsReadingClipboard] = useState(false);
   const [clipboardItems, setClipboardItems] = useState<ClipboardUploadItem[]>([]);
@@ -128,20 +128,8 @@ export function ClipboardUploadButton({ isFileMutationDisabled }: ClipboardUploa
     closeModal();
   };
 
-  return (
-    <>
-      <div className="tooltip" data-tip="上传剪贴板文件">
-        <button
-          type="button"
-          className="btn btn-square btn-sm border-sky-500 bg-sky-500 text-white hover:border-sky-600 hover:bg-sky-600 focus-visible:outline-sky-500 disabled:border-sky-300 disabled:bg-sky-300"
-          onClick={openModal}
-          disabled={isFileMutationDisabled}
-          aria-label="上传剪贴板文件"
-        >
-          <MdiClipboardFileOutline className="h-5 w-5" />
-        </button>
-      </div>
-
+  return {
+    clipboardUploadDialog: (
       <Dialog
         isOpen={isOpen}
         title="上传剪贴板文件"
@@ -167,7 +155,9 @@ export function ClipboardUploadButton({ isFileMutationDisabled }: ClipboardUploa
               <p className="text-sm font-medium">
                 {isReadingClipboard ? "正在读取剪贴板" : "可点击此处并粘贴"}
               </p>
-              {statusMessage ? <p className="text-xs text-base-content/60">{statusMessage}</p> : null}
+              {statusMessage ? (
+                <p className="text-xs text-base-content/60">{statusMessage}</p>
+              ) : null}
             </div>
           </div>
 
@@ -182,6 +172,31 @@ export function ClipboardUploadButton({ isFileMutationDisabled }: ClipboardUploa
           ) : null}
         </div>
       </Dialog>
+    ),
+    openClipboardUploadDialog: openModal,
+  };
+}
+
+export function ClipboardUploadButton({ isFileMutationDisabled }: ClipboardUploadButtonProps) {
+  const { clipboardUploadDialog, openClipboardUploadDialog } = useClipboardUploadDialog({
+    isFileMutationDisabled,
+  });
+
+  return (
+    <>
+      <div className="tooltip" data-tip="上传剪贴板文件">
+        <button
+          type="button"
+          className="btn btn-square btn-sm border-sky-500 bg-sky-500 text-white hover:border-sky-600 hover:bg-sky-600 focus-visible:outline-sky-500 disabled:border-sky-300 disabled:bg-sky-300"
+          onClick={openClipboardUploadDialog}
+          disabled={isFileMutationDisabled}
+          aria-label="上传剪贴板文件"
+        >
+          <MdiClipboardFileOutline className="h-5 w-5" />
+        </button>
+      </div>
+
+      {clipboardUploadDialog}
     </>
   );
 }
