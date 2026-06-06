@@ -25,7 +25,7 @@ const GRID_ITEM_NAME_CLASS =
 const GRID_ACTIONS_CLASS =
   'absolute right-1 top-1 z-20 opacity-100 transition-opacity focus-within:z-[90] [@media(hover:hover)]:pointer-events-none [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-focus-within:pointer-events-auto [@media(hover:hover)]:group-focus-within:opacity-100 [@media(hover:hover)]:group-hover:pointer-events-auto [@media(hover:hover)]:group-hover:opacity-100'
 const GRID_CHECKBOX_CLASS =
-  'checkbox checkbox-primary checkbox-sm absolute left-2 top-2 z-30 h-5 w-5 transition-opacity'
+  'checkbox checkbox-primary border-2 checkbox-sm absolute left-2 top-2 z-30 h-5 w-5 transition-opacity'
 const GRID_SELECTED_ITEM_CLASS = 'bg-primary/15 ring-1 ring-primary/40 hover:bg-primary/20'
 
 function GridEntryCheckbox({

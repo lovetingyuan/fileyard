@@ -6,6 +6,10 @@ import { closeNewTextFile, setSavingTextFile, updateNewTextFileDraft } from "../
 import { runWithLargeFileUploadToast } from "../fileOperations";
 import { useDashboardFileView } from "../hooks/useDashboardFileView";
 import { useDashboardPath } from "../hooks/useDashboardPath";
+import {
+  getNewTextFileConfirmButtonClassName,
+  getNewTextFileConfirmText,
+} from "./newTextFileModalState";
 
 export function NewTextFileModal() {
   const { addNewTextFile } = useAppStore();
@@ -46,8 +50,9 @@ export function NewTextFileModal() {
       title="新建文本文件"
       onClose={closeNewTextFile}
       onConfirm={handleSave}
-      confirmText="保存"
+      confirmText={getNewTextFileConfirmText(addNewTextFile.name)}
       confirmPendingText="保存中..."
+      confirmButtonClassName={getNewTextFileConfirmButtonClassName(addNewTextFile.name)}
       confirmDisabled={!addNewTextFile.name.trim()}
       boxClassName="flex w-[95vw] max-w-3xl flex-col"
       bodyClassName="flex flex-1 flex-col gap-4"

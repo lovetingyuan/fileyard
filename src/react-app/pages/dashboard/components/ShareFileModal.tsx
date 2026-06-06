@@ -1,231 +1,230 @@
-import { useRef, useState, type ComponentType, type CSSProperties } from "react";
-import QRCodeImport from "react-qr-code";
-import toast from "react-hot-toast";
-import type { ShareDurationOption, ShareLinkResponse } from "../../../../types";
-import { Dialog } from "../../../components/Dialog";
-import { ShareLinkCopyButton } from "../../../components/ShareLinkCopyButton";
-import { useCreateShareLinkMutation } from "../../../hooks/useFilesApi";
-import { useAppStore } from "../../../store";
-import { getSharePasswordError, normalizeSharePassword } from "../../../utils/sharePassword";
+import { useRef, useState, type ComponentType } from 'react'
+import QRCodeImport from 'react-qr-code'
+import toast from 'react-hot-toast'
+import type { ShareDurationOption, ShareLinkResponse } from '../../../../types'
+import { Dialog } from '../../../components/Dialog'
+import { ShareLinkCopyButton } from '../../../components/ShareLinkCopyButton'
+import { useCreateShareLinkMutation } from '../../../hooks/useFilesApi'
+import { useAppStore } from '../../../store'
+import { getSharePasswordError, normalizeSharePassword } from '../../../utils/sharePassword'
 import {
   formatShareDuration,
   formatShareExpiry,
   shareDurationOptions,
-} from "../../../utils/shareDurations";
-import { closeFileShare } from "../actions";
+} from '../../../utils/shareDurations'
+import { closeFileShare } from '../actions'
 
 type QRCodeComponentProps = {
-  value: string;
-  size?: number;
-  className?: string;
-  bgColor?: string;
-  fgColor?: string;
-  style?: CSSProperties;
-};
+  value: string
+  size?: number
+  className?: string
+  bgColor?: string
+  fgColor?: string
+}
 
-const DEFAULT_SHARE_DURATION: ShareDurationOption = 3600;
+const DEFAULT_SHARE_DURATION: ShareDurationOption = 3600
 const QRCode = ((QRCodeImport as unknown as { QRCode?: unknown; default?: unknown }).QRCode ??
   (QRCodeImport as unknown as { default?: unknown }).default ??
-  QRCodeImport) as ComponentType<QRCodeComponentProps>;
+  QRCodeImport) as ComponentType<QRCodeComponentProps>
 
 export function ShareFileModal() {
-  const { currentFile, sharing } = useAppStore();
-  const file = sharing ? currentFile : null;
+  const { currentFile, sharing } = useAppStore()
+  const file = sharing ? currentFile : null
   const [expiresInSeconds, setExpiresInSeconds] =
-    useState<ShareDurationOption>(DEFAULT_SHARE_DURATION);
-  const [sharePassword, setSharePassword] = useState("");
-  const [shareLink, setShareLink] = useState<ShareLinkResponse | null>(null);
-  const [isLinkCopied, setIsLinkCopied] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const requestIdRef = useRef(0);
-  const copyFeedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { createShareLink, isMutating } = useCreateShareLinkMutation();
+    useState<ShareDurationOption>(DEFAULT_SHARE_DURATION)
+  const [sharePassword, setSharePassword] = useState('')
+  const [shareLink, setShareLink] = useState<ShareLinkResponse | null>(null)
+  const [isLinkCopied, setIsLinkCopied] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const requestIdRef = useRef(0)
+  const copyFeedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const { createShareLink, isMutating } = useCreateShareLinkMutation()
 
   const clearCopyFeedbackTimeout = () => {
     if (copyFeedbackTimeoutRef.current === null) {
-      return;
+      return
     }
 
-    clearTimeout(copyFeedbackTimeoutRef.current);
-    copyFeedbackTimeoutRef.current = null;
-  };
-
-  const resetCopyFeedback = () => {
-    clearCopyFeedbackTimeout();
-    setIsLinkCopied(false);
-  };
-
-  const clearGeneratedLink = () => {
-    requestIdRef.current += 1;
-    resetCopyFeedback();
-    setShareLink(null);
-    setLoadError(null);
-  };
-
-  if (!file) {
-    return null;
+    clearTimeout(copyFeedbackTimeoutRef.current)
+    copyFeedbackTimeoutRef.current = null
   }
 
-  const passwordError = getSharePasswordError(sharePassword);
-  const normalizedPassword = normalizeSharePassword(sharePassword);
-  const shareDurationLabel = formatShareDuration(expiresInSeconds);
-  const isLoading = isMutating;
+  const resetCopyFeedback = () => {
+    clearCopyFeedbackTimeout()
+    setIsLinkCopied(false)
+  }
+
+  const clearGeneratedLink = () => {
+    requestIdRef.current += 1
+    resetCopyFeedback()
+    setShareLink(null)
+    setLoadError(null)
+  }
+
+  if (!file) {
+    return null
+  }
+
+  const passwordError = getSharePasswordError(sharePassword)
+  const normalizedPassword = normalizeSharePassword(sharePassword)
+  const shareDurationLabel = formatShareDuration(expiresInSeconds)
+  const isLoading = isMutating
   const shareText = shareLink
     ? [
         `文件名：${shareLink.fileName}`,
         `过期时间：${formatShareExpiry(shareLink.expiresAt)}`,
         `有效时长：${shareDurationLabel}`,
-        shareLink.passwordProtected ? "该链接需要分享密码，请通过其他渠道发送密码。" : null,
+        shareLink.passwordProtected ? '该链接需要分享密码，请通过其他渠道发送密码。' : null,
         `下载链接：${shareLink.shareUrl}`,
       ]
         .filter((line): line is string => Boolean(line))
-        .join("\n")
-    : "";
+        .join('\n')
+    : ''
 
   const handleClose = () => {
-    resetCopyFeedback();
-    closeFileShare();
-  };
+    resetCopyFeedback()
+    closeFileShare()
+  }
 
   const handleGenerateShareLink = async () => {
     if (passwordError) {
-      return;
+      return
     }
 
-    const currentRequestId = requestIdRef.current + 1;
-    requestIdRef.current = currentRequestId;
-    resetCopyFeedback();
-    setLoadError(null);
-    setShareLink(null);
+    const currentRequestId = requestIdRef.current + 1
+    requestIdRef.current = currentRequestId
+    resetCopyFeedback()
+    setLoadError(null)
+    setShareLink(null)
 
     try {
       const response = await createShareLink(
         file.path,
         expiresInSeconds,
         normalizedPassword || undefined,
-      );
+      )
       if (requestIdRef.current !== currentRequestId) {
-        return;
+        return
       }
-      setShareLink(response);
+      setShareLink(response)
     } catch (error) {
       if (requestIdRef.current !== currentRequestId) {
-        return;
+        return
       }
-      setLoadError(error instanceof Error ? error.message : "Failed to generate share link");
+      setLoadError(error instanceof Error ? error.message : 'Failed to generate share link')
     }
-  };
+  }
 
   const handleCopyLink = async () => {
     if (!shareLink) {
-      return;
+      return
     }
 
     try {
-      await navigator.clipboard.writeText(shareLink.shareUrl);
-      clearCopyFeedbackTimeout();
-      setIsLinkCopied(true);
+      await navigator.clipboard.writeText(shareLink.shareUrl)
+      clearCopyFeedbackTimeout()
+      setIsLinkCopied(true)
       copyFeedbackTimeoutRef.current = setTimeout(() => {
-        copyFeedbackTimeoutRef.current = null;
-        setIsLinkCopied(false);
-      }, 1600);
+        copyFeedbackTimeoutRef.current = null
+        setIsLinkCopied(false)
+      }, 1600)
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to copy share link");
+      toast.error(error instanceof Error ? error.message : 'Failed to copy share link')
     }
-  };
+  }
 
   const handleShare = async () => {
     if (!shareLink) {
-      await handleGenerateShareLink();
-      return;
+      await handleGenerateShareLink()
+      return
     }
 
     try {
-      if (typeof navigator.share === "function") {
+      if (typeof navigator.share === 'function') {
         await navigator.share({
           title: shareLink.fileName,
           text: shareText,
           url: shareLink.shareUrl,
-        });
-        return;
+        })
+        return
       }
 
-      await navigator.clipboard.writeText(shareText);
-      toast.success("浏览器不支持系统分享，已复制分享内容");
+      await navigator.clipboard.writeText(shareText)
+      toast.success('浏览器不支持系统分享，已复制分享内容')
     } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") {
-        return;
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        return
       }
 
-      if (typeof navigator.share !== "function") {
-        toast.error(error instanceof Error ? error.message : "Failed to copy share link");
-        return;
+      if (typeof navigator.share !== 'function') {
+        toast.error(error instanceof Error ? error.message : 'Failed to copy share link')
+        return
       }
 
-      toast.error(error instanceof Error ? error.message : "Failed to share file");
+      toast.error(error instanceof Error ? error.message : 'Failed to share file')
     }
-  };
+  }
 
   return (
     <Dialog
       isOpen
-      title={<h3 className="text-lg font-semibold text-base-content">文件分享</h3>}
+      title={<h3 className="text-xl font-semibold tracking-normal text-base-content">文件分享</h3>}
       onClose={handleClose}
       onConfirm={handleShare}
-      confirmText={shareLink ? "分享" : "生成链接"}
+      confirmText={shareLink ? '分享' : '生成链接'}
       confirmLoadingText="生成中"
       confirmDisabled={isLoading || Boolean(passwordError)}
       confirmLoading={isLoading}
-      boxClassName="max-w-xl bg-base-100 px-4 py-3.5 shadow-xl sm:px-5"
-      bodyClassName="pt-1"
+      boxClassName="w-[min(48rem,94vw)] max-w-none border border-base-300/70 bg-base-100 p-0 shadow-2xl"
+      headerClassName="mb-0 border-b border-base-200 px-5 py-4 sm:px-6"
+      bodyClassName="px-5 py-5 sm:px-6"
+      footerClassName="mt-0 border-t border-base-200 px-5 py-4 sm:px-6"
       closeButtonAriaLabel="关闭分享弹窗"
-      closeButtonClassName="btn-xs"
+      confirmButtonClassName="btn btn-sm btn-primary min-w-24"
     >
-      <>
-        <div className="flex flex-col gap-4 sm:grid sm:grid-cols-[1.15fr_0.85fr] sm:items-start">
-          <div className="order-last sm:order-first">
-            <div className="flex w-full flex-col items-center gap-1">
-              <div className="flex w-full justify-center bg-white p-2">
-                {shareLink ? (
-                  <QRCode
-                    value={shareLink.shareUrl}
-                    size={216}
-                    className="h-54 w-54"
-                    bgColor="#ffffff"
-                    fgColor="#111827"
-                    style={{ shapeRendering: "crispEdges" }}
-                  />
-                ) : (
-                  <div className="flex h-54 w-54 flex-col items-center justify-center gap-2 text-center text-base-content/55">
-                    <div className="text-sm font-medium">生成后显示二维码</div>
-                    <div className="max-w-44 text-xs leading-5">
-                      可设置分享密码，生成后再复制或分享链接
-                    </div>
-                  </div>
-                )}
+      <div className="grid gap-5 sm:grid-cols-[15rem_minmax(0,1fr)] md:items-start">
+        <div className="mx-auto grid aspect-square w-full max-w-72 place-items-center rounded-lg border border-base-300/80 bg-white p-2 md:max-w-none">
+          {shareLink ? (
+            <QRCode
+              value={shareLink.shareUrl}
+              size={200}
+              className="block h-auto w-full max-w-[12.5rem] [shape-rendering:crispEdges]"
+              bgColor="#ffffff"
+              fgColor="#111827"
+            />
+          ) : (
+            <div className="flex aspect-square w-full max-w-[12.5rem] flex-col items-center justify-center gap-2 text-center text-base-content/55">
+              <div className="text-sm font-medium text-base-content/70">生成后显示二维码</div>
+              <div className="max-w-44 text-xs leading-5 text-base-content/50">
+                可设置分享密码，生成后再复制或分享链接
               </div>
+            </div>
+          )}
+        </div>
+
+        <div className="min-w-0 space-y-4">
+          <div className="rounded-lg border border-base-300/70 bg-base-200/30 px-4 py-3">
+            <div className="text-xs font-medium text-base-content/45">文件名</div>
+            <div
+              className="mt-1 overflow-hidden text-sm font-medium leading-6 text-base-content [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]"
+              title={file.name}
+            >
+              {file.name}
             </div>
           </div>
 
-          <div className="min-w-0 space-y-3.5">
-            <div className="space-y-1">
-              <div className="text-sm text-base-content/50">文件名</div>
-              <div className="overflow-hidden font-mono text-sm font-medium leading-5 tracking-tight text-base-content [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]">
-                {file.name}
-              </div>
-            </div>
-
-            <label className="form-control flex items-center justify-between gap-1.5">
-              <span className="text-sm text-base-content/50">有效时长</span>
+          <div className="space-y-3">
+            <label className="grid gap-2 sm:grid-cols-[5.5rem_minmax(0,1fr)] sm:items-center">
+              <span className="text-sm font-medium text-base-content/50">有效时长</span>
               <select
-                className="select select-sm w-full max-w-35"
+                className="select select-sm w-full"
                 value={String(expiresInSeconds)}
-                onChange={(event) => {
-                  setExpiresInSeconds(Number(event.target.value) as ShareDurationOption);
-                  clearGeneratedLink();
+                onChange={event => {
+                  setExpiresInSeconds(Number(event.target.value) as ShareDurationOption)
+                  clearGeneratedLink()
                 }}
               >
-                {shareDurationOptions.map((option) => (
+                {shareDurationOptions.map(option => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
@@ -233,35 +232,36 @@ export function ShareFileModal() {
               </select>
             </label>
 
-            <label className="form-control gap-1.5">
-              <span className="text-sm text-base-content/50">分享密码</span>
-              <input
-                type="password"
-                className={`input input-sm w-full ${passwordError ? "input-error" : ""}`.trim()}
-                value={sharePassword}
-                autoComplete="new-password"
-                placeholder="可选，至少 6 位"
-                onChange={(event) => {
-                  setSharePassword(event.target.value);
-                  clearGeneratedLink();
-                }}
-              />
-              <span className={`text-xs ${passwordError ? "text-error" : "text-base-content/55"}`}>
-                {passwordError ?? "留空则无需密码；密码不会放进分享文本"}
+            <label className="grid gap-2 sm:grid-cols-[5.5rem_minmax(0,1fr)] sm:items-start">
+              <span className="pt-2 text-sm font-medium text-base-content/50">分享密码</span>
+              <span className="min-w-0 space-y-1">
+                <input
+                  type="password"
+                  className={`input input-sm w-full ${passwordError ? 'input-error' : ''}`.trim()}
+                  value={sharePassword}
+                  autoComplete="new-password"
+                  placeholder="可选，至少 6 位"
+                  onChange={event => {
+                    setSharePassword(event.target.value)
+                    clearGeneratedLink()
+                  }}
+                />
+                {passwordError ? (
+                  <span className="block text-xs text-error">{passwordError}</span>
+                ) : null}
               </span>
             </label>
+          </div>
 
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-2">
-                <div className="text-sm text-base-content/50">下载链接</div>
-                {shareLink?.passwordProtected ? (
-                  <span className="badge badge-outline badge-xs">需要密码</span>
-                ) : null}
-              </div>
+          <div className="grid gap-2 sm:grid-cols-[5.5rem_minmax(0,1fr)] sm:items-start">
+            <div className="flex min-h-8 items-center gap-2 text-sm font-medium text-base-content/50">
+              <span>下载链接</span>
+            </div>
+            <div className="min-w-0">
               {loadError ? (
-                <div className="text-base text-error">{loadError}</div>
+                <div className="text-sm leading-6 text-error">{loadError}</div>
               ) : shareLink ? (
-                <div className="flex items-center gap-2">
+                <div className="flex min-w-0 items-center gap-2">
                   <a
                     href={shareLink.shareUrl}
                     target="_blank"
@@ -277,12 +277,12 @@ export function ShareFileModal() {
                   />
                 </div>
               ) : (
-                <div className="text-sm text-base-content/50">点击“生成链接”后显示</div>
+                <div className="text-sm leading-6 text-base-content/50">点击“生成链接”后显示</div>
               )}
             </div>
           </div>
         </div>
-      </>
+      </div>
     </Dialog>
-  );
+  )
 }

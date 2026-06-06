@@ -9,7 +9,8 @@ import type { SearchMatchRange } from '../utils/searchMatch'
 import { FileActionsMenu, FolderActionsMenu } from './FileEntryActions'
 import { FileEntryName } from './FileEntryName'
 
-const ENTRY_CHECKBOX_CLASS = 'checkbox checkbox-primary checkbox-sm h-5 w-5 shrink-0'
+const ENTRY_CHECKBOX_CLASS = 'checkbox checkbox-primary border-2 checkbox-sm h-5 w-5 shrink-0'
+const STRIPED_ROW_CLASS = 'even:bg-base-200/50'
 const SELECTED_ROW_CLASS = '[&_td]:bg-primary/15'
 
 function TableEntryCheckbox({
@@ -80,7 +81,7 @@ export function FolderRow({
 
   return (
     <tr
-      className={`group ${selection.isSelectionActive ? 'cursor-pointer' : ''} ${
+      className={`group ${STRIPED_ROW_CLASS} ${selection.isSelectionActive ? 'cursor-pointer' : ''} ${
         selection.isSelected ? SELECTED_ROW_CLASS : ''
       }`.trim()}
       onClick={selection.handleActiveSelectionClick}
@@ -164,7 +165,7 @@ export function FileRow({
 
   return (
     <tr
-      className={`group ${selection.isSelectionActive ? 'cursor-pointer' : ''} ${
+      className={`group ${STRIPED_ROW_CLASS} ${selection.isSelectionActive ? 'cursor-pointer' : ''} ${
         selection.isSelected ? SELECTED_ROW_CLASS : ''
       }`.trim()}
       onClick={selection.handleActiveSelectionClick}
