@@ -10,6 +10,7 @@ import type {
   RenameRequest,
   SortKey,
   SortOrder,
+  VerifySharePasswordRequest,
 } from "../types";
 import { SHARE_DURATION_OPTIONS } from "../types";
 import type { Context } from "hono";
@@ -221,6 +222,7 @@ function parseCreateShareLinkRequest(value: unknown): CreateShareLinkRequest | n
     !isRecord(value) ||
     typeof value.path !== "string" ||
     typeof value.expiresInSeconds !== "number" ||
+    !isOptionalString(value.password) ||
     !SHARE_DURATION_OPTIONS.includes(
       value.expiresInSeconds as CreateShareLinkRequest["expiresInSeconds"],
     )
@@ -231,6 +233,17 @@ function parseCreateShareLinkRequest(value: unknown): CreateShareLinkRequest | n
   return {
     path: value.path,
     expiresInSeconds: value.expiresInSeconds as CreateShareLinkRequest["expiresInSeconds"],
+    ...(value.password === undefined ? {} : { password: value.password }),
+  };
+}
+
+function parseVerifySharePasswordRequest(value: unknown): VerifySharePasswordRequest | null {
+  if (!isRecord(value) || typeof value.password !== "string") {
+    return null;
+  }
+
+  return {
+    password: value.password,
   };
 }
 
@@ -372,6 +385,7 @@ export const moveJsonValidator = jsonBody(parseMoveRequest);
 export const batchDeleteJsonValidator = jsonBody(parseBatchDeleteRequest);
 export const batchMoveJsonValidator = jsonBody(parseBatchMoveRequest);
 export const createShareLinkJsonValidator = jsonBody(parseCreateShareLinkRequest);
+export const verifySharePasswordJsonValidator = jsonBody(parseVerifySharePasswordRequest);
 export const multipartCreateJsonValidator = jsonBody(parseMultipartUploadCreateRequest);
 export const multipartCompleteJsonValidator = jsonBody(parseMultipartUploadCompleteRequest);
 

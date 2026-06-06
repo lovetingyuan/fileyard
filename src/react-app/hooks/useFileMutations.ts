@@ -262,10 +262,8 @@ export function useBatchMoveEntriesMutation() {
     },
   );
 
-  const batchMoveEntries = (
-    targets: BatchMoveRequest["targets"],
-    targetParentPath: string,
-  ) => trigger({ targets, targetParentPath });
+  const batchMoveEntries = (targets: BatchMoveRequest["targets"], targetParentPath: string) =>
+    trigger({ targets, targetParentPath });
 
   return {
     batchMoveEntries,
@@ -294,7 +292,13 @@ export function useCreateShareLinkMutation() {
   const createShareLink = (
     path: string,
     expiresInSeconds: CreateShareLinkRequest["expiresInSeconds"],
-  ) => trigger({ path, expiresInSeconds });
+    password?: string,
+  ) =>
+    trigger({
+      path,
+      expiresInSeconds,
+      ...(password ? { password } : {}),
+    });
 
   return {
     createShareLink,

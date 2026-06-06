@@ -18,6 +18,9 @@ export const SHARE_DURATION_OPTIONS = [600, 1800, 3600, 7200, 86400] as const;
 
 export type ShareDurationOption = (typeof SHARE_DURATION_OPTIONS)[number];
 
+export const SHARE_PASSWORD_MIN_LENGTH = 6;
+export const SHARE_PASSWORD_MAX_LENGTH = 128;
+
 export interface ProfileResponse {
   success: true;
   profile: Profile;
@@ -249,6 +252,7 @@ export interface FileMutationResponse {
 export interface CreateShareLinkRequest {
   path: string;
   expiresInSeconds: ShareDurationOption;
+  password?: string;
 }
 
 export interface ShareLinkResponse {
@@ -257,16 +261,39 @@ export interface ShareLinkResponse {
   expiresAt: string;
   expiresInSeconds: ShareDurationOption;
   shareUrl: string;
+  passwordProtected: boolean;
 }
 
-export type SharedFileStatus = "active" | "expired" | "missing";
+export type SharedFileStatus = "active" | "expired" | "missing" | "locked";
 
-export interface SharedFileMetadataResponse {
+export interface VerifySharePasswordRequest {
+  password: string;
+}
+
+interface SharedFileMetadataBaseResponse {
   success: true;
   status: SharedFileStatus;
+  serverNow: string;
+  passwordProtected: boolean;
+}
+
+export interface LockedSharedFileMetadataResponse extends SharedFileMetadataBaseResponse {
+  status: "locked";
+  fileName: null;
+  expiresAt: null;
+  expiresInSeconds: null;
+  downloadUrl: null;
+  passwordProtected: true;
+}
+
+export interface ResolvedSharedFileMetadataResponse extends SharedFileMetadataBaseResponse {
+  status: Exclude<SharedFileStatus, "locked">;
   fileName: string;
   expiresAt: string;
   expiresInSeconds: ShareDurationOption;
-  serverNow: string;
   downloadUrl: string | null;
 }
+
+export type SharedFileMetadataResponse =
+  | LockedSharedFileMetadataResponse
+  | ResolvedSharedFileMetadataResponse;
