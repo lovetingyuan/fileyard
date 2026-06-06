@@ -234,9 +234,9 @@ export const FileToolbar = forwardRef<FileToolbarHandle, FileToolbarProps>(funct
           <LayoutToggleButton />
           <FileSortMenu />
           <div
-            className={`group/search relative h-8 max-w-full min-w-0 shrink-0 transition-[width] duration-200 ease-in-out focus-within:order-last focus-within:basis-full focus-within:w-full sm:focus-within:order-0 sm:focus-within:basis-auto sm:focus-within:w-40 ${
+            className={`group/search relative h-8 max-w-full min-w-0 shrink-0 transition-[width] duration-200 ease-in-out focus-within:order-last focus-within:basis-full focus-within:w-full sm:focus-within:order-0 sm:focus-within:basis-auto sm:focus-within:w-52 ${
               isSearchExpanded
-                ? 'order-last basis-full w-full sm:order-0 sm:basis-auto sm:w-40'
+                ? 'order-last basis-full w-full sm:order-0 sm:basis-auto sm:w-52'
                 : 'basis-8 w-8'
             }`}
           >
@@ -244,7 +244,7 @@ export const FileToolbar = forwardRef<FileToolbarHandle, FileToolbarProps>(funct
               <input
                 ref={searchInputRef}
                 type="text"
-                className={`placeholder:text-[12px] input input-sm input-bordered absolute top-0 right-0 h-8 w-full min-w-0 transition-opacity duration-150 ease-in-out sm:w-40 group-focus-within/search:border-base-300 group-focus-within/search:bg-base-100 group-focus-within/search:opacity-100 group-focus-within/search:outline-none ${
+                className={`placeholder:text-[12px] input input-sm input-bordered absolute top-0 right-0 h-8 w-full min-w-0 transition-opacity duration-150 ease-in-out sm:w-52 group-focus-within/search:border-base-300 group-focus-within/search:bg-base-100 group-focus-within/search:opacity-100 group-focus-within/search:outline-none ${
                   isSearchExpanded
                     ? 'border-base-300 bg-base-100 pr-9 opacity-100'
                     : 'border-transparent bg-transparent pr-9 opacity-0'

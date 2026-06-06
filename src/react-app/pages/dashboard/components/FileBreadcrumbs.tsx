@@ -1,3 +1,4 @@
+import clsx from 'clsx/lite'
 import MdiChevronRight from '~icons/mdi/chevron-right'
 import MdiHomeOutline from '~icons/mdi/home-outline'
 import MdiInformationOutline from '~icons/mdi/information-outline'
@@ -16,6 +17,7 @@ export function FileBreadcrumbs({
 }: FileBreadcrumbsProps) {
   const { breadcrumbs, currentPath, setPath } = useDashboardPath()
   const isActionDisabled = isCurrentPathMissing || isNavigationDisabled
+  const isRootPath = breadcrumbs.length === 0
 
   return (
     <nav className="min-w-0 max-w-full flex-1 basis-[max-content]" aria-label="文件路径">
@@ -23,9 +25,10 @@ export function FileBreadcrumbs({
         <li className="flex min-w-0 items-center">
           <button
             type="button"
-            className={`${getBreadcrumbButtonClassName(
-              isNavigationDisabled,
-            )} inline-flex items-center gap-1`}
+            className={clsx(
+              isRootPath ? 'text-base-content' : getBreadcrumbButtonClassName(isNavigationDisabled),
+              'inline-flex items-center gap-1',
+            )}
             disabled={isNavigationDisabled}
             onClick={() => setPath('')}
           >
