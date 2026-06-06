@@ -109,7 +109,7 @@ export const FileToolbar = forwardRef<FileToolbarHandle, FileToolbarProps>(funct
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-5">
       <input
         ref={fileInputRef}
         type="file"
@@ -132,7 +132,7 @@ export const FileToolbar = forwardRef<FileToolbarHandle, FileToolbarProps>(funct
       {!isCurrentPathMissing && isBatchSelectionActive ? <BatchSelectionToolbar /> : null}
 
       {!isCurrentPathMissing && !isBatchSelectionActive ? (
-        <div className="ml-auto flex w-full min-w-0 flex-wrap items-center justify-end gap-3 sm:w-auto sm:flex-1 sm:gap-4">
+        <div className="ml-auto flex w-max max-w-full min-w-0 flex-wrap items-center justify-end gap-3 sm:gap-4">
           <Dropdown
             containerClassName="shrink-0"
             trigger={
@@ -146,7 +146,7 @@ export const FileToolbar = forwardRef<FileToolbarHandle, FileToolbarProps>(funct
             triggerAriaLabel="上传"
             disabled={isFileMutationDisabled}
             placement="bottom-end"
-            contentClassName="menu menu-sm bg-base-200 rounded-box z-20 mt-1 w-44 border border-base-300/60 p-2 shadow-lg space-y-1"
+            contentClassName="menu menu-md bg-base-200 rounded-box z-20 mt-1 w-44 border border-base-300/60 p-2 shadow-lg space-y-1"
           >
             <li>
               <button
@@ -204,7 +204,7 @@ export const FileToolbar = forwardRef<FileToolbarHandle, FileToolbarProps>(funct
             triggerAriaLabel="新建"
             disabled={isFileMutationDisabled}
             placement="bottom-end"
-            contentClassName="menu menu-sm bg-base-200 rounded-box z-20 mt-1 w-44 border border-base-300/60 p-2 shadow-lg space-y-1"
+            contentClassName="menu menu-md bg-base-200 rounded-box z-20 mt-1 w-44 border border-base-300/60 p-2 shadow-lg space-y-1"
           >
             <li>
               <button

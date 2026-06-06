@@ -14,7 +14,7 @@ export function BatchSelectionToolbar() {
   const isEmpty = selectedDashboardTargets.length === 0;
 
   return (
-    <div className="ml-auto flex min-w-0 items-center justify-end gap-2 sm:gap-3">
+    <div className="ml-auto flex w-max max-w-full min-w-0 flex-wrap items-center justify-end gap-2 sm:gap-3">
       <span className="shrink-0 text-sm text-base-content/70">
         已选择 {selectedDashboardTargets.length} 项
       </span>
