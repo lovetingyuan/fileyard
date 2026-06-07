@@ -62,6 +62,18 @@ export function toggleDashboardLayoutMode() {
   setDashboardLayoutMode(getNextDashboardLayoutMode(getDashboardLayoutMode()));
 }
 
+export function setDashboardTreeSidebarOpen(isOpen: boolean) {
+  const { setIsDashboardTreeSidebarOpen } = getStoreMethods();
+
+  setIsDashboardTreeSidebarOpen(isOpen);
+}
+
+export function toggleDashboardTreeSidebar() {
+  const { getIsDashboardTreeSidebarOpen, setIsDashboardTreeSidebarOpen } = getStoreMethods();
+
+  setIsDashboardTreeSidebarOpen(!getIsDashboardTreeSidebarOpen());
+}
+
 export function startCreateFolder(defaultName: string) {
   const { setAddNewFolderName, setIsCreatingNewFolder } = getStoreMethods();
 

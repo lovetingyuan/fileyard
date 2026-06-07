@@ -10,6 +10,7 @@ import { BatchMoveModal } from './components/BatchMoveModal'
 import { DeleteConfirmModal } from './components/DeleteConfirmModal'
 import { DirectoryStatsModal } from './components/DirectoryStatsModal'
 import { FileDetailsModal } from './components/FileDetailsModal'
+import { FileTreeSidebar } from './components/FileTreeSidebar'
 import { FileToolbar, type FileToolbarHandle } from './components/FileToolbar'
 import { MoveModal } from './components/MoveModal'
 import { NewFolderModal } from './components/NewFolderModal'
@@ -149,7 +150,7 @@ export function Dashboard() {
   }
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       <DeleteConfirmModal />
       {pendingBatchDeleteTargets ? <BatchDeleteConfirmModal /> : null}
       <DirectoryStatsModal />
@@ -162,50 +163,57 @@ export function Dashboard() {
       {isCreatingNewFolder ? <NewFolderModal key={addNewFolderName} /> : null}
       <NewTextFileModal />
       <UploadProgressPanel />
-      <main className="mx-auto flex w-[96%] max-w-300 flex-1 flex-col gap-4 py-6 md:w-[90%]">
-        <section className="card bg-base-100 shadow-sm">
-          <div
-            className={`card-body gap-6 rounded-box border border-transparent transition-colors duration-150 ${
-              isDraggingUpload ? 'border-primary bg-primary/30 ring-2 ring-primary/40' : ''
-            }`}
-            onDragEnter={handleDragEnter}
-            onDragLeave={handleDragLeave}
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
-          >
-            <FileToolbar ref={fileToolbarRef} isCurrentPathMissing={isCurrentPathMissing} />
+      <div className="flex min-h-0 flex-1">
+        <FileTreeSidebar />
+        <main className="min-w-0 flex-1 overflow-auto">
+          <div className="mx-auto flex min-h-full w-[96%] max-w-300 flex-col gap-4 py-6 md:w-[90%]">
+            <section className="card bg-base-100 shadow-sm">
+              <div
+                className={`card-body gap-6 rounded-box border border-transparent transition-colors duration-150 ${
+                  isDraggingUpload ? 'border-primary bg-primary/30 ring-2 ring-primary/40' : ''
+                }`}
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+              >
+                <FileToolbar ref={fileToolbarRef} isCurrentPathMissing={isCurrentPathMissing} />
 
-            {isCurrentPathMissing ? (
-              <div className="rounded-box border border-warning/30 bg-warning/10 p-10">
-                <div className="flex flex-col items-center gap-3 text-center text-base-content/70">
-                  <MdiAlertCircleOutline className="h-12 w-12 text-warning" />
-                  <div className="space-y-1">
-                    <h2 className="text-base font-medium text-base-content">当前文件路径不存在</h2>
-                    <p className="break-all text-sm">
-                      无法找到路径{' '}
-                      <span className="font-mono text-base-content">/{currentPath}</span>
-                    </p>
+                {isCurrentPathMissing ? (
+                  <div className="rounded-box border border-warning/30 bg-warning/10 p-10">
+                    <div className="flex flex-col items-center gap-3 text-center text-base-content/70">
+                      <MdiAlertCircleOutline className="h-12 w-12 text-warning" />
+                      <div className="space-y-1">
+                        <h2 className="text-base font-medium text-base-content">
+                          当前文件路径不存在
+                        </h2>
+                        <p className="break-all text-sm">
+                          无法找到路径{' '}
+                          <span className="font-mono text-base-content">/{currentPath}</span>
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ) : error ? (
+                  <div className="rounded-box border border-base-300 bg-base-200 p-10">
+                    <div className="flex flex-col items-center gap-3 text-center text-base-content/60">
+                      <MdiAlertCircleOutline className="h-12 w-12 text-error" />
+                      <p className="text-sm">Failed to load files</p>
+                    </div>
+                  </div>
+                ) : (
+                  <DashboardFileList
+                    filteredFiles={filteredFiles}
+                    filteredFolders={filteredFolders}
+                    isLoading={isLoading}
+                    searchInputValue={searchInputValue}
+                  />
+                )}
               </div>
-            ) : error ? (
-              <div className="rounded-box border border-base-300 bg-base-200 p-10">
-                <div className="flex flex-col items-center gap-3 text-center text-base-content/60">
-                  <MdiAlertCircleOutline className="h-12 w-12 text-error" />
-                  <p className="text-sm">Failed to load files</p>
-                </div>
-              </div>
-            ) : (
-              <DashboardFileList
-                filteredFiles={filteredFiles}
-                filteredFolders={filteredFolders}
-                isLoading={isLoading}
-                searchInputValue={searchInputValue}
-              />
-            )}
+            </section>
           </div>
-        </section>
-      </main>
+        </main>
+      </div>
     </div>
   )
 }

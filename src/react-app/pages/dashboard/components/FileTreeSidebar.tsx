@@ -1,0 +1,307 @@
+import { useEffect, useState } from 'react'
+import clsx from 'clsx/lite'
+import MdiAlertCircleOutline from '~icons/mdi/alert-circle-outline'
+import MdiChevronDown from '~icons/mdi/chevron-down'
+import MdiChevronRight from '~icons/mdi/chevron-right'
+import MdiFileTree from '~icons/mdi/file-tree'
+import MdiFolder from '~icons/mdi/folder'
+import MdiFolderOpen from '~icons/mdi/folder-open'
+import type { FileEntry, FolderEntry } from '../../../../types'
+import { useFileList } from '../../../hooks/useFilesApi'
+import { getFileIcon } from '../../../constants/fileIcons'
+import { useAppStore } from '../../../store'
+import { openFilePreview, toggleDashboardTreeSidebar } from '../actions'
+import { useDashboardPath } from '../hooks/useDashboardPath'
+import {
+  getDashboardTreeAutoOpenPaths,
+  mergeDashboardTreeOpenPaths,
+  toggleDashboardTreeOpenPath,
+} from '../utils/fileTreeSidebarState'
+
+const TREE_LEVEL_LOADING_ROW_COUNT = 4
+const TREE_LEVEL_SORT_KEY = 'name'
+const TREE_LEVEL_SORT_ORDER = 'asc'
+
+type FileTreeLevelProps = {
+  currentPath: string
+  isNavigationDisabled: boolean
+  onToggleFolder: (path: string) => void
+  openPaths: string[]
+  path: string
+  setPath: (path: string) => void
+  isRootLevel?: boolean
+}
+
+function getFileTreeLevelClassName(isRootLevel = false) {
+  return clsx(
+    isRootLevel
+      ? 'menu menu-md w-[calc(100%-0.5rem)] rounded-box bg-transparent p-1 [&_li_ul]:ms-2'
+      : 'w-[calc(100%-0.5rem)]',
+    'max-w-full min-w-0 overflow-hidden',
+  )
+}
+
+function FileTreeLoadingRows({ isRootLevel = false }: { isRootLevel?: boolean }) {
+  return (
+    <ul className={getFileTreeLevelClassName(isRootLevel)} aria-busy="true">
+      {Array.from({ length: TREE_LEVEL_LOADING_ROW_COUNT }, (_, index) => (
+        <li key={index} className="w-full max-w-full min-w-0 overflow-hidden">
+          <span className="flex w-full max-w-full min-w-0 items-center gap-2 overflow-hidden px-2 py-1">
+            <span className="skeleton h-4 w-4 shrink-0 rounded-sm" />
+            <span className="skeleton h-3 w-28 max-w-[80%]" />
+          </span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+function FileTreeErrorRow({
+  isRootLevel = false,
+  refresh,
+}: {
+  isRootLevel?: boolean
+  refresh: () => Promise<void>
+}) {
+  return (
+    <ul className={getFileTreeLevelClassName(isRootLevel)}>
+      <li className="w-full max-w-full min-w-0 overflow-hidden">
+        <div className="flex w-full max-w-full min-w-0 items-start gap-2 overflow-hidden rounded-md bg-error/10 px-2 py-2 text-xs text-error">
+          <MdiAlertCircleOutline className="mt-0.5 h-4 w-4 shrink-0" />
+          <span className="min-w-0 flex-1">加载失败</span>
+          <button
+            type="button"
+            className="link shrink-0"
+            onClick={() => {
+              void refresh()
+            }}
+          >
+            重试
+          </button>
+        </div>
+      </li>
+    </ul>
+  )
+}
+
+function FileTreeFolderRow({
+  currentPath,
+  folder,
+  isNavigationDisabled,
+  isOpen,
+  onToggleFolder,
+  openPaths,
+  setPath,
+}: Omit<FileTreeLevelProps, 'path'> & {
+  folder: FolderEntry
+  isOpen: boolean
+}) {
+  const isCurrent = currentPath === folder.path
+  const FolderIcon = isOpen ? MdiFolderOpen : MdiFolder
+  const ChevronIcon = isOpen ? MdiChevronDown : MdiChevronRight
+
+  return (
+    <li className="w-full max-w-full min-w-0 overflow-hidden">
+      <div
+        className={clsx(
+          'flex w-full max-w-full min-w-0 items-center gap-1 overflow-hidden rounded-md px-1 py-0.5',
+          isCurrent && 'menu-active',
+        )}
+      >
+        <button
+          type="button"
+          className="btn btn-ghost btn-square btn-xs h-5 min-h-5 w-5 shrink-0"
+          aria-expanded={isOpen}
+          aria-label={isOpen ? `折叠文件夹 ${folder.name}` : `展开文件夹 ${folder.name}`}
+          onClick={() => onToggleFolder(folder.path)}
+        >
+          <ChevronIcon className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          className="flex w-full max-w-full min-w-0 flex-1 items-center gap-2 overflow-hidden bg-transparent px-1 py-1 text-left disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={isNavigationDisabled}
+          aria-current={isCurrent ? 'page' : undefined}
+          title={folder.name}
+          onClick={() => setPath(folder.path)}
+        >
+          <FolderIcon className="h-4 w-4 shrink-0 text-warning" />
+          <span className="min-w-0 flex-1 truncate font-medium">{folder.name}</span>
+        </button>
+      </div>
+      {isOpen ? (
+        <FileTreeLevel
+          currentPath={currentPath}
+          isNavigationDisabled={isNavigationDisabled}
+          onToggleFolder={onToggleFolder}
+          openPaths={openPaths}
+          path={folder.path}
+          setPath={setPath}
+        />
+      ) : null}
+    </li>
+  )
+}
+
+function FileTreeFileRow({
+  file,
+  isNavigationDisabled,
+}: {
+  file: FileEntry
+  isNavigationDisabled: boolean
+}) {
+  const fileIcon = getFileIcon(file.name)
+
+  return (
+    <li className="w-full max-w-full min-w-0 overflow-hidden">
+      <button
+        type="button"
+        className="flex w-full max-w-full min-w-0 items-center gap-2 overflow-hidden rounded-md px-2 py-1 text-left hover:bg-base-300/70 disabled:cursor-not-allowed disabled:opacity-50"
+        disabled={isNavigationDisabled}
+        title={file.name}
+        onClick={() => openFilePreview(file)}
+      >
+        <fileIcon.Icon className={clsx('h-4 w-4 shrink-0', fileIcon.color)} />
+        <span className="min-w-0 flex-1 truncate">{file.name}</span>
+      </button>
+    </li>
+  )
+}
+
+function FileTreeLevel({
+  currentPath,
+  isNavigationDisabled,
+  isRootLevel = false,
+  onToggleFolder,
+  openPaths,
+  path,
+  setPath,
+}: FileTreeLevelProps) {
+  const { data, error, isLoading, refresh } = useFileList(
+    path,
+    TREE_LEVEL_SORT_KEY,
+    TREE_LEVEL_SORT_ORDER,
+  )
+
+  if (isLoading) {
+    return <FileTreeLoadingRows isRootLevel={isRootLevel} />
+  }
+
+  if (error) {
+    return <FileTreeErrorRow isRootLevel={isRootLevel} refresh={refresh} />
+  }
+
+  return (
+    <ul className={getFileTreeLevelClassName(isRootLevel)} aria-busy="false">
+      {data.folders.map(folder => {
+        const isOpen = openPaths.includes(folder.path)
+        return (
+          <FileTreeFolderRow
+            key={`folder:${folder.path}`}
+            currentPath={currentPath}
+            folder={folder}
+            isNavigationDisabled={isNavigationDisabled}
+            isOpen={isOpen}
+            onToggleFolder={onToggleFolder}
+            openPaths={openPaths}
+            setPath={setPath}
+          />
+        )
+      })}
+      {data.files.map(file => (
+        <FileTreeFileRow
+          key={`file:${file.path}`}
+          file={file}
+          isNavigationDisabled={isNavigationDisabled}
+        />
+      ))}
+    </ul>
+  )
+}
+
+export function FileTreeSidebar() {
+  const { isDashboardTreeSidebarOpen, selectedDashboardTargets } = useAppStore()
+  const { currentPath, setPath } = useDashboardPath()
+  const [openPaths, setOpenPaths] = useState(() => getDashboardTreeAutoOpenPaths(currentPath))
+  const isNavigationDisabled = selectedDashboardTargets.length > 0
+  const isRootCurrent = currentPath === ''
+
+  useEffect(() => {
+    if (!isDashboardTreeSidebarOpen) {
+      return
+    }
+
+    setOpenPaths(paths =>
+      mergeDashboardTreeOpenPaths(paths, getDashboardTreeAutoOpenPaths(currentPath)),
+    )
+  }, [currentPath, isDashboardTreeSidebarOpen])
+
+  const handleToggleFolder = (path: string) => {
+    setOpenPaths(paths => toggleDashboardTreeOpenPath(paths, path))
+  }
+
+  return (
+    <aside
+      className={clsx(
+        'shrink-0 overflow-hidden border-r border-base-300/70 bg-base-100/85 transition-[width] duration-200 ease-in-out',
+        isDashboardTreeSidebarOpen ? 'w-72' : 'w-12',
+      )}
+      aria-label="Home 文件树侧栏"
+    >
+      <div className="flex h-full min-h-0 flex-col">
+        <div className="flex h-13 shrink-0 items-center gap-2 px-2">
+          <button
+            type="button"
+            className="btn btn-ghost btn-square btn-sm shrink-0"
+            aria-expanded={isDashboardTreeSidebarOpen}
+            aria-label={isDashboardTreeSidebarOpen ? '折叠 Home 文件树' : '展开 Home 文件树'}
+            title={isDashboardTreeSidebarOpen ? '折叠 Home 文件树' : '展开 Home 文件树'}
+            onClick={toggleDashboardTreeSidebar}
+          >
+            <MdiFileTree className="h-5 w-5" />
+          </button>
+          {isDashboardTreeSidebarOpen ? (
+            <button
+              type="button"
+              className={clsx(
+                'flex min-w-0 flex-1 items-center gap-2 overflow-hidden rounded-md px-2 py-2 text-left text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50',
+                isRootCurrent
+                  ? 'bg-primary text-primary-content hover:bg-primary/90'
+                  : 'hover:bg-base-200',
+              )}
+              disabled={isNavigationDisabled}
+              aria-current={isRootCurrent ? 'page' : undefined}
+              title="Home"
+              onClick={() => setPath('')}
+            >
+              <MdiFolderOpen
+                className={clsx(
+                  'h-4 w-4 shrink-0',
+                  isRootCurrent ? 'text-primary-content' : 'text-primary',
+                )}
+              />
+              <span className="min-w-0 flex-1 truncate">Home</span>
+            </button>
+          ) : null}
+        </div>
+
+        {isDashboardTreeSidebarOpen ? (
+          <nav
+            className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-2 pb-3"
+            aria-label="Home 文件树"
+          >
+            <FileTreeLevel
+              currentPath={currentPath}
+              isNavigationDisabled={isNavigationDisabled}
+              isRootLevel
+              onToggleFolder={handleToggleFolder}
+              openPaths={openPaths}
+              path=""
+              setPath={setPath}
+            />
+          </nav>
+        ) : null}
+      </div>
+    </aside>
+  )
+}

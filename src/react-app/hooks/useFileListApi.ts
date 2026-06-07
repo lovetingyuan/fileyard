@@ -1,4 +1,4 @@
-import useSWR from "swr";
+import useSWR, { useSWRConfig } from "swr";
 import type {
   DirectoryStatsResponse,
   FileListResponse,
@@ -14,6 +14,7 @@ import {
   buildListUrl,
   buildStatsUrl,
   type FileListKey,
+  isFileListKey,
 } from "./filesApiUrls";
 
 export function getDirectoryStats(path: string) {
@@ -52,7 +53,8 @@ export function useFolderTree(enabled: boolean) {
 }
 
 export function useFileList(path: string, sort: SortKey, order: SortOrder) {
-  const { data, error, isLoading, isValidating, mutate } = useSWR<FileListResponse, ApiError>(
+  const { mutate } = useSWRConfig();
+  const { data, error, isLoading, isValidating } = useSWR<FileListResponse, ApiError>(
     [FILES_ENDPOINT, path, sort, order] as FileListKey,
     (key) => {
       const [, currentPath, currentSort, currentOrder] = key as FileListKey;
@@ -61,7 +63,7 @@ export function useFileList(path: string, sort: SortKey, order: SortOrder) {
   );
 
   const refresh = async () => {
-    await mutate();
+    await mutate((key) => isFileListKey(key));
   };
 
   return {

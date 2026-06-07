@@ -49,6 +49,8 @@ export const { useStore, getStoreMethods, getStoreState, getStateSnapshot, subsc
     dashboardSortOrder: "desc" as SortOrder,
     /** Dashboard 文件列表展示布局。 */
     dashboardLayoutMode: getInitialDashboardLayoutMode(),
+    /** Dashboard 左侧文件树侧栏是否展开。 */
+    isDashboardTreeSidebarOpen: false,
     /** 搜索输入框当前正在编辑的内容。 */
     searchInputValue: "",
     /** 已提交给 Dashboard 文件列表过滤逻辑的搜索关键字。 */

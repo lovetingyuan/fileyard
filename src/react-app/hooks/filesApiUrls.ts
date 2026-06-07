@@ -12,6 +12,17 @@ export const FILE_STATS_ENDPOINT = "/api/files/stats";
 
 export type FileListKey = [string, string, SortKey, SortOrder];
 
+export function isFileListKey(key: unknown): key is FileListKey {
+  return (
+    Array.isArray(key) &&
+    key.length === 4 &&
+    key[0] === FILES_ENDPOINT &&
+    typeof key[1] === "string" &&
+    (key[2] === "name" || key[2] === "size" || key[2] === "uploadedAt") &&
+    (key[3] === "asc" || key[3] === "desc")
+  );
+}
+
 export function buildListUrl(path: string, sort: SortKey, order: SortOrder): string {
   const params = new URLSearchParams({ sort, order });
   if (path) {
