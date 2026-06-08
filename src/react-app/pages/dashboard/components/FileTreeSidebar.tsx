@@ -19,8 +19,6 @@ import {
 } from '../utils/fileTreeSidebarState'
 
 const TREE_LEVEL_LOADING_ROW_COUNT = 4
-const TREE_LEVEL_SORT_KEY = 'name'
-const TREE_LEVEL_SORT_ORDER = 'asc'
 
 type FileTreeLevelProps = {
   currentPath: string
@@ -177,10 +175,11 @@ function FileTreeLevel({
   path,
   setPath,
 }: FileTreeLevelProps) {
+  const { dashboardSortKey, dashboardSortOrder } = useAppStore()
   const { data, error, isLoading, refresh } = useFileList(
     path,
-    TREE_LEVEL_SORT_KEY,
-    TREE_LEVEL_SORT_ORDER,
+    dashboardSortKey,
+    dashboardSortOrder,
   )
 
   if (isLoading) {
