@@ -24,6 +24,7 @@
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.2",
     "hono": "4.12.23",
+    "p-queue": "^9.3.0",
     "react": "19.2.1",
     "react-atomic-store": "^0.0.9",
     "react-dom": "19.2.1",

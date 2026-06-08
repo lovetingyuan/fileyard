@@ -79,7 +79,8 @@ export function useUploadQueue({ currentPath, onUploadsComplete }: UseUploadQueu
   );
 
   const isItemCanceled = useCallback((id: string) => {
-    return itemsRef.current.find((item) => item.id === id)?.status === "canceled";
+    const item = itemsRef.current.find((currentItem) => currentItem.id === id);
+    return !item || item.status === "canceled";
   }, []);
 
   const finishIdleBatch = useCallback(() => {

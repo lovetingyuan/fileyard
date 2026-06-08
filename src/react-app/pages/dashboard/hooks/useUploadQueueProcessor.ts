@@ -1,4 +1,5 @@
 import { useCallback, useRef } from "react";
+import PQueue from "p-queue";
 import type { UploadQueueItem } from "../../../../types";
 import { UploadCanceledError, uploadFileWithProgress } from "../../../utils/fileUpload";
 import {
@@ -42,9 +43,15 @@ export function useUploadQueueProcessor({
   uploadedSinceIdleRef,
 }: UseUploadQueueProcessorArgs) {
   const processQueueRef = useRef<() => void>(() => undefined);
+  const scheduledIdsRef = useRef(new Set<string>());
+  const uploadQueueRef = useRef(new PQueue({ concurrency: maxConcurrentUploads }));
 
   const startItem = useCallback(
     async (item: UploadQueueItem) => {
+      if (isItemCanceled(item.id)) {
+        return;
+      }
+
       activeIdsRef.current.add(item.id);
       setItems((currentItems) =>
         updateUploadQueueItem(currentItems, item.id, {
@@ -136,20 +143,24 @@ export function useUploadQueueProcessor({
   );
 
   const processQueue = useCallback(() => {
-    while (activeIdsRef.current.size < maxConcurrentUploads) {
-      const nextItem = itemsRef.current.find(
-        (item) => item.status === "queued" && !activeIdsRef.current.has(item.id),
-      );
-      if (!nextItem) {
-        break;
+    uploadQueueRef.current.concurrency = maxConcurrentUploads;
+
+    for (const nextItem of itemsRef.current) {
+      if (nextItem.status !== "queued" || scheduledIdsRef.current.has(nextItem.id)) {
+        continue;
       }
-      const startPromise = startItem(nextItem);
+
+      scheduledIdsRef.current.add(nextItem.id);
+      const startPromise = uploadQueueRef.current.add(() => startItem(nextItem), {
+        id: nextItem.id,
+      });
       activeItemPromisesRef.current.set(nextItem.id, startPromise);
       void startPromise.finally(() => {
+        scheduledIdsRef.current.delete(nextItem.id);
         activeItemPromisesRef.current.delete(nextItem.id);
       });
     }
-  }, [activeIdsRef, activeItemPromisesRef, itemsRef, maxConcurrentUploads, startItem]);
+  }, [activeItemPromisesRef, itemsRef, maxConcurrentUploads, startItem]);
 
   processQueueRef.current = processQueue;
 
