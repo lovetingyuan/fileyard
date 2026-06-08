@@ -242,7 +242,7 @@ export function FileTreeSidebar() {
   return (
     <aside
       className={clsx(
-        'shrink-0 overflow-hidden border-r border-base-300/70 bg-base-100/85 transition-[width] duration-200 ease-in-out',
+        'h-full min-h-0 shrink-0 overflow-hidden border-r border-base-300/70 bg-base-100/85 transition-[width] duration-200 ease-in-out',
         isDashboardTreeSidebarOpen ? 'w-72' : 'w-12',
       )}
       aria-label="Home 文件树侧栏"
