@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { type KeyboardEvent, useCallback, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { Dialog } from "../../../components/Dialog";
 import { useRenameFileMutation, useRenameFolderMutation } from "../../../hooks/useFilesApi";
@@ -10,6 +10,7 @@ import {
   FILE_OPERATION_UPLOAD_BLOCKED_MESSAGE,
   isFolderOperationBlockedByActiveUpload,
 } from "../hooks/useUploadQueue";
+import { shouldConfirmFromInputKey } from "../utils/modalKeyboard";
 import {
   focusRenameInput,
   getRenameConfirmButtonClassName,
@@ -125,6 +126,20 @@ export function RenameModal() {
     }
   };
 
+  const handleNameKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (
+      !shouldConfirmFromInputKey({
+        key: event.key,
+        isComposing: event.nativeEvent.isComposing,
+      })
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    void handleSave();
+  };
+
   return (
     <Dialog
       isOpen
@@ -159,6 +174,7 @@ export function RenameModal() {
                 setHasEditedName(true);
                 setName(event.target.value);
               }}
+              onKeyDown={handleNameKeyDown}
               disabled={isInteractionDisabled}
               autoFocus
             />

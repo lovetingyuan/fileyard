@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { type KeyboardEvent, useCallback, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { Dialog } from "../../../components/Dialog";
 import { useCreateFolderMutation } from "../../../hooks/useFilesApi";
@@ -7,6 +7,7 @@ import { validateFolderName } from "../../../utils/folderValidation";
 import { closeCreateFolder, setCreatingFolder } from "../actions";
 import { useDashboardFileView } from "../hooks/useDashboardFileView";
 import { useDashboardPath } from "../hooks/useDashboardPath";
+import { shouldConfirmFromInputKey } from "../utils/modalKeyboard";
 import { focusFolderNameInput, getNewFolderFieldErrorMessage } from "./newFolderModalState";
 
 export function getCreateFolderErrorMessage(error: unknown): string {
@@ -66,6 +67,20 @@ export function NewFolderModal() {
     }
   };
 
+  const handleNameKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (
+      !shouldConfirmFromInputKey({
+        key: event.key,
+        isComposing: event.nativeEvent.isComposing,
+      })
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    void handleCreate();
+  };
+
   return (
     <Dialog
       isOpen
@@ -93,6 +108,7 @@ export function NewFolderModal() {
               setName(event.target.value);
               setCreateErrorMessage(null);
             }}
+            onKeyDown={handleNameKeyDown}
             disabled={isInteractionDisabled}
           />
           {fieldErrorMessage ? <span className="text-xs text-error">{fieldErrorMessage}</span> : null}
