@@ -45,6 +45,7 @@ export function FileEntryName({
   return (
     <span
       ref={registerTextNode}
+      title={name}
       className={selectedDashboardTargets.length > 0 ? 'select-none' : ''}
     >
       {name}
