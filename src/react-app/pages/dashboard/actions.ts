@@ -74,6 +74,32 @@ export function toggleDashboardTreeSidebar() {
   setIsDashboardTreeSidebarOpen(!getIsDashboardTreeSidebarOpen());
 }
 
+export function requestDashboardFileLocation(filePath: string) {
+  const {
+    setCurrentFile,
+    setDashboardLocatedFilePath,
+    setIsDashboardTreeSidebarOpen,
+    setPreviewing,
+    setSharing,
+    setViewDetail,
+  } = getStoreMethods();
+
+  setDashboardLocatedFilePath(filePath);
+  setIsDashboardTreeSidebarOpen(false);
+  setCurrentFile(null);
+  setPreviewing(false);
+  setSharing(false);
+  setViewDetail(false);
+}
+
+export function clearDashboardLocatedFilePath(filePath: string) {
+  const { getDashboardLocatedFilePath, setDashboardLocatedFilePath } = getStoreMethods();
+
+  if (getDashboardLocatedFilePath() === filePath) {
+    setDashboardLocatedFilePath(null);
+  }
+}
+
 export function startCreateFolder(defaultName: string) {
   const { setAddNewFolderName, setIsCreatingNewFolder } = getStoreMethods();
 

@@ -1,9 +1,11 @@
+import clsx from 'clsx/lite'
 import MdiFolder from '~icons/mdi/folder'
 import type { BatchOperationTarget, FileEntry, FolderEntry } from '../../../../types'
 import { getFileIcon } from '../../../constants/fileIcons'
 import { formatBytes, formatDate, formatDetailedDate } from '../../../utils/fileFormatters'
 import { openFilePreview } from '../actions'
 import { useDashboardEntrySelection } from '../hooks/useDashboardEntrySelection'
+import { useDashboardLocatedFileHighlight } from '../hooks/useDashboardLocatedFileHighlight'
 import { useDashboardPath } from '../hooks/useDashboardPath'
 import type { SearchMatchRange } from '../utils/searchMatch'
 import { FileActionsMenu, FolderActionsMenu } from './FileEntryActions'
@@ -12,6 +14,8 @@ import { FileEntryName } from './FileEntryName'
 const ENTRY_CHECKBOX_CLASS = 'checkbox checkbox-primary border-2 checkbox-sm h-5 w-5 shrink-0'
 const STRIPED_ROW_CLASS = 'even:bg-base-200/50'
 const SELECTED_ROW_CLASS = '[&_td]:bg-primary/15'
+const LOCATED_FILE_ROW_CLASS =
+  '[&_td]:bg-warning/20 [&_td]:transition-colors [&_td]:duration-500'
 
 function TableEntryCheckbox({
   ariaLabel,
@@ -154,6 +158,7 @@ export function FileRow({
   const fileIcon = getFileIcon(file.name)
   const rowKey = `file:${file.path}`
   const createdAtTooltip = `创建时间：${formatDetailedDate(file.createdAt)}`
+  const locatedFile = useDashboardLocatedFileHighlight<HTMLTableRowElement>(file.path)
   const selection = useDashboardEntrySelection(
     {
       type: 'file',
@@ -165,9 +170,15 @@ export function FileRow({
 
   return (
     <tr
-      className={`group ${STRIPED_ROW_CLASS} ${selection.isSelectionActive ? 'cursor-pointer' : ''} ${
-        selection.isSelected ? SELECTED_ROW_CLASS : ''
-      }`.trim()}
+      ref={locatedFile.elementRef}
+      className={clsx(
+        'group',
+        STRIPED_ROW_CLASS,
+        selection.isSelectionActive && 'cursor-pointer',
+        selection.isSelected && SELECTED_ROW_CLASS,
+        locatedFile.isHighlighted && LOCATED_FILE_ROW_CLASS,
+      )}
+      data-dashboard-file-path={file.path}
       onClick={selection.handleActiveSelectionClick}
       onPointerDown={selection.handlePointerDown}
       onPointerUp={selection.handlePointerEnd}

@@ -1,8 +1,10 @@
+import clsx from 'clsx/lite'
 import MdiFolder from '~icons/mdi/folder'
 import type { BatchOperationTarget, FileEntry, FolderEntry } from '../../../../types'
 import { getFileIcon } from '../../../constants/fileIcons'
 import { openFilePreview } from '../actions'
 import { useDashboardEntrySelection } from '../hooks/useDashboardEntrySelection'
+import { useDashboardLocatedFileHighlight } from '../hooks/useDashboardLocatedFileHighlight'
 import { useDashboardPath } from '../hooks/useDashboardPath'
 import type { SearchMatchRange } from '../utils/searchMatch'
 import { FileActionsMenu, FolderActionsMenu } from './FileEntryActions'
@@ -27,6 +29,8 @@ const GRID_ACTIONS_CLASS =
 const GRID_CHECKBOX_CLASS =
   'checkbox checkbox-primary border-2 checkbox-sm absolute left-2 top-2 z-30 h-5 w-5 transition-opacity'
 const GRID_SELECTED_ITEM_CLASS = 'bg-primary/15 ring-1 ring-primary/40 hover:bg-primary/20'
+const GRID_LOCATED_FILE_ITEM_CLASS =
+  'bg-warning/20 ring-2 ring-warning/40 transition-colors duration-500'
 
 function GridEntryCheckbox({
   ariaLabel,
@@ -129,6 +133,7 @@ export function FileGridItem({
 }) {
   const fileIcon = getFileIcon(file.name)
   const entryKey = `file:${file.path}`
+  const locatedFile = useDashboardLocatedFileHighlight<HTMLDivElement>(file.path)
   const selection = useDashboardEntrySelection(
     {
       type: 'file',
@@ -140,7 +145,13 @@ export function FileGridItem({
 
   return (
     <div
-      className={`${GRID_ITEM_CLASS} ${selection.isSelected ? GRID_SELECTED_ITEM_CLASS : ''}`.trim()}
+      ref={locatedFile.elementRef}
+      className={clsx(
+        GRID_ITEM_CLASS,
+        selection.isSelected && GRID_SELECTED_ITEM_CLASS,
+        locatedFile.isHighlighted && GRID_LOCATED_FILE_ITEM_CLASS,
+      )}
+      data-dashboard-file-path={file.path}
       role="listitem"
       onClick={selection.handleActiveSelectionClick}
       onPointerDown={selection.handlePointerDown}

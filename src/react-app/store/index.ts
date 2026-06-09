@@ -51,6 +51,8 @@ export const { useStore, getStoreMethods, getStoreState, getStateSnapshot, subsc
     dashboardLayoutMode: getInitialDashboardLayoutMode(),
     /** Dashboard 左侧文件树侧栏是否展开。 */
     isDashboardTreeSidebarOpen: false,
+    /** Dashboard 右侧文件列表需要滚动定位并短暂高亮的文件路径。 */
+    dashboardLocatedFilePath: null as string | null,
     /** 搜索输入框当前正在编辑的内容。 */
     searchInputValue: "",
     /** 已提交给 Dashboard 文件列表过滤逻辑的搜索关键字。 */

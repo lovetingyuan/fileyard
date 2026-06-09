@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import clsx from 'clsx/lite'
 import MdiAlertCircleOutline from '~icons/mdi/alert-circle-outline'
 import MdiChevronDown from '~icons/mdi/chevron-down'
@@ -10,8 +10,9 @@ import type { FileEntry, FolderEntry } from '../../../../types'
 import { useFileList } from '../../../hooks/useFilesApi'
 import { getFileIcon } from '../../../constants/fileIcons'
 import { useAppStore } from '../../../store'
-import { openFilePreview, toggleDashboardTreeSidebar } from '../actions'
+import { requestDashboardFileLocation, toggleDashboardTreeSidebar } from '../actions'
 import { useDashboardPath } from '../hooks/useDashboardPath'
+import { getDashboardFileParentPath } from '../utils/dashboardFileLocation'
 import {
   getDashboardTreeAutoOpenPaths,
   mergeDashboardTreeOpenPaths,
@@ -19,6 +20,20 @@ import {
 } from '../utils/fileTreeSidebarState'
 
 const TREE_LEVEL_LOADING_ROW_COUNT = 4
+
+export function scrollCurrentFileTreeRowIntoView(
+  row: HTMLDivElement | null,
+  isCurrent: boolean,
+) {
+  if (!isCurrent) {
+    return
+  }
+
+  row?.scrollIntoView({
+    block: 'center',
+    inline: 'nearest',
+  })
+}
 
 type FileTreeLevelProps = {
   currentPath: string
@@ -97,10 +112,16 @@ function FileTreeFolderRow({
   const isCurrent = currentPath === folder.path
   const FolderIcon = isOpen ? MdiFolderOpen : MdiFolder
   const ChevronIcon = isOpen ? MdiChevronDown : MdiChevronRight
+  const rowRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    scrollCurrentFileTreeRowIntoView(rowRef.current, isCurrent)
+  }, [isCurrent])
 
   return (
     <li className="w-full max-w-full min-w-0 overflow-hidden">
       <div
+        ref={rowRef}
         className={clsx(
           'flex w-full max-w-full min-w-0 items-center gap-1 overflow-hidden rounded-md px-1 py-0.5',
           isCurrent && 'menu-active',
@@ -144,9 +165,11 @@ function FileTreeFolderRow({
 function FileTreeFileRow({
   file,
   isNavigationDisabled,
+  setPath,
 }: {
   file: FileEntry
   isNavigationDisabled: boolean
+  setPath: (path: string) => void
 }) {
   const fileIcon = getFileIcon(file.name)
 
@@ -156,8 +179,12 @@ function FileTreeFileRow({
         type="button"
         className="flex w-full max-w-full min-w-0 items-center gap-2 overflow-hidden rounded-md px-2 py-1 text-left hover:bg-base-300/70 disabled:cursor-not-allowed disabled:opacity-50"
         disabled={isNavigationDisabled}
+        data-dashboard-file-path={file.path}
         title={file.name}
-        onClick={() => openFilePreview(file)}
+        onClick={() => {
+          requestDashboardFileLocation(file.path)
+          setPath(getDashboardFileParentPath(file.path))
+        }}
       >
         <fileIcon.Icon className={clsx('h-4 w-4 shrink-0', fileIcon.color)} />
         <span className="min-w-0 flex-1 truncate">{file.name}</span>
@@ -212,6 +239,7 @@ function FileTreeLevel({
           key={`file:${file.path}`}
           file={file}
           isNavigationDisabled={isNavigationDisabled}
+          setPath={setPath}
         />
       ))}
     </ul>
