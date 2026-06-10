@@ -18,6 +18,7 @@ import {
 import {
   getDashboardSelectionKey,
   getNextDashboardSelection,
+  getNextDashboardSelectAllSelection,
 } from "./utils/dashboardSelectionRange";
 
 export function setDashboardSearchInput(value: string) {
@@ -253,6 +254,34 @@ export function toggleDashboardSelection(
     selectedTargets: getSelectedDashboardTargets(),
     target,
     visibleTargets: options.visibleTargets ?? [],
+  });
+  const nextTargets = result.selectedTargets;
+
+  setSelectedDashboardTargets(nextTargets);
+  setDashboardSelectionAnchorKey(result.anchorKey);
+  if (nextTargets.length === 0) {
+    setPendingBatchDeleteTargets(null);
+    setPendingBatchMoveTargets(null);
+  }
+}
+
+export function toggleDashboardSelectAll(visibleTargets: BatchOperationTarget[]) {
+  if (visibleTargets.length === 0) {
+    return;
+  }
+
+  const {
+    getDashboardSelectionAnchorKey,
+    getSelectedDashboardTargets,
+    setDashboardSelectionAnchorKey,
+    setPendingBatchDeleteTargets,
+    setPendingBatchMoveTargets,
+    setSelectedDashboardTargets,
+  } = getStoreMethods();
+  const result = getNextDashboardSelectAllSelection({
+    anchorKey: getDashboardSelectionAnchorKey(),
+    selectedTargets: getSelectedDashboardTargets(),
+    visibleTargets,
   });
   const nextTargets = result.selectedTargets;
 

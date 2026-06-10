@@ -2,8 +2,12 @@ import MdiFolderOpenOutline from "~icons/mdi/folder-open-outline";
 import MdiMagnifyRemoveOutline from "~icons/mdi/magnify-remove-outline";
 import type { BatchOperationTarget, FileEntry, FolderEntry } from "../../../../types";
 import { useAppStore } from "../../../store";
+import { toggleDashboardSelectAll } from "../actions";
 import { createDashboardGridSections } from "../utils/dashboardLayoutMode";
-import { createDashboardSelectionTargets } from "../utils/dashboardSelectionRange";
+import {
+  createDashboardSelectionTargets,
+  getDashboardSelectAllState,
+} from "../utils/dashboardSelectionRange";
 import type { SearchMatchRange } from "../utils/searchMatch";
 import { FileGridItem, FolderGridItem } from "./FileGridItems";
 import { FileRow, FolderRow } from "./FileTableRows";
@@ -11,6 +15,7 @@ import { FileRow, FolderRow } from "./FileTableRows";
 const DASHBOARD_LOADING_ROW_COUNT = 6;
 const DASHBOARD_LOADING_GRID_ITEM_COUNT = 8;
 const GRID_CLASS = "grid grid-cols-[repeat(auto-fill,minmax(6.25rem,1fr))] gap-3 sm:gap-4";
+const SELECT_ALL_CHECKBOX_CLASS = "checkbox checkbox-primary border-2 checkbox-sm h-5 w-5 shrink-0";
 
 type DashboardFolder = FolderEntry & {
   searchMatchRanges?: SearchMatchRange[];
@@ -28,6 +33,7 @@ type DashboardFileListProps = {
 };
 
 type DashboardResolvedFileListProps = DashboardFileListProps & {
+  selectedDashboardTargets: BatchOperationTarget[];
   visibleTargets: BatchOperationTarget[];
 };
 
@@ -85,6 +91,48 @@ function DashboardLoadingGrid() {
   );
 }
 
+function DashboardSelectAllCheckbox({
+  className = "",
+  selectedDashboardTargets,
+  visibleTargets,
+}: {
+  className?: string;
+  selectedDashboardTargets: BatchOperationTarget[];
+  visibleTargets: BatchOperationTarget[];
+}) {
+  const selectAllState = getDashboardSelectAllState({
+    selectedTargets: selectedDashboardTargets,
+    visibleTargets,
+  });
+
+  if (selectedDashboardTargets.length === 0 || selectAllState.disabled) {
+    return null;
+  }
+
+  const setCheckboxRef = (node: HTMLInputElement | null) => {
+    if (node) {
+      node.indeterminate = selectAllState.indeterminate;
+    }
+  };
+
+  const handleClick = (event: React.MouseEvent<HTMLInputElement>) => {
+    event.stopPropagation();
+    toggleDashboardSelectAll(visibleTargets);
+  };
+
+  return (
+    <input
+      ref={setCheckboxRef}
+      type="checkbox"
+      className={`${SELECT_ALL_CHECKBOX_CLASS} ${className}`.trim()}
+      checked={selectAllState.checked}
+      readOnly
+      onClick={handleClick}
+      aria-label="选择当前可见项"
+    />
+  );
+}
+
 function DashboardTableEmptyRows({ searchInputValue }: { searchInputValue: string }) {
   return (
     <>
@@ -107,6 +155,7 @@ function DashboardTable({
   filteredFolders,
   isLoading,
   searchInputValue,
+  selectedDashboardTargets,
   visibleTargets,
 }: DashboardResolvedFileListProps) {
   return (
@@ -118,7 +167,13 @@ function DashboardTable({
         <thead className="bg-base-300">
           <tr className="bg-base-200">
             <th className="w-auto">
-              <span>Name</span>
+              <span className="flex items-center gap-2">
+                <DashboardSelectAllCheckbox
+                  selectedDashboardTargets={selectedDashboardTargets}
+                  visibleTargets={visibleTargets}
+                />
+                <span>Name</span>
+              </span>
             </th>
             <th className="hidden sm:table-cell sm:w-28">
               <span>Size</span>
@@ -162,6 +217,7 @@ function DashboardGrid({
   filteredFolders,
   isLoading,
   searchInputValue,
+  selectedDashboardTargets,
   visibleTargets,
 }: DashboardResolvedFileListProps) {
   const sections = createDashboardGridSections(filteredFolders, filteredFiles);
@@ -176,6 +232,11 @@ function DashboardGrid({
 
   return (
     <div className="space-y-4" aria-busy="false">
+      <DashboardSelectAllCheckbox
+        className="ml-1"
+        selectedDashboardTargets={selectedDashboardTargets}
+        visibleTargets={visibleTargets}
+      />
       {sections.map((section) => {
         if (section.kind === "folders") {
           return (
@@ -204,12 +265,24 @@ function DashboardGrid({
 }
 
 export function DashboardFileList(props: DashboardFileListProps) {
-  const { dashboardLayoutMode } = useAppStore();
+  const { dashboardLayoutMode, selectedDashboardTargets } = useAppStore();
   const visibleTargets = createDashboardSelectionTargets(props.filteredFolders, props.filteredFiles);
 
   if (dashboardLayoutMode === "grid") {
-    return <DashboardGrid {...props} visibleTargets={visibleTargets} />;
+    return (
+      <DashboardGrid
+        {...props}
+        selectedDashboardTargets={selectedDashboardTargets}
+        visibleTargets={visibleTargets}
+      />
+    );
   }
 
-  return <DashboardTable {...props} visibleTargets={visibleTargets} />;
+  return (
+    <DashboardTable
+      {...props}
+      selectedDashboardTargets={selectedDashboardTargets}
+      visibleTargets={visibleTargets}
+    />
+  );
 }

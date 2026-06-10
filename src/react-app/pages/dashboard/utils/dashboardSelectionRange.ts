@@ -13,6 +13,18 @@ type DashboardSelectionResult = {
   selectedTargets: BatchOperationTarget[];
 };
 
+type DashboardSelectAllArgs = {
+  anchorKey?: string | null;
+  selectedTargets: BatchOperationTarget[];
+  visibleTargets: BatchOperationTarget[];
+};
+
+type DashboardSelectAllState = {
+  checked: boolean;
+  disabled: boolean;
+  indeterminate: boolean;
+};
+
 export function getDashboardSelectionKey(target: Pick<BatchOperationTarget, "path" | "type">) {
   return `${target.type}:${target.path}`;
 }
@@ -33,6 +45,66 @@ export function createDashboardSelectionTargets<
       name: file.name,
     })),
   ];
+}
+
+function countSelectedVisibleTargets(
+  selectedTargets: BatchOperationTarget[],
+  visibleTargets: BatchOperationTarget[],
+) {
+  const selectedKeys = new Set(selectedTargets.map(getDashboardSelectionKey));
+
+  return visibleTargets.filter((visibleTarget) =>
+    selectedKeys.has(getDashboardSelectionKey(visibleTarget)),
+  ).length;
+}
+
+export function getDashboardSelectAllState({
+  selectedTargets,
+  visibleTargets,
+}: Pick<DashboardSelectAllArgs, "selectedTargets" | "visibleTargets">): DashboardSelectAllState {
+  if (visibleTargets.length === 0) {
+    return {
+      checked: false,
+      disabled: true,
+      indeterminate: false,
+    };
+  }
+
+  const selectedVisibleTargetCount = countSelectedVisibleTargets(selectedTargets, visibleTargets);
+
+  return {
+    checked: selectedVisibleTargetCount === visibleTargets.length,
+    disabled: false,
+    indeterminate:
+      selectedVisibleTargetCount > 0 && selectedVisibleTargetCount < visibleTargets.length,
+  };
+}
+
+export function getNextDashboardSelectAllSelection({
+  anchorKey = null,
+  selectedTargets,
+  visibleTargets,
+}: DashboardSelectAllArgs): DashboardSelectionResult {
+  const selectAllState = getDashboardSelectAllState({ selectedTargets, visibleTargets });
+
+  if (selectAllState.disabled) {
+    return {
+      selectedTargets,
+      anchorKey,
+    };
+  }
+
+  if (selectAllState.checked) {
+    return {
+      selectedTargets: [],
+      anchorKey: null,
+    };
+  }
+
+  return {
+    selectedTargets: visibleTargets,
+    anchorKey: getDashboardSelectionKey(visibleTargets[0]),
+  };
 }
 
 function toggleTarget(
