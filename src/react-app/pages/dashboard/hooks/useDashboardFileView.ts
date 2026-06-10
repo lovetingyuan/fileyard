@@ -32,16 +32,15 @@ export function useDashboardFileView() {
   const deferredSearchQuery = useDeferredValue(searchKeyword);
   const fileList = useFileList(currentPath, dashboardSortKey, dashboardSortOrder);
   const isCurrentPathMissing = isMissingCurrentPathError(currentPath, fileList.error);
-  const filteredFolders = fileList.data.folders.reduce<Array<SearchMatchedEntry<DashboardFolderEntry>>>(
-    (folders, folder) => {
-      const searchMatchRanges = findFuzzyMatchRanges(folder.name, deferredSearchQuery);
-      if (searchMatchRanges) {
-        folders.push({ ...folder, searchMatchRanges });
-      }
-      return folders;
-    },
-    [],
-  );
+  const filteredFolders = fileList.data.folders.reduce<
+    Array<SearchMatchedEntry<DashboardFolderEntry>>
+  >((folders, folder) => {
+    const searchMatchRanges = findFuzzyMatchRanges(folder.name, deferredSearchQuery);
+    if (searchMatchRanges) {
+      folders.push({ ...folder, searchMatchRanges });
+    }
+    return folders;
+  }, []);
   const filteredFiles = fileList.data.files.reduce<Array<SearchMatchedEntry<FileEntry>>>(
     (files, file) => {
       const searchMatchRanges = findFuzzyMatchRanges(file.name, deferredSearchQuery);

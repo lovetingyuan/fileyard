@@ -7,11 +7,7 @@ interface PreviewCopyTextButtonProps {
   onClick: () => void;
 }
 
-export function PreviewCopyTextButton({
-  disabled,
-  isCopied,
-  onClick,
-}: PreviewCopyTextButtonProps) {
+export function PreviewCopyTextButton({ disabled, isCopied, onClick }: PreviewCopyTextButtonProps) {
   const Icon = isCopied ? MdiCheck : MdiContentCopy;
 
   return (

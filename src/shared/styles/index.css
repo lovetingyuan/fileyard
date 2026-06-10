@@ -15,7 +15,7 @@ html body {
     font-size: 0;
     text-shadow: none;
 
-    >svg {
+    > svg {
       visibility: hidden;
     }
   }
@@ -23,7 +23,6 @@ html body {
   .input,
   .select,
   .textarea {
-
     &:focus,
     &:focus-within {
       outline-offset: 0;

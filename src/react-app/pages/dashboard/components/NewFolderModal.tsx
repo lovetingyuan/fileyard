@@ -111,7 +111,9 @@ export function NewFolderModal() {
             onKeyDown={handleNameKeyDown}
             disabled={isInteractionDisabled}
           />
-          {fieldErrorMessage ? <span className="text-xs text-error">{fieldErrorMessage}</span> : null}
+          {fieldErrorMessage ? (
+            <span className="text-xs text-error">{fieldErrorMessage}</span>
+          ) : null}
         </label>
       )}
     </Dialog>

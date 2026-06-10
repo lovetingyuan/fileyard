@@ -13,6 +13,7 @@
 ### Task 1: Remove dead code from password.ts
 
 **Files:**
+
 - Modify: `src/worker/utils/password.ts`
 
 - [ ] **Step 1: Remove hashPassword, generateSalt, and related private functions**
@@ -84,6 +85,7 @@ better-auth handles password hashing internally. Only validatePassword is used."
 ### Task 2: Wire up better-auth logger
 
 **Files:**
+
 - Modify: `src/worker/auth/logger.ts`
 - Modify: `src/worker/auth/index.ts`
 
@@ -147,15 +149,19 @@ git commit -m "fix: wire up better-auth logger to suppress expected credential e
 ### Task 3: Add backgroundTaskHandler and fix stale c.req.raw
 
 **Files:**
+
 - Modify: `src/worker/auth/index.ts`
 
 - [ ] **Step 1: Fix trustedOrigins closure to not capture c.req.raw**
 
 Change:
+
 ```ts
 trustedOrigins: async (request) => resolveTrustedOrigins(c.env, request ?? c.req.raw),
 ```
+
 To:
+
 ```ts
 trustedOrigins: async (request) => resolveTrustedOrigins(c.env, request),
 ```
@@ -163,6 +169,7 @@ trustedOrigins: async (request) => resolveTrustedOrigins(c.env, request),
 - [ ] **Step 2: Pass backgroundTaskHandler using executionCtx.waitUntil**
 
 Add to the `createBetterAuthOptions` call:
+
 ```ts
 backgroundTaskHandler: (promise) => c.executionCtx.waitUntil(promise),
 ```
@@ -184,6 +191,7 @@ git commit -m "fix: add backgroundTaskHandler and remove stale c.req.raw from au
 ### Task 4: Simplify middleware registration in index.ts
 
 **Files:**
+
 - Modify: `src/worker/index.ts`
 
 - [ ] **Step 1: Consolidate CSRF middleware into a single registration**
@@ -195,7 +203,14 @@ const csrfProtection = csrf({
   origin: (origin, c) => isAllowedOrigin(c as Context<AppContext>, origin),
 });
 
-for (const prefix of ["/api/profile", "/api/profile/*", "/api/files", "/api/files/*", "/api/admin", "/api/admin/*"]) {
+for (const prefix of [
+  "/api/profile",
+  "/api/profile/*",
+  "/api/files",
+  "/api/files/*",
+  "/api/admin",
+  "/api/admin/*",
+]) {
   app.use(prefix, csrfProtection);
 }
 ```
@@ -208,7 +223,14 @@ Replace the 12 separate `app.use(path, authMiddleware/requireAuth)` calls:
 const authMw = authMiddleware();
 const requireAuthMw = requireAuth();
 
-for (const prefix of ["/api/profile", "/api/profile/*", "/api/files", "/api/files/*", "/api/admin", "/api/admin/*"]) {
+for (const prefix of [
+  "/api/profile",
+  "/api/profile/*",
+  "/api/files",
+  "/api/files/*",
+  "/api/admin",
+  "/api/admin/*",
+]) {
   app.use(prefix, authMw);
   app.use(prefix, requireAuthMw);
 }
@@ -231,6 +253,7 @@ git commit -m "refactor: consolidate repetitive middleware registration in index
 ### Task 5: Fix better-auth-logger.node.test.ts
 
 **Files:**
+
 - Modify: `test/better-auth-logger.node.test.ts`
 
 - [ ] **Step 1: Convert from node:test to vitest**
@@ -313,6 +336,7 @@ git commit -m "fix: convert better-auth-logger test from node:test to vitest"
 ### Task 6: Fix stale auth-api.test.ts
 
 **Files:**
+
 - Modify: `test/auth-api.test.ts`
 
 - [ ] **Step 1: Rewrite test to match current better-auth client implementation**
@@ -367,6 +391,7 @@ git commit -m "fix: remove stale auth-api test that tested old SWR-based impleme
 ### Task 7: Fix stale tests that use env.USER_DO
 
 **Files:**
+
 - Modify: `test/file-manager.test.ts`
 - Modify: `test/password-reset.test.ts`
 - Modify: `test/release-hardening.test.ts`
@@ -378,7 +403,13 @@ These three test files use `env.USER_DO.getByName()` which no longer exists (Use
 Replace the UserDO-based `createVerifiedUser` with one that uses `seedAuthUser`, `seedCredentialAccount` from `test/helpers/auth-db.ts`, and creates a session via better-auth's D1 tables:
 
 ```ts
-import { ensureAuthSchema, clearAuthTables, seedAuthUser, seedCredentialAccount, seedAuthSession } from "./helpers/auth-db";
+import {
+  ensureAuthSchema,
+  clearAuthTables,
+  seedAuthUser,
+  seedCredentialAccount,
+  seedAuthSession,
+} from "./helpers/auth-db";
 
 async function createVerifiedUser(email = createEmailAddress(), password = "Password123A") {
   const { userId } = await seedAuthUser({
@@ -402,7 +433,7 @@ async function createSessionCookie(email: string): Promise<string> {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Origin": "http://localhost",
+      Origin: "http://localhost",
       "CF-Connecting-IP": "203.0.113.10",
     },
     body: JSON.stringify({ email, password: "Password123A" }),
@@ -423,8 +454,10 @@ The "backfills rootDirId" test used `runInDurableObject` to check storage. Repla
 
 ```ts
 const profile = await env.AUTH_DB.prepare(
-  `SELECT root_dir_id FROM app_user_profile WHERE user_id = ?`
-).bind(userId).first<{ root_dir_id: string }>();
+  `SELECT root_dir_id FROM app_user_profile WHERE user_id = ?`,
+)
+  .bind(userId)
+  .first<{ root_dir_id: string }>();
 expect(profile?.root_dir_id).toBeTruthy();
 ```
 
@@ -435,6 +468,7 @@ Replace UserDO-based `createUser` with better-auth D1 helpers. Remove tests that
 - [ ] **Step 5: Apply same pattern to release-hardening.test.ts**
 
 Replace UserDO-based helpers. Update API routes:
+
 - `/api/auth/login` → `/api/auth/sign-in/email`
 - `/api/auth/register` → `/api/auth/sign-up/email`
 - `/api/auth/resend-verification` → better-auth equivalent
@@ -442,6 +476,7 @@ Replace UserDO-based helpers. Update API routes:
 - [ ] **Step 6: Fix password-reset.test.ts frontend markup tests**
 
 Update the `allowsAuthenticatedEmailActionPath` test:
+
 ```ts
 expect(allowsAuthenticatedEmailActionPath("/reset-password")).toBe(true);
 ```

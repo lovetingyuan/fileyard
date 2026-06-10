@@ -1,57 +1,54 @@
-import { useEffect, useRef, useState } from 'react'
-import clsx from 'clsx/lite'
-import MdiAlertCircleOutline from '~icons/mdi/alert-circle-outline'
-import MdiChevronDown from '~icons/mdi/chevron-down'
-import MdiChevronRight from '~icons/mdi/chevron-right'
-import MdiFileTree from '~icons/mdi/file-tree'
-import MdiFolder from '~icons/mdi/folder'
-import MdiFolderOpen from '~icons/mdi/folder-open'
-import type { FileEntry, FolderEntry } from '../../../../types'
-import { useFileList } from '../../../hooks/useFilesApi'
-import { getFileIcon } from '../../../constants/fileIcons'
-import { useAppStore } from '../../../store'
-import { requestDashboardFileLocation, toggleDashboardTreeSidebar } from '../actions'
-import { useDashboardPath } from '../hooks/useDashboardPath'
-import { getDashboardFileParentPath } from '../utils/dashboardFileLocation'
+import { useEffect, useRef, useState } from "react";
+import clsx from "clsx/lite";
+import MdiAlertCircleOutline from "~icons/mdi/alert-circle-outline";
+import MdiChevronDown from "~icons/mdi/chevron-down";
+import MdiChevronRight from "~icons/mdi/chevron-right";
+import MdiFileTree from "~icons/mdi/file-tree";
+import MdiFolder from "~icons/mdi/folder";
+import MdiFolderOpen from "~icons/mdi/folder-open";
+import type { FileEntry, FolderEntry } from "../../../../types";
+import { useFileList } from "../../../hooks/useFilesApi";
+import { getFileIcon } from "../../../constants/fileIcons";
+import { useAppStore } from "../../../store";
+import { requestDashboardFileLocation, toggleDashboardTreeSidebar } from "../actions";
+import { useDashboardPath } from "../hooks/useDashboardPath";
+import { getDashboardFileParentPath } from "../utils/dashboardFileLocation";
 import {
   getDashboardTreeAutoOpenPaths,
   mergeDashboardTreeOpenPaths,
   toggleDashboardTreeOpenPath,
-} from '../utils/fileTreeSidebarState'
+} from "../utils/fileTreeSidebarState";
 
-const TREE_LEVEL_LOADING_ROW_COUNT = 4
+const TREE_LEVEL_LOADING_ROW_COUNT = 4;
 
-export function scrollCurrentFileTreeRowIntoView(
-  row: HTMLDivElement | null,
-  isCurrent: boolean,
-) {
+export function scrollCurrentFileTreeRowIntoView(row: HTMLDivElement | null, isCurrent: boolean) {
   if (!isCurrent) {
-    return
+    return;
   }
 
   row?.scrollIntoView({
-    block: 'center',
-    inline: 'nearest',
-  })
+    block: "center",
+    inline: "nearest",
+  });
 }
 
 type FileTreeLevelProps = {
-  currentPath: string
-  isNavigationDisabled: boolean
-  onToggleFolder: (path: string) => void
-  openPaths: string[]
-  path: string
-  setPath: (path: string) => void
-  isRootLevel?: boolean
-}
+  currentPath: string;
+  isNavigationDisabled: boolean;
+  onToggleFolder: (path: string) => void;
+  openPaths: string[];
+  path: string;
+  setPath: (path: string) => void;
+  isRootLevel?: boolean;
+};
 
 function getFileTreeLevelClassName(isRootLevel = false) {
   return clsx(
     isRootLevel
-      ? 'menu menu-md w-[calc(100%-0.5rem)] rounded-box bg-transparent p-1 [&_li_ul]:ms-2'
-      : 'w-[calc(100%-0.5rem)]',
-    'max-w-full min-w-0 overflow-hidden',
-  )
+      ? "menu menu-md w-[calc(100%-0.5rem)] rounded-box bg-transparent p-1 [&_li_ul]:ms-2"
+      : "w-[calc(100%-0.5rem)]",
+    "max-w-full min-w-0 overflow-hidden",
+  );
 }
 
 function FileTreeLoadingRows({ isRootLevel = false }: { isRootLevel?: boolean }) {
@@ -66,15 +63,15 @@ function FileTreeLoadingRows({ isRootLevel = false }: { isRootLevel?: boolean })
         </li>
       ))}
     </ul>
-  )
+  );
 }
 
 function FileTreeErrorRow({
   isRootLevel = false,
   refresh,
 }: {
-  isRootLevel?: boolean
-  refresh: () => Promise<void>
+  isRootLevel?: boolean;
+  refresh: () => Promise<void>;
 }) {
   return (
     <ul className={getFileTreeLevelClassName(isRootLevel)}>
@@ -86,7 +83,7 @@ function FileTreeErrorRow({
             type="button"
             className="link shrink-0"
             onClick={() => {
-              void refresh()
+              void refresh();
             }}
           >
             重试
@@ -94,7 +91,7 @@ function FileTreeErrorRow({
         </div>
       </li>
     </ul>
-  )
+  );
 }
 
 function FileTreeFolderRow({
@@ -105,26 +102,26 @@ function FileTreeFolderRow({
   onToggleFolder,
   openPaths,
   setPath,
-}: Omit<FileTreeLevelProps, 'path'> & {
-  folder: FolderEntry
-  isOpen: boolean
+}: Omit<FileTreeLevelProps, "path"> & {
+  folder: FolderEntry;
+  isOpen: boolean;
 }) {
-  const isCurrent = currentPath === folder.path
-  const FolderIcon = isOpen ? MdiFolderOpen : MdiFolder
-  const ChevronIcon = isOpen ? MdiChevronDown : MdiChevronRight
-  const rowRef = useRef<HTMLDivElement>(null)
+  const isCurrent = currentPath === folder.path;
+  const FolderIcon = isOpen ? MdiFolderOpen : MdiFolder;
+  const ChevronIcon = isOpen ? MdiChevronDown : MdiChevronRight;
+  const rowRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    scrollCurrentFileTreeRowIntoView(rowRef.current, isCurrent)
-  }, [isCurrent])
+    scrollCurrentFileTreeRowIntoView(rowRef.current, isCurrent);
+  }, [isCurrent]);
 
   return (
     <li className="w-full max-w-full min-w-0 overflow-hidden">
       <div
         ref={rowRef}
         className={clsx(
-          'flex w-full max-w-full min-w-0 items-center gap-1 overflow-hidden rounded-md px-1 py-0.5',
-          isCurrent && 'menu-active',
+          "flex w-full max-w-full min-w-0 items-center gap-1 overflow-hidden rounded-md px-1 py-0.5",
+          isCurrent && "menu-active",
         )}
       >
         <button
@@ -140,7 +137,7 @@ function FileTreeFolderRow({
           type="button"
           className="flex w-full max-w-full min-w-0 flex-1 items-center gap-2 overflow-hidden bg-transparent px-1 py-1 text-left disabled:cursor-not-allowed disabled:opacity-50"
           disabled={isNavigationDisabled}
-          aria-current={isCurrent ? 'page' : undefined}
+          aria-current={isCurrent ? "page" : undefined}
           title={folder.name}
           onClick={() => setPath(folder.path)}
         >
@@ -159,7 +156,7 @@ function FileTreeFolderRow({
         />
       ) : null}
     </li>
-  )
+  );
 }
 
 function FileTreeFileRow({
@@ -167,11 +164,11 @@ function FileTreeFileRow({
   isNavigationDisabled,
   setPath,
 }: {
-  file: FileEntry
-  isNavigationDisabled: boolean
-  setPath: (path: string) => void
+  file: FileEntry;
+  isNavigationDisabled: boolean;
+  setPath: (path: string) => void;
 }) {
-  const fileIcon = getFileIcon(file.name)
+  const fileIcon = getFileIcon(file.name);
 
   return (
     <li className="w-full max-w-full min-w-0 overflow-hidden">
@@ -182,15 +179,15 @@ function FileTreeFileRow({
         data-dashboard-file-path={file.path}
         title={file.name}
         onClick={() => {
-          requestDashboardFileLocation(file.path)
-          setPath(getDashboardFileParentPath(file.path))
+          requestDashboardFileLocation(file.path);
+          setPath(getDashboardFileParentPath(file.path));
         }}
       >
-        <fileIcon.Icon className={clsx('h-4 w-4 shrink-0', fileIcon.color)} />
+        <fileIcon.Icon className={clsx("h-4 w-4 shrink-0", fileIcon.color)} />
         <span className="min-w-0 flex-1 truncate">{file.name}</span>
       </button>
     </li>
-  )
+  );
 }
 
 function FileTreeLevel({
@@ -202,25 +199,25 @@ function FileTreeLevel({
   path,
   setPath,
 }: FileTreeLevelProps) {
-  const { dashboardSortKey, dashboardSortOrder } = useAppStore()
+  const { dashboardSortKey, dashboardSortOrder } = useAppStore();
   const { data, error, isLoading, refresh } = useFileList(
     path,
     dashboardSortKey,
     dashboardSortOrder,
-  )
+  );
 
   if (isLoading) {
-    return <FileTreeLoadingRows isRootLevel={isRootLevel} />
+    return <FileTreeLoadingRows isRootLevel={isRootLevel} />;
   }
 
   if (error) {
-    return <FileTreeErrorRow isRootLevel={isRootLevel} refresh={refresh} />
+    return <FileTreeErrorRow isRootLevel={isRootLevel} refresh={refresh} />;
   }
 
   return (
     <ul className={getFileTreeLevelClassName(isRootLevel)} aria-busy="false">
-      {data.folders.map(folder => {
-        const isOpen = openPaths.includes(folder.path)
+      {data.folders.map((folder) => {
+        const isOpen = openPaths.includes(folder.path);
         return (
           <FileTreeFolderRow
             key={`folder:${folder.path}`}
@@ -232,9 +229,9 @@ function FileTreeLevel({
             openPaths={openPaths}
             setPath={setPath}
           />
-        )
+        );
       })}
-      {data.files.map(file => (
+      {data.files.map((file) => (
         <FileTreeFileRow
           key={`file:${file.path}`}
           file={file}
@@ -243,58 +240,53 @@ function FileTreeLevel({
         />
       ))}
     </ul>
-  )
+  );
 }
 
 export function FileTreeSidebar() {
-  const { isDashboardTreeSidebarOpen, selectedDashboardTargets } = useAppStore()
-  const { currentPath, setPath } = useDashboardPath()
-  const [openPaths, setOpenPaths] = useState(() => getDashboardTreeAutoOpenPaths(currentPath))
-  const isNavigationDisabled = selectedDashboardTargets.length > 0
-  const isRootCurrent = currentPath === ''
+  const { isDashboardTreeSidebarOpen, selectedDashboardTargets } = useAppStore();
+  const { currentPath, setPath } = useDashboardPath();
+  const [openPaths, setOpenPaths] = useState(() => getDashboardTreeAutoOpenPaths(currentPath));
+  const isNavigationDisabled = selectedDashboardTargets.length > 0;
+  const isRootCurrent = currentPath === "";
 
   useEffect(() => {
     if (!isDashboardTreeSidebarOpen) {
-      return
+      return;
     }
 
-    setOpenPaths(paths =>
+    setOpenPaths((paths) =>
       mergeDashboardTreeOpenPaths(paths, getDashboardTreeAutoOpenPaths(currentPath)),
-    )
-  }, [currentPath, isDashboardTreeSidebarOpen])
+    );
+  }, [currentPath, isDashboardTreeSidebarOpen]);
 
   const handleToggleFolder = (path: string) => {
-    setOpenPaths(paths => toggleDashboardTreeOpenPath(paths, path))
-  }
+    setOpenPaths((paths) => toggleDashboardTreeOpenPath(paths, path));
+  };
 
   return (
     <aside
       className={clsx(
-        'relative z-10 h-full min-h-0 shrink-0 transition-[width] duration-200 ease-in-out',
+        "relative z-10 h-full min-h-0 shrink-0 transition-[width] duration-200 ease-in-out",
         isDashboardTreeSidebarOpen
-          ? 'w-72 overflow-hidden border-r border-base-300/70 bg-base-100/85'
-          : 'w-0 overflow-visible',
+          ? "w-72 overflow-hidden border-r border-base-300/70 bg-base-100/85"
+          : "w-0 overflow-visible",
       )}
       aria-label="Home 文件树侧栏"
     >
-      <div
-        className={clsx(
-          'flex h-full min-h-0 flex-col',
-          !isDashboardTreeSidebarOpen && 'w-12',
-        )}
-      >
+      <div className={clsx("flex h-full min-h-0 flex-col", !isDashboardTreeSidebarOpen && "w-12")}>
         <div
           className={clsx(
-            'flex h-13 shrink-0 items-center gap-2',
-            isDashboardTreeSidebarOpen ? 'px-2' : 'justify-center',
+            "flex h-13 shrink-0 items-center gap-2",
+            isDashboardTreeSidebarOpen ? "px-2" : "justify-center",
           )}
         >
           <button
             type="button"
             className="btn btn-ghost btn-square btn-sm shrink-0"
             aria-expanded={isDashboardTreeSidebarOpen}
-            aria-label={isDashboardTreeSidebarOpen ? '折叠 Home 文件树' : '展开 Home 文件树'}
-            title={isDashboardTreeSidebarOpen ? '折叠 Home 文件树' : '展开 Home 文件树'}
+            aria-label={isDashboardTreeSidebarOpen ? "折叠 Home 文件树" : "展开 Home 文件树"}
+            title={isDashboardTreeSidebarOpen ? "折叠 Home 文件树" : "展开 Home 文件树"}
             onClick={toggleDashboardTreeSidebar}
           >
             <MdiFileTree className="h-5 w-5" />
@@ -303,20 +295,20 @@ export function FileTreeSidebar() {
             <button
               type="button"
               className={clsx(
-                'flex min-w-0 flex-1 items-center gap-2 overflow-hidden rounded-md px-2 py-2 text-left text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50',
+                "flex min-w-0 flex-1 items-center gap-2 overflow-hidden rounded-md px-2 py-2 text-left text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50",
                 isRootCurrent
-                  ? 'bg-primary text-primary-content hover:bg-primary/90'
-                  : 'hover:bg-base-200',
+                  ? "bg-primary text-primary-content hover:bg-primary/90"
+                  : "hover:bg-base-200",
               )}
               disabled={isNavigationDisabled}
-              aria-current={isRootCurrent ? 'page' : undefined}
+              aria-current={isRootCurrent ? "page" : undefined}
               title="Home"
-              onClick={() => setPath('')}
+              onClick={() => setPath("")}
             >
               <MdiFolderOpen
                 className={clsx(
-                  'h-4 w-4 shrink-0',
-                  isRootCurrent ? 'text-primary-content' : 'text-primary',
+                  "h-4 w-4 shrink-0",
+                  isRootCurrent ? "text-primary-content" : "text-primary",
                 )}
               />
               <span className="min-w-0 flex-1 truncate">Home</span>
@@ -342,5 +334,5 @@ export function FileTreeSidebar() {
         ) : null}
       </div>
     </aside>
-  )
+  );
 }

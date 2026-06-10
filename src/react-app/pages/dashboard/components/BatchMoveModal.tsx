@@ -179,10 +179,7 @@ export function BatchMoveModal() {
             ) : null}
           </div>
 
-          <BatchMoveFailureList
-            results={failureResults}
-            sourceTargets={pendingBatchMoveTargets}
-          />
+          <BatchMoveFailureList results={failureResults} sourceTargets={pendingBatchMoveTargets} />
         </div>
       )}
     </Dialog>

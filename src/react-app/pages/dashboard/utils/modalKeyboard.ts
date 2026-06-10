@@ -3,9 +3,6 @@ interface InputKeyConfirmOptions {
   isComposing: boolean;
 }
 
-export function shouldConfirmFromInputKey({
-  key,
-  isComposing,
-}: InputKeyConfirmOptions): boolean {
+export function shouldConfirmFromInputKey({ key, isComposing }: InputKeyConfirmOptions): boolean {
   return key === "Enter" && !isComposing;
 }

@@ -1,18 +1,18 @@
-import { useId, useRef, useState } from 'react'
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import MdiAccountPlusOutline from '~icons/mdi/account-plus-outline'
-import MdiAlertCircleOutline from '~icons/mdi/alert-circle-outline'
-import MdiEmailOutline from '~icons/mdi/email-outline'
-import MdiLockOutline from '~icons/mdi/lock-outline'
-import MdiLogin from '~icons/mdi/login'
-import toast from 'react-hot-toast'
-import { useAuth } from '../auth/useAuth'
+import { useId, useRef, useState } from "react";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import MdiAccountPlusOutline from "~icons/mdi/account-plus-outline";
+import MdiAlertCircleOutline from "~icons/mdi/alert-circle-outline";
+import MdiEmailOutline from "~icons/mdi/email-outline";
+import MdiLockOutline from "~icons/mdi/lock-outline";
+import MdiLogin from "~icons/mdi/login";
+import toast from "react-hot-toast";
+import { useAuth } from "../auth/useAuth";
 
 const AUTH_FEEDBACK_MESSAGES = {
-  registered: 'Registration successful. Please check your email to verify your account.',
-  reset: 'Password reset successful. Please log in with your new password.',
-  verified: 'Email verified. You can now log in.',
-} as const
+  registered: "Registration successful. Please check your email to verify your account.",
+  reset: "Password reset successful. Please log in with your new password.",
+  verified: "Email verified. You can now log in.",
+} as const;
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -34,74 +34,74 @@ function GoogleIcon({ className }: { className?: string }) {
         d="M43.61 20.08H42V20H24v8h11.3a12.03 12.03 0 0 1-4.08 5.57l6.19 5.24C40.97 35.51 44 30.26 44 24c0-1.34-.14-2.65-.39-3.92Z"
       />
     </svg>
-  )
+  );
 }
 
 export function Login() {
-  const location = useLocation()
-  const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const { login, loginWithGoogle, loading } = useAuth()
-  const emailId = useId()
-  const passwordId = useId()
-  const registered = searchParams.get('registered') === '1'
-  const reset = searchParams.get('reset') === '1'
-  const verified = searchParams.get('verified') === '1'
-  const initialEmail = searchParams.get('email') ?? ''
-  const [email, setEmail] = useState(initialEmail)
-  const [password, setPassword] = useState('')
-  const [isGoogleLoginPending, setIsGoogleLoginPending] = useState(false)
-  const [formError, setFormError] = useState<string | null>(null)
-  const shownKeyRef = useRef<string | null>(null)
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { login, loginWithGoogle, loading } = useAuth();
+  const emailId = useId();
+  const passwordId = useId();
+  const registered = searchParams.get("registered") === "1";
+  const reset = searchParams.get("reset") === "1";
+  const verified = searchParams.get("verified") === "1";
+  const initialEmail = searchParams.get("email") ?? "";
+  const [email, setEmail] = useState(initialEmail);
+  const [password, setPassword] = useState("");
+  const [isGoogleLoginPending, setIsGoogleLoginPending] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const shownKeyRef = useRef<string | null>(null);
 
   if (shownKeyRef.current !== location.key) {
-    shownKeyRef.current = location.key
+    shownKeyRef.current = location.key;
     if (registered) {
       toast.success(AUTH_FEEDBACK_MESSAGES.registered, {
         id: `auth-feedback:${location.key}:registered`,
-      })
+      });
     }
     if (reset) {
-      toast.success(AUTH_FEEDBACK_MESSAGES.reset, { id: `auth-feedback:${location.key}:reset` })
+      toast.success(AUTH_FEEDBACK_MESSAGES.reset, { id: `auth-feedback:${location.key}:reset` });
     }
     if (verified) {
       toast.success(AUTH_FEEDBACK_MESSAGES.verified, {
         id: `auth-feedback:${location.key}:verified`,
-      })
+      });
     }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setFormError(null)
+    e.preventDefault();
+    setFormError(null);
 
     if (!email || !password) {
-      toast.error('Please fill in all fields')
-      return
+      toast.error("Please fill in all fields");
+      return;
     }
 
-    const result = await login(email, password)
+    const result = await login(email, password);
     if (!result.success) {
-      setFormError(result.error || 'Login failed')
-      toast.error(result.error || 'Login failed')
+      setFormError(result.error || "Login failed");
+      toast.error(result.error || "Login failed");
     }
-  }
+  };
 
   const handleGoogleLogin = async () => {
     if (isGoogleLoginPending) {
-      return
+      return;
     }
 
-    setFormError(null)
-    setIsGoogleLoginPending(true)
+    setFormError(null);
+    setIsGoogleLoginPending(true);
 
-    const result = await loginWithGoogle()
+    const result = await loginWithGoogle();
     if (!result.success) {
-      setIsGoogleLoginPending(false)
-      setFormError(result.error || 'Google login failed')
-      toast.error(result.error || 'Google login failed')
+      setIsGoogleLoginPending(false);
+      setFormError(result.error || "Google login failed");
+      toast.error(result.error || "Google login failed");
     }
-  }
+  };
 
   return (
     <main className="flex flex-1 items-center justify-center p-4">
@@ -132,7 +132,7 @@ export function Login() {
                 placeholder="email@example.com"
                 className="input input-bordered w-full"
                 value={email}
-                onChange={e => setEmail(e.target.value)}
+                onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
                 required
                 spellCheck={false}
@@ -154,7 +154,7 @@ export function Login() {
                 placeholder="••••••••"
                 className="input input-bordered w-full"
                 value={password}
-                onChange={e => setPassword(e.target.value)}
+                onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
                 required
               />
@@ -163,11 +163,11 @@ export function Login() {
             <div className="form-control mt-6 flex justify-between items-center">
               <button
                 type="submit"
-                className={`btn btn-primary gap-2 ${loading ? 'loading' : ''}`}
+                className={`btn btn-primary gap-2 ${loading ? "loading" : ""}`}
                 disabled={loading}
               >
                 {loading ? (
-                  'Logging in...'
+                  "Logging in..."
                 ) : (
                   <>
                     <MdiLogin className="w-5 h-5" />
@@ -176,7 +176,7 @@ export function Login() {
                 )}
               </button>
               <Link
-                to={`/forgot-password${email ? `?email=${encodeURIComponent(email)}` : ''}`}
+                to={`/forgot-password${email ? `?email=${encodeURIComponent(email)}` : ""}`}
                 className="link link-hover text-sm text-primary"
               >
                 Forgot password?
@@ -193,7 +193,7 @@ export function Login() {
             disabled={loading || isGoogleLoginPending}
           >
             <GoogleIcon className="h-5 w-5 shrink-0" />
-            {isGoogleLoginPending ? 'Please wait...' : 'Continue with Google'}
+            {isGoogleLoginPending ? "Please wait..." : "Continue with Google"}
           </button>
 
           <div className="divider">OR</div>
@@ -201,7 +201,7 @@ export function Login() {
           <button
             type="button"
             className="btn btn-outline gap-2"
-            onClick={() => navigate('/register')}
+            onClick={() => navigate("/register")}
             disabled={loading}
           >
             <MdiAccountPlusOutline className="w-5 h-5" />
@@ -210,5 +210,5 @@ export function Login() {
         </div>
       </div>
     </main>
-  )
+  );
 }

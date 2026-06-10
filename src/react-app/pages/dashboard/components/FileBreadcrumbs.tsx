@@ -1,23 +1,23 @@
-import clsx from 'clsx/lite'
-import MdiChevronRight from '~icons/mdi/chevron-right'
-import MdiHomeOutline from '~icons/mdi/home-outline'
-import MdiInformationOutline from '~icons/mdi/information-outline'
-import { openDirectoryStats } from '../actions'
-import { useDashboardPath } from '../hooks/useDashboardPath'
-import { getBreadcrumbButtonClassName } from './fileBreadcrumbsClasses'
+import clsx from "clsx/lite";
+import MdiChevronRight from "~icons/mdi/chevron-right";
+import MdiHomeOutline from "~icons/mdi/home-outline";
+import MdiInformationOutline from "~icons/mdi/information-outline";
+import { openDirectoryStats } from "../actions";
+import { useDashboardPath } from "../hooks/useDashboardPath";
+import { getBreadcrumbButtonClassName } from "./fileBreadcrumbsClasses";
 
 type FileBreadcrumbsProps = {
-  isCurrentPathMissing?: boolean
-  isNavigationDisabled?: boolean
-}
+  isCurrentPathMissing?: boolean;
+  isNavigationDisabled?: boolean;
+};
 
 export function FileBreadcrumbs({
   isCurrentPathMissing = false,
   isNavigationDisabled = false,
 }: FileBreadcrumbsProps) {
-  const { breadcrumbs, currentPath, setPath } = useDashboardPath()
-  const isActionDisabled = isCurrentPathMissing || isNavigationDisabled
-  const isRootPath = breadcrumbs.length === 0
+  const { breadcrumbs, currentPath, setPath } = useDashboardPath();
+  const isActionDisabled = isCurrentPathMissing || isNavigationDisabled;
+  const isRootPath = breadcrumbs.length === 0;
 
   return (
     <nav className="min-w-0 max-w-full flex-1 basis-[max-content]" aria-label="文件路径">
@@ -26,19 +26,19 @@ export function FileBreadcrumbs({
           <button
             type="button"
             className={clsx(
-              isRootPath ? 'text-base-content' : getBreadcrumbButtonClassName(isNavigationDisabled),
-              'inline-flex items-center gap-1',
+              isRootPath ? "text-base-content" : getBreadcrumbButtonClassName(isNavigationDisabled),
+              "inline-flex items-center gap-1",
             )}
             disabled={isNavigationDisabled}
-            onClick={() => setPath('')}
+            onClick={() => setPath("")}
           >
             <MdiHomeOutline className="w-5 h-5" />
             Home
           </button>
         </li>
         {breadcrumbs.map((segment, index) => {
-          const path = breadcrumbs.slice(0, index + 1).join('/')
-          const isCurrentSegment = index === breadcrumbs.length - 1
+          const path = breadcrumbs.slice(0, index + 1).join("/");
+          const isCurrentSegment = index === breadcrumbs.length - 1;
 
           return (
             <li key={path} className="flex min-w-0 items-center gap-2">
@@ -60,12 +60,12 @@ export function FileBreadcrumbs({
                 </button>
               )}
             </li>
-          )
+          );
         })}
         <li className="flex shrink-0 items-center">
           <div
-            className={isActionDisabled ? 'shrink-0' : 'tooltip shrink-0'}
-            data-tip={isActionDisabled ? undefined : '查看当前文件夹详情'}
+            className={isActionDisabled ? "shrink-0" : "tooltip shrink-0"}
+            data-tip={isActionDisabled ? undefined : "查看当前文件夹详情"}
           >
             <button
               type="button"
@@ -80,5 +80,5 @@ export function FileBreadcrumbs({
         </li>
       </ol>
     </nav>
-  )
+  );
 }

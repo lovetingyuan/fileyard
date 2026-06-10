@@ -59,5 +59,7 @@ export function closeDashboardUploadPanel() {
 }
 
 export function cancelDashboardUploadsInFolderAndWait(folderPath: string) {
-  return getActiveUploadQueueControls()?.cancelUploadsInFolderAndWait(folderPath) ?? Promise.resolve();
+  return (
+    getActiveUploadQueueControls()?.cancelUploadsInFolderAndWait(folderPath) ?? Promise.resolve()
+  );
 }

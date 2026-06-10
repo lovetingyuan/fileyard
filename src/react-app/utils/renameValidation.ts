@@ -1,7 +1,11 @@
 import type { FileEntry, FolderEntry, UploadQueueItem } from "../../types";
 
 const RESERVED_NAMES = new Set([".fileyard-folder", ".fileshare-folder", ".user"]);
-const ACTIVE_UPLOAD_STATUSES = new Set<UploadQueueItem["status"]>(["queued", "preparing", "uploading"]);
+const ACTIVE_UPLOAD_STATUSES = new Set<UploadQueueItem["status"]>([
+  "queued",
+  "preparing",
+  "uploading",
+]);
 
 function containsControlCharacters(value: string): boolean {
   for (const char of value) {

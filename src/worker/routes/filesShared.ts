@@ -139,7 +139,9 @@ export async function getFolderCreatedAt(
   throw new Error(`Folder metadata missing for ${folderPath}`);
 }
 
-export function resolveFileCreatedAt(object: Pick<R2Object, "uploaded" | "customMetadata">): string {
+export function resolveFileCreatedAt(
+  object: Pick<R2Object, "uploaded" | "customMetadata">,
+): string {
   return object.customMetadata?.createdAt ?? object.uploaded.toISOString();
 }
 

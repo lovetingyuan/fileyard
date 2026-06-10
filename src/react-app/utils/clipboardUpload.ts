@@ -122,7 +122,9 @@ export function createClipboardUploadItemsFromFiles(
   const createId = options.createId ?? createDefaultId;
 
   return files.map((file, index) => {
-    const namedFile = file.name ? file : renameFile(file, getGeneratedClipboardFilename(file, index, now), now);
+    const namedFile = file.name
+      ? file
+      : renameFile(file, getGeneratedClipboardFilename(file, index, now), now);
     return {
       id: createId(),
       file: namedFile,

@@ -1,70 +1,70 @@
-import MdiCloseCircleOutline from '~icons/mdi/close-circle-outline'
-import MdiClose from '~icons/mdi/close'
-import MdiChevronDown from '~icons/mdi/chevron-down'
-import MdiChevronUp from '~icons/mdi/chevron-up'
-import { Fragment } from 'react'
-import { useAppStore } from '../../../store'
-import type { UploadQueuePanelState } from '../hooks/useUploadQueue'
+import MdiCloseCircleOutline from "~icons/mdi/close-circle-outline";
+import MdiClose from "~icons/mdi/close";
+import MdiChevronDown from "~icons/mdi/chevron-down";
+import MdiChevronUp from "~icons/mdi/chevron-up";
+import { Fragment } from "react";
+import { useAppStore } from "../../../store";
+import type { UploadQueuePanelState } from "../hooks/useUploadQueue";
 import {
   cancelRemainingDashboardUploads,
   closeDashboardUploadPanel,
   getUploadQueuePanelState,
   minimizeDashboardUploadPanel,
   restoreDashboardUploadPanel,
-} from '../hooks/useUploadQueue'
-import { UploadFolderProgressRow } from './UploadFolderProgressRow'
-import { UploadProgressRow } from './UploadProgressRow'
-import { getUploadProgressDisplayRows } from './uploadProgressDisplay'
+} from "../hooks/useUploadQueue";
+import { UploadFolderProgressRow } from "./UploadFolderProgressRow";
+import { UploadProgressRow } from "./UploadProgressRow";
+import { getUploadProgressDisplayRows } from "./uploadProgressDisplay";
 
 const PANEL_SURFACE_CLASS =
-  'rounded-box border border-[color-mix(in_oklab,var(--color-info)_38%,var(--color-base-300))] bg-[color-mix(in_oklab,var(--color-info)_14%,var(--color-base-100))] p-3 text-base-content shadow-2xl shadow-base-content/20'
-const PANEL_SUBTITLE_CLASS_NAME = 'min-w-0 truncate text-xs'
+  "rounded-box border border-[color-mix(in_oklab,var(--color-info)_38%,var(--color-base-300))] bg-[color-mix(in_oklab,var(--color-info)_14%,var(--color-base-100))] p-3 text-base-content shadow-2xl shadow-base-content/20";
+const PANEL_SUBTITLE_CLASS_NAME = "min-w-0 truncate text-xs";
 
 function getPanelTitle(panelState: UploadQueuePanelState): string {
   if (panelState.isComplete) {
-    return panelState.hasTerminalIssues ? '上传已结束' : '上传完成'
+    return panelState.hasTerminalIssues ? "上传已结束" : "上传完成";
   }
-  return '上传中'
+  return "上传中";
 }
 
 function getPanelSubtitle(panelState: UploadQueuePanelState): string {
-  const segments = [`${panelState.completed}/${panelState.total} 已完成`]
+  const segments = [`${panelState.completed}/${panelState.total} 已完成`];
   if (panelState.remaining > 0) {
-    segments.push(`${panelState.remaining} 个进行中`)
+    segments.push(`${panelState.remaining} 个进行中`);
   }
   if (panelState.failed > 0) {
-    segments.push(`${panelState.failed} 个失败`)
+    segments.push(`${panelState.failed} 个失败`);
   }
   if (panelState.canceled > 0) {
-    segments.push(`${panelState.canceled} 个已取消`)
+    segments.push(`${panelState.canceled} 个已取消`);
   }
-  return segments.join(' · ')
+  return segments.join(" · ");
 }
 
 function renderPanelSubtitle(panelState: UploadQueuePanelState) {
   const segments = [
     {
-      className: 'text-success',
+      className: "text-success",
       text: `${panelState.completed}/${panelState.total} 已完成`,
     },
-  ]
+  ];
   if (panelState.remaining > 0) {
     segments.push({
-      className: 'text-base-content/60',
+      className: "text-base-content/60",
       text: `${panelState.remaining} 个进行中`,
-    })
+    });
   }
   if (panelState.failed > 0) {
     segments.push({
-      className: 'text-error',
+      className: "text-error",
       text: `${panelState.failed} 个失败`,
-    })
+    });
   }
   if (panelState.canceled > 0) {
     segments.push({
-      className: 'text-warning',
+      className: "text-warning",
       text: `${panelState.canceled} 个已取消`,
-    })
+    });
   }
 
   return segments.map((segment, index) => (
@@ -72,21 +72,21 @@ function renderPanelSubtitle(panelState: UploadQueuePanelState) {
       {index > 0 ? <span className="mx-1 text-base-content/40">·</span> : null}
       <span className={segment.className}>{segment.text}</span>
     </Fragment>
-  ))
+  ));
 }
 
 export function UploadProgressPanel() {
-  const { isUploadPanelMinimized, uploadQueue: items } = useAppStore()
-  const panelState = getUploadQueuePanelState(items)
-  const isMinimized = isUploadPanelMinimized
+  const { isUploadPanelMinimized, uploadQueue: items } = useAppStore();
+  const panelState = getUploadQueuePanelState(items);
+  const isMinimized = isUploadPanelMinimized;
 
   if (!panelState.shouldShowPanel) {
-    return null
+    return null;
   }
 
-  const totalProgress = Math.max(0, Math.min(100, Math.round(panelState.totalProgress)))
-  const visibleRows = getUploadProgressDisplayRows(items)
-  const canClose = panelState.isComplete
+  const totalProgress = Math.max(0, Math.min(100, Math.round(panelState.totalProgress)));
+  const visibleRows = getUploadProgressDisplayRows(items);
+  const canClose = panelState.isComplete;
 
   if (isMinimized) {
     return (
@@ -131,7 +131,7 @@ export function UploadProgressPanel() {
           </div>
         </div>
       </aside>
-    )
+    );
   }
 
   return (
@@ -188,8 +188,8 @@ export function UploadProgressPanel() {
 
       {visibleRows.length > 0 ? (
         <ul className="mt-3 flex max-h-80 flex-col gap-2 overflow-y-auto">
-          {visibleRows.map(row =>
-            row.kind === 'folder' ? (
+          {visibleRows.map((row) =>
+            row.kind === "folder" ? (
               <UploadFolderProgressRow key={`folder:${row.folderPath}`} row={row} />
             ) : (
               <UploadProgressRow key={row.item.id} item={row.item} />
@@ -198,5 +198,5 @@ export function UploadProgressPanel() {
         </ul>
       ) : null}
     </aside>
-  )
+  );
 }

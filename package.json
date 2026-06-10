@@ -61,11 +61,11 @@
     "wrangler": "^4.83.0"
   },
   "overrides": {
-    "kysely": "0.28.17",
-    "postcss": "8.5.15",
     "@esbuild-kit/core-utils": {
       "esbuild": "0.25.12"
-    }
+    },
+    "kysely": "0.28.17",
+    "postcss": "8.5.15"
   },
   "cloudflare": {
     "label": "Fileyard",

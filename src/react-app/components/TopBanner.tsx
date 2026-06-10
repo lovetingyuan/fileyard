@@ -29,9 +29,7 @@ export function writeDismissedTopBannerDate(
 }
 
 export function shouldShowTopBanner(banner: TopBannerMessage | null, dismissedDate: string | null) {
-  return Boolean(
-    banner?.date && banner.contentHtml.trim() && dismissedDate !== banner.date,
-  );
+  return Boolean(banner?.date && banner.contentHtml.trim() && dismissedDate !== banner.date);
 }
 
 type TopBannerViewProps = {

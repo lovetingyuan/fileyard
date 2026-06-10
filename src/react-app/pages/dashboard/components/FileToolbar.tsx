@@ -1,37 +1,37 @@
-import { forwardRef, useCallback, useImperativeHandle, useRef } from 'react'
-import MdiChevronDown from '~icons/mdi/chevron-down'
-import MdiClipboardFileOutline from '~icons/mdi/clipboard-file-outline'
-import MdiClose from '~icons/mdi/close'
-import MdiFileUpload from '~icons/mdi/file-upload'
-import MdiFilePlus from '~icons/mdi/file-plus'
-import MdiFolderPlus from '~icons/mdi/folder-plus'
-import MdiFolderUpload from '~icons/mdi/folder-upload'
-import MdiMagnify from '~icons/mdi/magnify'
-import MdiRefresh from '~icons/mdi/refresh'
-import MdiViewGrid from '~icons/mdi/view-grid'
-import MdiViewList from '~icons/mdi/view-list'
-import { Dropdown } from '../../../components/Dropdown'
-import { useAppStore } from '../../../store'
-import { takeFileInputSelection } from '../../../utils/uploadInputSelection'
+import { forwardRef, useCallback, useImperativeHandle, useRef } from "react";
+import MdiChevronDown from "~icons/mdi/chevron-down";
+import MdiClipboardFileOutline from "~icons/mdi/clipboard-file-outline";
+import MdiClose from "~icons/mdi/close";
+import MdiFileUpload from "~icons/mdi/file-upload";
+import MdiFilePlus from "~icons/mdi/file-plus";
+import MdiFolderPlus from "~icons/mdi/folder-plus";
+import MdiFolderUpload from "~icons/mdi/folder-upload";
+import MdiMagnify from "~icons/mdi/magnify";
+import MdiRefresh from "~icons/mdi/refresh";
+import MdiViewGrid from "~icons/mdi/view-grid";
+import MdiViewList from "~icons/mdi/view-list";
+import { Dropdown } from "../../../components/Dropdown";
+import { useAppStore } from "../../../store";
+import { takeFileInputSelection } from "../../../utils/uploadInputSelection";
 import {
   openNewTextFile,
   setDashboardSearchInput,
   setUploadType,
   startCreateFolder,
   toggleDashboardLayoutMode,
-} from '../actions'
-import { useDashboardFileView } from '../hooks/useDashboardFileView'
-import { uploadDashboardFiles } from '../uploadFiles'
-import { useClipboardUploadDialog } from './ClipboardUploadButton'
-import { BatchSelectionToolbar } from './BatchSelectionToolbar'
-import { FileBreadcrumbs } from './FileBreadcrumbs'
-import { FileSortMenu } from './FileSortMenu'
+} from "../actions";
+import { useDashboardFileView } from "../hooks/useDashboardFileView";
+import { uploadDashboardFiles } from "../uploadFiles";
+import { useClipboardUploadDialog } from "./ClipboardUploadButton";
+import { BatchSelectionToolbar } from "./BatchSelectionToolbar";
+import { FileBreadcrumbs } from "./FileBreadcrumbs";
+import { FileSortMenu } from "./FileSortMenu";
 
 function LayoutToggleButton() {
-  const { dashboardLayoutMode } = useAppStore()
-  const isGridLayout = dashboardLayoutMode === 'grid'
-  const ToggleIcon = isGridLayout ? MdiViewList : MdiViewGrid
-  const tooltip = isGridLayout ? '切换到表格布局' : '切换到网格布局'
+  const { dashboardLayoutMode } = useAppStore();
+  const isGridLayout = dashboardLayoutMode === "grid";
+  const ToggleIcon = isGridLayout ? MdiViewList : MdiViewGrid;
+  const tooltip = isGridLayout ? "切换到表格布局" : "切换到网格布局";
 
   return (
     <div className="tooltip" data-tip={tooltip}>
@@ -45,25 +45,25 @@ function LayoutToggleButton() {
         <ToggleIcon className="h-5 w-5" />
       </button>
     </div>
-  )
+  );
 }
 
 type FileToolbarProps = {
-  isCurrentPathMissing?: boolean
-}
+  isCurrentPathMissing?: boolean;
+};
 
 export type FileToolbarHandle = {
-  focusSearchInput: () => void
-}
+  focusSearchInput: () => void;
+};
 
 export const FileToolbar = forwardRef<FileToolbarHandle, FileToolbarProps>(function FileToolbar(
   { isCurrentPathMissing = false },
   ref,
 ) {
-  const fileInputRef = useRef<HTMLInputElement | null>(null)
-  const folderInputRef = useRef<HTMLInputElement | null>(null)
-  const searchInputRef = useRef<HTMLInputElement | null>(null)
-  const { getUniqueFolderName, isRefreshing, refresh, searchInputValue } = useDashboardFileView()
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const folderInputRef = useRef<HTMLInputElement | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const { getUniqueFolderName, isRefreshing, refresh, searchInputValue } = useDashboardFileView();
   const {
     creatingFolder,
     isCreatingNewFolder,
@@ -71,42 +71,42 @@ export const FileToolbar = forwardRef<FileToolbarHandle, FileToolbarProps>(funct
     renamingPath,
     savingTextFile,
     selectedDashboardTargets,
-  } = useAppStore()
-  const isBatchSelectionActive = selectedDashboardTargets.length > 0
-  const isSearchExpanded = searchInputValue.length > 0
-  const isFileMutationDisabled = Boolean(renamingPath || movingPath)
+  } = useAppStore();
+  const isBatchSelectionActive = selectedDashboardTargets.length > 0;
+  const isSearchExpanded = searchInputValue.length > 0;
+  const isFileMutationDisabled = Boolean(renamingPath || movingPath);
   const { clipboardUploadDialog, openClipboardUploadDialog } = useClipboardUploadDialog({
     isFileMutationDisabled,
-  })
+  });
 
   const folderInputCallbackRef = useCallback((node: HTMLInputElement | null) => {
-    folderInputRef.current = node
+    folderInputRef.current = node;
     if (node) {
-      node.setAttribute('webkitdirectory', '')
-      node.setAttribute('directory', '')
+      node.setAttribute("webkitdirectory", "");
+      node.setAttribute("directory", "");
     }
-  }, [])
+  }, []);
 
   const handleUploadSelection = (
     event: React.ChangeEvent<HTMLInputElement>,
-    source: 'file' | 'folder',
+    source: "file" | "folder",
   ) => {
-    const files = takeFileInputSelection(event.target)
-    void uploadDashboardFiles({ files, source, isFileMutationDisabled })
-  }
+    const files = takeFileInputSelection(event.target);
+    void uploadDashboardFiles({ files, source, isFileMutationDisabled });
+  };
 
   const focusSearchInput = useCallback(() => {
     requestAnimationFrame(() => {
-      searchInputRef.current?.focus()
-    })
-  }, [])
+      searchInputRef.current?.focus();
+    });
+  }, []);
 
-  useImperativeHandle(ref, () => ({ focusSearchInput }), [focusSearchInput])
+  useImperativeHandle(ref, () => ({ focusSearchInput }), [focusSearchInput]);
 
   const clearSearchInput = () => {
-    setDashboardSearchInput('')
-    focusSearchInput()
-  }
+    setDashboardSearchInput("");
+    focusSearchInput();
+  };
 
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-5">
@@ -115,13 +115,13 @@ export const FileToolbar = forwardRef<FileToolbarHandle, FileToolbarProps>(funct
         type="file"
         className="hidden"
         multiple
-        onChange={event => handleUploadSelection(event, 'file')}
+        onChange={(event) => handleUploadSelection(event, "file")}
       />
       <input
         ref={folderInputCallbackRef}
         type="file"
         className="hidden"
-        onChange={event => handleUploadSelection(event, 'folder')}
+        onChange={(event) => handleUploadSelection(event, "folder")}
       />
 
       <FileBreadcrumbs
@@ -153,8 +153,8 @@ export const FileToolbar = forwardRef<FileToolbarHandle, FileToolbarProps>(funct
                 type="button"
                 className="gap-2"
                 onClick={() => {
-                  setUploadType('file')
-                  fileInputRef.current?.click()
+                  setUploadType("file");
+                  fileInputRef.current?.click();
                 }}
                 disabled={isFileMutationDisabled}
                 aria-label="上传文件"
@@ -168,8 +168,8 @@ export const FileToolbar = forwardRef<FileToolbarHandle, FileToolbarProps>(funct
                 type="button"
                 className="gap-2"
                 onClick={() => {
-                  setUploadType('folder')
-                  folderInputRef.current?.click()
+                  setUploadType("folder");
+                  folderInputRef.current?.click();
                 }}
                 disabled={isFileMutationDisabled}
                 aria-label="上传文件夹"
@@ -221,9 +221,9 @@ export const FileToolbar = forwardRef<FileToolbarHandle, FileToolbarProps>(funct
             <li>
               <button
                 type="button"
-                className={`gap-2 ${creatingFolder ? 'loading' : ''}`}
+                className={`gap-2 ${creatingFolder ? "loading" : ""}`}
                 disabled={creatingFolder || isCreatingNewFolder || isFileMutationDisabled}
-                onClick={() => startCreateFolder(getUniqueFolderName('新建文件夹'))}
+                onClick={() => startCreateFolder(getUniqueFolderName("新建文件夹"))}
                 aria-label="新建文件夹"
               >
                 {!creatingFolder && <MdiFolderPlus className="h-4 w-4 text-secondary" />}
@@ -236,8 +236,8 @@ export const FileToolbar = forwardRef<FileToolbarHandle, FileToolbarProps>(funct
           <div
             className={`group/search relative h-8 max-w-full min-w-0 shrink-0 transition-[width] duration-200 ease-in-out focus-within:order-last focus-within:basis-full focus-within:w-full sm:focus-within:order-0 sm:focus-within:basis-auto sm:focus-within:w-52 ${
               isSearchExpanded
-                ? 'order-last basis-full w-full sm:order-0 sm:basis-auto sm:w-52'
-                : 'basis-8 w-8'
+                ? "order-last basis-full w-full sm:order-0 sm:basis-auto sm:w-52"
+                : "basis-8 w-8"
             }`}
           >
             <div className="absolute inset-0 overflow-hidden rounded-field">
@@ -246,16 +246,16 @@ export const FileToolbar = forwardRef<FileToolbarHandle, FileToolbarProps>(funct
                 type="text"
                 className={`placeholder:text-[12px] input input-sm input-bordered absolute top-0 right-0 h-8 w-full min-w-0 transition-opacity duration-150 ease-in-out sm:w-52 group-focus-within/search:border-base-300 group-focus-within/search:bg-base-100 group-focus-within/search:opacity-100 group-focus-within/search:outline-none ${
                   isSearchExpanded
-                    ? 'border-base-300 bg-base-100 pr-9 opacity-100'
-                    : 'border-transparent bg-transparent pr-9 opacity-0'
+                    ? "border-base-300 bg-base-100 pr-9 opacity-100"
+                    : "border-transparent bg-transparent pr-9 opacity-0"
                 }`}
                 placeholder="Search current folder"
                 value={searchInputValue}
-                onChange={event => setDashboardSearchInput(event.target.value)}
-                onKeyDown={event => {
-                  if (event.key === 'Escape') {
-                    setDashboardSearchInput('')
-                    event.currentTarget.blur()
+                onChange={(event) => setDashboardSearchInput(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Escape") {
+                    setDashboardSearchInput("");
+                    event.currentTarget.blur();
                   }
                 }}
               />
@@ -265,9 +265,9 @@ export const FileToolbar = forwardRef<FileToolbarHandle, FileToolbarProps>(funct
               <button
                 type="button"
                 className={`btn btn-ghost btn-square btn-sm h-8 w-8 transition-opacity duration-150 ease-in-out group-focus-within/search:pointer-events-none group-focus-within/search:opacity-0 ${
-                  isSearchExpanded ? 'pointer-events-none opacity-0' : ''
+                  isSearchExpanded ? "pointer-events-none opacity-0" : ""
                 }`}
-                onMouseDown={event => event.preventDefault()}
+                onMouseDown={(event) => event.preventDefault()}
                 onClick={focusSearchInput}
                 aria-label="搜索文件"
               >
@@ -278,7 +278,7 @@ export const FileToolbar = forwardRef<FileToolbarHandle, FileToolbarProps>(funct
               <button
                 type="button"
                 className="btn btn-ghost btn-square btn-xs absolute inset-y-0 right-1 z-10 my-auto h-6 min-h-6 w-6 text-base-content/50 hover:text-base-content"
-                onMouseDown={event => event.preventDefault()}
+                onMouseDown={(event) => event.preventDefault()}
                 onClick={clearSearchInput}
                 aria-label="清空搜索"
               >
@@ -289,7 +289,7 @@ export const FileToolbar = forwardRef<FileToolbarHandle, FileToolbarProps>(funct
           <div className="tooltip shrink-0" data-tip="Refresh">
             <button
               type="button"
-              className={`btn btn-ghost btn-square btn-sm ${isRefreshing ? 'loading w-8 scale-75' : ''}`}
+              className={`btn btn-ghost btn-square btn-sm ${isRefreshing ? "loading w-8 scale-75" : ""}`}
               disabled={isRefreshing}
               onClick={() => void refresh()}
               aria-label="刷新文件列表"
@@ -301,5 +301,5 @@ export const FileToolbar = forwardRef<FileToolbarHandle, FileToolbarProps>(funct
         </div>
       ) : null}
     </div>
-  )
-})
+  );
+});

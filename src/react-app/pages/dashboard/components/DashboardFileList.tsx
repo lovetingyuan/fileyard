@@ -95,10 +95,12 @@ function DashboardSelectAllCheckbox({
   className = "",
   selectedDashboardTargets,
   visibleTargets,
+  text,
 }: {
   className?: string;
   selectedDashboardTargets: BatchOperationTarget[];
   visibleTargets: BatchOperationTarget[];
+  text?: string;
 }) {
   const selectAllState = getDashboardSelectAllState({
     selectedTargets: selectedDashboardTargets,
@@ -121,15 +123,21 @@ function DashboardSelectAllCheckbox({
   };
 
   return (
-    <input
-      ref={setCheckboxRef}
-      type="checkbox"
-      className={`${SELECT_ALL_CHECKBOX_CLASS} ${className}`.trim()}
-      checked={selectAllState.checked}
-      readOnly
-      onClick={handleClick}
-      aria-label="选择当前可见项"
-    />
+    <div className="flex items-center">
+      <input
+        ref={setCheckboxRef}
+        type="checkbox"
+        className={`${SELECT_ALL_CHECKBOX_CLASS} ${className}`.trim()}
+        checked={selectAllState.checked}
+        readOnly
+        onClick={handleClick}
+        id="select-all"
+        aria-label="选择当前可见项"
+      />
+      <label className="ml-2" htmlFor="select-all">
+        {text}
+      </label>
+    </div>
   );
 }
 
@@ -233,9 +241,10 @@ function DashboardGrid({
   return (
     <div className="space-y-4" aria-busy="false">
       <DashboardSelectAllCheckbox
-        className="ml-1"
+        className="ml-2"
         selectedDashboardTargets={selectedDashboardTargets}
         visibleTargets={visibleTargets}
+        text="全选"
       />
       {sections.map((section) => {
         if (section.kind === "folders") {
@@ -266,7 +275,10 @@ function DashboardGrid({
 
 export function DashboardFileList(props: DashboardFileListProps) {
   const { dashboardLayoutMode, selectedDashboardTargets } = useAppStore();
-  const visibleTargets = createDashboardSelectionTargets(props.filteredFolders, props.filteredFiles);
+  const visibleTargets = createDashboardSelectionTargets(
+    props.filteredFolders,
+    props.filteredFiles,
+  );
 
   if (dashboardLayoutMode === "grid") {
     return (

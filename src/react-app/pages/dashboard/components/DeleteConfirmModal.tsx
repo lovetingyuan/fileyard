@@ -3,11 +3,7 @@ import toast from "react-hot-toast";
 import { Dialog } from "../../../components/Dialog";
 import { useDeleteFileMutation, useDeleteFolderMutation } from "../../../hooks/useFilesApi";
 import { useAppStore } from "../../../store";
-import {
-  closeDeleteTarget,
-  setDeletingFilePath,
-  setDeletingFolderPath,
-} from "../actions";
+import { closeDeleteTarget, setDeletingFilePath, setDeletingFolderPath } from "../actions";
 import { useDashboardFileView } from "../hooks/useDashboardFileView";
 import {
   FILE_OPERATION_UPLOAD_BLOCKED_MESSAGE,

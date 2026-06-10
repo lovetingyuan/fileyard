@@ -79,7 +79,9 @@ export function ImagePreview({
   previewUrl: string;
 }) {
   return (
-    <div className={isFullscreen ? "flex h-full items-center justify-center" : "flex justify-center"}>
+    <div
+      className={isFullscreen ? "flex h-full items-center justify-center" : "flex justify-center"}
+    >
       <img
         src={previewUrl}
         alt={file.name}
@@ -120,7 +122,9 @@ export function AudioPreview({
 }) {
   return (
     <div
-      className={isFullscreen ? "flex h-full items-center justify-center" : "flex justify-center py-8"}
+      className={
+        isFullscreen ? "flex h-full items-center justify-center" : "flex justify-center py-8"
+      }
     >
       <audio
         ref={restoreStoredPreviewMediaVolume}

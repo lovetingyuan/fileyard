@@ -1,32 +1,31 @@
-import clsx from 'clsx/lite'
-import MdiFolder from '~icons/mdi/folder'
-import type { BatchOperationTarget, FileEntry, FolderEntry } from '../../../../types'
-import { getFileIcon } from '../../../constants/fileIcons'
-import { formatBytes, formatDate, formatDetailedDate } from '../../../utils/fileFormatters'
-import { openFilePreview } from '../actions'
-import { useDashboardEntrySelection } from '../hooks/useDashboardEntrySelection'
-import { useDashboardLocatedFileHighlight } from '../hooks/useDashboardLocatedFileHighlight'
-import { useDashboardPath } from '../hooks/useDashboardPath'
-import type { SearchMatchRange } from '../utils/searchMatch'
-import { FileActionsMenu, FolderActionsMenu } from './FileEntryActions'
-import { FileEntryName } from './FileEntryName'
+import clsx from "clsx/lite";
+import MdiFolder from "~icons/mdi/folder";
+import type { BatchOperationTarget, FileEntry, FolderEntry } from "../../../../types";
+import { getFileIcon } from "../../../constants/fileIcons";
+import { formatBytes, formatDate, formatDetailedDate } from "../../../utils/fileFormatters";
+import { openFilePreview } from "../actions";
+import { useDashboardEntrySelection } from "../hooks/useDashboardEntrySelection";
+import { useDashboardLocatedFileHighlight } from "../hooks/useDashboardLocatedFileHighlight";
+import { useDashboardPath } from "../hooks/useDashboardPath";
+import type { SearchMatchRange } from "../utils/searchMatch";
+import { FileActionsMenu, FolderActionsMenu } from "./FileEntryActions";
+import { FileEntryName } from "./FileEntryName";
 
-const ENTRY_CHECKBOX_CLASS = 'checkbox checkbox-primary border-2 checkbox-sm h-5 w-5 shrink-0'
-const STRIPED_ROW_CLASS = 'even:bg-base-200/50'
-const SELECTED_ROW_CLASS = '[&_td]:bg-primary/15'
-const LOCATED_FILE_ROW_CLASS =
-  '[&_td]:bg-warning/20 [&_td]:transition-colors [&_td]:duration-500'
+const ENTRY_CHECKBOX_CLASS = "checkbox checkbox-primary border-2 checkbox-sm h-5 w-5 shrink-0";
+const STRIPED_ROW_CLASS = "even:bg-base-200/50";
+const SELECTED_ROW_CLASS = "[&_td]:bg-primary/15";
+const LOCATED_FILE_ROW_CLASS = "[&_td]:bg-warning/20 [&_td]:transition-colors [&_td]:duration-500";
 
 function TableEntryCheckbox({
   ariaLabel,
   checked,
-  className = '',
+  className = "",
   onClick,
 }: {
-  ariaLabel: string
-  checked: boolean
-  className?: string
-  onClick: (event: React.MouseEvent<HTMLInputElement>) => void
+  ariaLabel: string;
+  checked: boolean;
+  className?: string;
+  onClick: (event: React.MouseEvent<HTMLInputElement>) => void;
 }) {
   return (
     <input
@@ -37,56 +36,56 @@ function TableEntryCheckbox({
       onClick={onClick}
       aria-label={ariaLabel}
     />
-  )
+  );
 }
 
 function TableActionsSlot({
   children,
   isSelectionActive,
 }: {
-  children: React.ReactNode
-  isSelectionActive: boolean
+  children: React.ReactNode;
+  isSelectionActive: boolean;
 }) {
   return (
     <div
-      className={`flex justify-end ${isSelectionActive ? 'invisible pointer-events-none' : ''}`.trim()}
+      className={`flex justify-end ${isSelectionActive ? "invisible pointer-events-none" : ""}`.trim()}
       aria-hidden={isSelectionActive}
     >
       {children}
     </div>
-  )
+  );
 }
 
 type DashboardFolder = FolderEntry & {
-  searchMatchRanges?: SearchMatchRange[]
-}
+  searchMatchRanges?: SearchMatchRange[];
+};
 
 type DashboardFile = FileEntry & {
-  searchMatchRanges?: SearchMatchRange[]
-}
+  searchMatchRanges?: SearchMatchRange[];
+};
 
 export function FolderRow({
   folder,
   visibleTargets,
 }: {
-  folder: DashboardFolder
-  visibleTargets: BatchOperationTarget[]
+  folder: DashboardFolder;
+  visibleTargets: BatchOperationTarget[];
 }) {
-  const { setPath } = useDashboardPath()
-  const rowKey = `folder:${folder.path}`
+  const { setPath } = useDashboardPath();
+  const rowKey = `folder:${folder.path}`;
   const selection = useDashboardEntrySelection(
     {
-      type: 'folder',
+      type: "folder",
       path: folder.path,
       name: folder.name,
     },
     visibleTargets,
-  )
+  );
 
   return (
     <tr
-      className={`group ${STRIPED_ROW_CLASS} ${selection.isSelectionActive ? 'cursor-pointer' : ''} ${
-        selection.isSelected ? SELECTED_ROW_CLASS : ''
+      className={`group ${STRIPED_ROW_CLASS} ${selection.isSelectionActive ? "cursor-pointer" : ""} ${
+        selection.isSelected ? SELECTED_ROW_CLASS : ""
       }`.trim()}
       onClick={selection.handleActiveSelectionClick}
       onPointerDown={selection.handlePointerDown}
@@ -119,16 +118,16 @@ export function FolderRow({
           <button
             type="button"
             className={`block min-w-0 truncate text-left font-bold ${
-              selection.isSelectionActive ? 'cursor-pointer text-base-content' : 'link link-hover'
+              selection.isSelectionActive ? "cursor-pointer text-base-content" : "link link-hover"
             }`.trim()}
-            onClick={event => {
+            onClick={(event) => {
               if (selection.handleActiveSelectionClick(event)) {
-                return
+                return;
               }
               if (selection.shouldIgnoreEntryOpen()) {
-                return
+                return;
               }
-              setPath(folder.path)
+              setPath(folder.path);
             }}
           >
             <FileEntryName name={folder.name} ranges={folder.searchMatchRanges} entryKey={rowKey} />
@@ -145,36 +144,36 @@ export function FolderRow({
         </TableActionsSlot>
       </td>
     </tr>
-  )
+  );
 }
 
 export function FileRow({
   file,
   visibleTargets,
 }: {
-  file: DashboardFile
-  visibleTargets: BatchOperationTarget[]
+  file: DashboardFile;
+  visibleTargets: BatchOperationTarget[];
 }) {
-  const fileIcon = getFileIcon(file.name)
-  const rowKey = `file:${file.path}`
-  const createdAtTooltip = `创建时间：${formatDetailedDate(file.createdAt)}`
-  const locatedFile = useDashboardLocatedFileHighlight<HTMLTableRowElement>(file.path)
+  const fileIcon = getFileIcon(file.name);
+  const rowKey = `file:${file.path}`;
+  const createdAtTooltip = `创建时间：${formatDetailedDate(file.createdAt)}`;
+  const locatedFile = useDashboardLocatedFileHighlight<HTMLTableRowElement>(file.path);
   const selection = useDashboardEntrySelection(
     {
-      type: 'file',
+      type: "file",
       path: file.path,
       name: file.name,
     },
     visibleTargets,
-  )
+  );
 
   return (
     <tr
       ref={locatedFile.elementRef}
       className={clsx(
-        'group',
+        "group",
         STRIPED_ROW_CLASS,
-        selection.isSelectionActive && 'cursor-pointer',
+        selection.isSelectionActive && "cursor-pointer",
         selection.isSelected && SELECTED_ROW_CLASS,
         locatedFile.isHighlighted && LOCATED_FILE_ROW_CLASS,
       )}
@@ -212,16 +211,16 @@ export function FileRow({
           <button
             type="button"
             className={`min-w-0 truncate text-left ${
-              selection.isSelectionActive ? 'cursor-pointer text-base-content' : 'link link-hover'
+              selection.isSelectionActive ? "cursor-pointer text-base-content" : "link link-hover"
             }`.trim()}
-            onClick={event => {
+            onClick={(event) => {
               if (selection.handleActiveSelectionClick(event)) {
-                return
+                return;
               }
               if (selection.shouldIgnoreEntryOpen()) {
-                return
+                return;
               }
-              openFilePreview(file)
+              openFilePreview(file);
             }}
           >
             <FileEntryName name={file.name} ranges={file.searchMatchRanges} entryKey={rowKey} />
@@ -242,5 +241,5 @@ export function FileRow({
         </TableActionsSlot>
       </td>
     </tr>
-  )
+  );
 }

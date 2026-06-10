@@ -7,7 +7,9 @@ const LARGE_FILE_UPLOAD_THRESHOLD_BYTES = 20 * 1024 * 1024;
 
 export async function runWithLargeFileUploadToast<T>(file: File, action: () => Promise<T>) {
   const waitingToastId =
-    file.size >= LARGE_FILE_UPLOAD_THRESHOLD_BYTES ? toast.loading("Large file, please wait") : undefined;
+    file.size >= LARGE_FILE_UPLOAD_THRESHOLD_BYTES
+      ? toast.loading("Large file, please wait")
+      : undefined;
 
   try {
     return await action();
@@ -30,7 +32,10 @@ export async function downloadDashboardFile(path: string, fallbackName: string) 
     const downloadUrl = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = downloadUrl;
-    anchor.download = getDownloadFilename(response.headers.get("Content-Disposition"), fallbackName);
+    anchor.download = getDownloadFilename(
+      response.headers.get("Content-Disposition"),
+      fallbackName,
+    );
     document.body.append(anchor);
     anchor.click();
     anchor.remove();
