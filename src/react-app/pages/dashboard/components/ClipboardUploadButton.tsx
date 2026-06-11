@@ -1,7 +1,6 @@
-import { type KeyboardEvent, useRef, useState } from "react";
+import { type KeyboardEvent, useState } from "react";
 import MdiClipboardFileOutline from "~icons/mdi/clipboard-file-outline";
 import MdiContentPaste from "~icons/mdi/content-paste";
-import MdiFileUpload from "~icons/mdi/file-upload";
 import type { ClipboardUploadItem } from "../../../../types";
 import { Dialog } from "../../../components/Dialog";
 import { getFileIcon } from "../../../constants/fileIcons";
@@ -11,7 +10,6 @@ import {
   readClipboardUploadItems,
 } from "../../../utils/clipboardUpload";
 import { formatBytes } from "../../../utils/fileFormatters";
-import { takeFileInputSelection } from "../../../utils/uploadInputSelection";
 import { uploadDashboardFiles } from "../uploadFiles";
 
 type ClipboardUploadButtonProps = {
@@ -20,10 +18,8 @@ type ClipboardUploadButtonProps = {
 
 type ClipboardUploadDropzoneProps = {
   isMobileUploadLayout: boolean;
-  isReadingClipboard: boolean;
   statusMessage: string | null;
   onReadClipboard: () => void;
-  onSelectFiles: () => void;
 };
 
 const AUTO_READ_TIMEOUT_MS = 2000;
@@ -57,22 +53,14 @@ function shouldUseMobileUploadLayout(): boolean {
 
 export function getClipboardAutoReadUnavailableMessage(isMobileUploadLayout: boolean): string {
   return isMobileUploadLayout
-    ? "无法通过点击读取剪贴板文件，请选择文件/照片或长按此处粘贴"
+    ? "未读取到可上传文件"
     : "无法通过点击读取剪贴板文件，请按 Ctrl+V 粘贴文件";
 }
 
 export function getClipboardEmptyMessage(isMobileUploadLayout: boolean): string {
   return isMobileUploadLayout
-    ? "未读取到可上传文件，请选择文件/照片或长按此处粘贴"
+    ? "未读取到可上传文件"
     : "未读取到可上传文件；文件管理器复制的文件请按 Ctrl+V";
-}
-
-export function uploadClipboardFileInputSelection(
-  event: React.ChangeEvent<HTMLInputElement>,
-  isFileMutationDisabled: boolean,
-) {
-  const files = takeFileInputSelection(event.target);
-  void uploadDashboardFiles({ files, source: "file", isFileMutationDisabled });
 }
 
 function ClipboardUploadFileRow({ item }: { item: ClipboardUploadItem }) {
@@ -95,10 +83,8 @@ function ClipboardUploadFileRow({ item }: { item: ClipboardUploadItem }) {
 
 export function ClipboardUploadDropzone({
   isMobileUploadLayout,
-  isReadingClipboard,
   statusMessage,
   onReadClipboard,
-  onSelectFiles,
 }: ClipboardUploadDropzoneProps) {
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key !== "Enter" && event.key !== " ") {
@@ -107,12 +93,6 @@ export function ClipboardUploadDropzone({
 
     event.preventDefault();
     onReadClipboard();
-  };
-
-  const handleSelectFiles = (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-    onSelectFiles();
   };
 
   return (
@@ -124,40 +104,18 @@ export function ClipboardUploadDropzone({
       onKeyDown={handleKeyDown}
       aria-label="读取剪贴板文件"
     >
-      {isReadingClipboard ? (
-        <span className="loading loading-spinner loading-md text-primary" />
-      ) : (
-        <MdiContentPaste className="h-8 w-8 text-base-content/50" aria-hidden="true" />
-      )}
+      <MdiContentPaste className="h-8 w-8 text-base-content/50" aria-hidden="true" />
       <div className="space-y-1">
         <p className="text-sm font-medium">
-          {isReadingClipboard
-            ? "正在读取剪贴板"
-            : isMobileUploadLayout
-              ? "选择文件/照片，或长按此处粘贴"
-              : "点击读取图片，或按 Ctrl+V 粘贴文件"}
+          {isMobileUploadLayout ? "读取剪贴板文件" : "点击读取图片，或按 Ctrl+V 粘贴文件"}
         </p>
         {statusMessage ? <p className="text-xs text-base-content/60">{statusMessage}</p> : null}
       </div>
-      {isMobileUploadLayout ? (
-        <div className="flex flex-wrap justify-center gap-2">
-          <button
-            type="button"
-            className="btn btn-sm btn-outline gap-2"
-            onClick={handleSelectFiles}
-            aria-label="选择文件/照片"
-          >
-            <MdiFileUpload className="h-4 w-4" aria-hidden="true" />
-            选择文件/照片
-          </button>
-        </div>
-      ) : null}
     </div>
   );
 }
 
 export function useClipboardUploadDialog({ isFileMutationDisabled }: ClipboardUploadButtonProps) {
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [isReadingClipboard, setIsReadingClipboard] = useState(false);
   const [clipboardItems, setClipboardItems] = useState<ClipboardUploadItem[]>([]);
@@ -242,20 +200,14 @@ export function useClipboardUploadDialog({ isFileMutationDisabled }: ClipboardUp
         widthMode="content"
         boxClassName="w-[min(34rem,95vw)]"
       >
-        <div className="flex flex-col gap-4" onPaste={handlePaste}>
-          <input
-            ref={fileInputRef}
-            type="file"
-            className="hidden"
-            multiple
-            onChange={(event) => uploadClipboardFileInputSelection(event, isFileMutationDisabled)}
-          />
+        <div
+          className="flex flex-col gap-4"
+          onPaste={isMobileUploadLayout ? undefined : handlePaste}
+        >
           <ClipboardUploadDropzone
             isMobileUploadLayout={isMobileUploadLayout}
-            isReadingClipboard={isReadingClipboard}
             statusMessage={statusMessage}
             onReadClipboard={() => void readClipboard()}
-            onSelectFiles={() => fileInputRef.current?.click()}
           />
 
           {clipboardItems.length > 0 ? (

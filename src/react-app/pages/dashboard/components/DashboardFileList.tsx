@@ -56,15 +56,15 @@ function DashboardLoadingRows() {
   return Array.from({ length: DASHBOARD_LOADING_ROW_COUNT }, (_, index) => (
     <tr key={index} data-dashboard-loading-row="true">
       <td className="min-w-0">
-        <span className="flex w-full min-w-0 items-center gap-1 sm:gap-2 align-middle">
+        <span className="flex w-full min-w-0 items-center gap-1 @min-[40rem]:gap-2 align-middle">
           <span className="skeleton h-5 w-5 shrink-0 rounded-sm" />
-          <span className="skeleton h-4 w-36 max-w-[70%] sm:w-52" />
+          <span className="skeleton h-4 w-36 max-w-[70%] @min-[40rem]:w-52" />
         </span>
       </td>
-      <td className="hidden sm:table-cell">
+      <td className="hidden @min-[40rem]:table-cell">
         <span className="skeleton block h-4 w-12" />
       </td>
-      <td className="hidden sm:table-cell">
+      <td className="hidden @min-[40rem]:table-cell">
         <span className="skeleton block h-4 w-28" />
       </td>
       <td className="text-right">
@@ -144,12 +144,18 @@ function DashboardSelectAllCheckbox({
 function DashboardTableEmptyRows({ searchInputValue }: { searchInputValue: string }) {
   return (
     <>
-      <tr className={searchInputValue ? "sm:hidden" : "bg-base-100 sm:hidden"}>
+      <tr className={searchInputValue ? "@min-[40rem]:hidden" : "bg-base-100 @min-[40rem]:hidden"}>
         <td colSpan={2}>
           <DashboardEmptyState searchInputValue={searchInputValue} />
         </td>
       </tr>
-      <tr className={searchInputValue ? "hidden sm:table-row" : "hidden bg-base-100 sm:table-row"}>
+      <tr
+        className={
+          searchInputValue
+            ? "hidden @min-[40rem]:table-row"
+            : "hidden bg-base-100 @min-[40rem]:table-row"
+        }
+      >
         <td colSpan={4}>
           <DashboardEmptyState searchInputValue={searchInputValue} />
         </td>
@@ -167,9 +173,9 @@ function DashboardTable({
   visibleTargets,
 }: DashboardResolvedFileListProps) {
   return (
-    <div>
+    <div className="@container">
       <table
-        className="table table-zebra table-md table-fixed w-full [&_td]:px-2 [&_th]:px-2 sm:[&_td]:px-4 sm:[&_th]:px-4"
+        className="table table-zebra table-md table-fixed w-full [&_td]:px-2 [&_th]:px-2 @min-[40rem]:[&_td]:px-4 @min-[40rem]:[&_th]:px-4"
         aria-busy={isLoading}
       >
         <thead className="bg-base-300">
@@ -183,13 +189,13 @@ function DashboardTable({
                 <span>Name</span>
               </span>
             </th>
-            <th className="hidden sm:table-cell sm:w-28">
+            <th className="hidden @min-[40rem]:table-cell @min-[40rem]:w-28">
               <span>Size</span>
             </th>
-            <th className="hidden sm:table-cell sm:w-46">
+            <th className="hidden @min-[40rem]:table-cell @min-[40rem]:w-46">
               <span>Updated</span>
             </th>
-            <th className="w-18 text-right sm:w-21">
+            <th className="w-18 text-right @min-[40rem]:w-21">
               <span>Actions</span>
             </th>
           </tr>

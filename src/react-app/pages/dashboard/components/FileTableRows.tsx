@@ -94,7 +94,7 @@ export function FolderRow({
       onPointerCancel={selection.handlePointerEnd}
     >
       <td className="min-w-0">
-        <span className="flex w-full min-w-0 items-center gap-1 sm:gap-2 align-middle">
+        <span className="flex w-full min-w-0 items-center gap-1 @min-[40rem]:gap-2 align-middle">
           {selection.isSelectionActive ? (
             <>
               <TableEntryCheckbox
@@ -134,8 +134,8 @@ export function FolderRow({
           </button>
         </span>
       </td>
-      <td className="hidden text-base-content/50 sm:table-cell select-none">-</td>
-      <td className="hidden whitespace-nowrap text-base-content/50 sm:table-cell text-xs select-none">
+      <td className="hidden text-base-content/50 @min-[40rem]:table-cell select-none">-</td>
+      <td className="hidden whitespace-nowrap text-base-content/50 @min-[40rem]:table-cell text-xs select-none">
         {formatDate(folder.createdAt)}
       </td>
       <td className="text-right">
@@ -185,7 +185,7 @@ export function FileRow({
       onPointerCancel={selection.handlePointerEnd}
     >
       <td className="min-w-0 font-medium">
-        <span className="flex w-full min-w-0 items-start gap-1 sm:gap-2 align-middle">
+        <span className="flex w-full min-w-0 items-start gap-1 @min-[40rem]:gap-2 align-middle">
           {selection.isSelectionActive ? (
             <>
               <TableEntryCheckbox
@@ -227,10 +227,10 @@ export function FileRow({
           </button>
         </span>
       </td>
-      <td className="hidden text-base-content/50 sm:table-cell text-xs select-none">
+      <td className="hidden text-base-content/50 @min-[40rem]:table-cell text-xs select-none">
         <span>{formatBytes(file.size)}</span>
       </td>
-      <td className="hidden whitespace-nowrap text-base-content/50 sm:table-cell text-xs select-none">
+      <td className="hidden whitespace-nowrap text-base-content/50 @min-[40rem]:table-cell text-xs select-none">
         {/* <span className="tooltip" data-tip={createdAtTooltip}> */}
         <span title={createdAtTooltip}>{formatDate(file.uploadedAt)}</span>
         {/* </span> */}
