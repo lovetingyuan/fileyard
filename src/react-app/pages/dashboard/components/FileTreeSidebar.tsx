@@ -267,9 +267,9 @@ export function FileTreeSidebar() {
   return (
     <aside
       className={clsx(
-        "relative z-10 h-full min-h-0 shrink-0 transition-[width] duration-200 ease-in-out",
+        "absolute inset-y-0 left-0 z-[110] h-full min-h-0 shrink-0 transition-[width] duration-200 ease-in-out md:relative md:inset-auto md:z-10",
         isDashboardTreeSidebarOpen
-          ? "w-72 overflow-hidden border-r border-base-300/70 bg-base-100/85"
+          ? "w-72 max-w-[calc(100vw-1rem)] overflow-hidden border-r border-base-300/70 bg-base-100/95 shadow-xl md:max-w-none md:bg-base-100/85 md:shadow-none"
           : "w-0 overflow-visible",
       )}
       aria-label="Home 文件树侧栏"

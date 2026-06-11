@@ -159,7 +159,7 @@ export function Dashboard() {
       {isCreatingNewFolder ? <NewFolderModal key={addNewFolderName} /> : null}
       <NewTextFileModal />
       <UploadProgressPanel />
-      <div className="flex min-h-0 flex-1 overflow-hidden">
+      <div className="relative flex min-h-0 flex-1 overflow-hidden">
         <FileTreeSidebar />
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           <main className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
