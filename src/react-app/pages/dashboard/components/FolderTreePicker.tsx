@@ -1,3 +1,4 @@
+import clsx from "clsx/lite";
 import { type ComponentType, type SVGProps } from "react";
 import MdiFolder from "~icons/mdi/folder";
 import type { FolderTreeNode } from "../../../../types";
@@ -29,19 +30,30 @@ function FolderTreeItem({
   const isSelectionVisible = isSelected && !isDisabled;
 
   return (
-    <li>
+    <li className={isDisabled ? "disabled" : undefined}>
       <button
         type="button"
-        className={`gap-2 ${isSelectionVisible ? "menu-active" : ""}`.trim()}
+        className={clsx(
+          "gap-2",
+          isSelectionVisible && "menu-active",
+          isDisabled && "cursor-not-allowed text-base-content/40",
+        )}
         disabled={isDisabled}
         title={disabledReason ?? undefined}
         aria-pressed={isSelected}
         onClick={() => onSelect(node.path)}
       >
         <Icon
-          className={`h-4 w-4 shrink-0 ${
-            isSelectionVisible ? "text-current" : node.path ? "text-warning" : "text-primary"
-          }`}
+          className={clsx(
+            "h-4 w-4 shrink-0",
+            isDisabled
+              ? "text-base-content/35"
+              : isSelectionVisible
+                ? "text-current"
+                : node.path
+                  ? "text-warning"
+                  : "text-primary",
+          )}
         />
         <span className="min-w-0 flex-1 truncate text-left">
           {getFolderLabel(node.path, node.name)}
@@ -51,7 +63,7 @@ function FolderTreeItem({
         ) : null}
       </button>
       {node.children.length > 0 ? (
-        <ul>
+        <ul className="!ms-2 !ps-1">
           {node.children.map((child) => (
             <FolderTreeItem
               key={child.path}
