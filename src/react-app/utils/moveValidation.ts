@@ -9,6 +9,27 @@ export function isFolderSelfOrDescendant(folderPath: string, targetParentPath: s
   return targetParentPath === folderPath || targetParentPath.startsWith(`${folderPath}/`);
 }
 
+export function isFolderStrictDescendant(folderPath: string, candidatePath: string): boolean {
+  return candidatePath.startsWith(`${folderPath}/`);
+}
+
+export function isMoveDestinationHidden(destinationPath: string, target: MoveTarget): boolean {
+  return target.type === "folder" && isFolderStrictDescendant(target.path, destinationPath);
+}
+
+export function isBatchMoveDestinationHidden(
+  destinationPath: string,
+  targets: BatchOperationTarget[],
+): boolean {
+  if (targets.some((target) => target.type === "folder" && target.path === destinationPath)) {
+    return false;
+  }
+
+  return targets.some(
+    (target) => target.type === "folder" && isFolderStrictDescendant(target.path, destinationPath),
+  );
+}
+
 export function getMoveDestinationDisabledReason(
   destinationPath: string,
   target: MoveTarget,

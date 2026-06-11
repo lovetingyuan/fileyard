@@ -6,7 +6,10 @@ import { Dialog } from "../../../components/Dialog";
 import { useFolderTree, useMoveEntryMutation } from "../../../hooks/useFilesApi";
 import { useAppStore } from "../../../store";
 import { ApiError } from "../../../utils/apiRequest";
-import { getMoveDestinationDisabledReason } from "../../../utils/moveValidation";
+import {
+  getMoveDestinationDisabledReason,
+  isMoveDestinationHidden,
+} from "../../../utils/moveValidation";
 import { closeMoveTarget, setMovingPath } from "../actions";
 import { useDashboardFileView } from "../hooks/useDashboardFileView";
 import {
@@ -122,6 +125,7 @@ export function MoveModal() {
                 getDisabledReason={(path) =>
                   getMoveDestinationDisabledReason(path, pendingMoveTarget)
                 }
+                isNodeHidden={(path) => isMoveDestinationHidden(path, pendingMoveTarget)}
                 isInteractionDisabled={isInteractionDisabled}
                 onSelect={handleSelect}
                 selectedPath={selectedPath}

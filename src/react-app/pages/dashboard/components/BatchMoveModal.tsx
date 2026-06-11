@@ -6,7 +6,10 @@ import type { BatchFileOperationResult, BatchOperationTarget } from "../../../..
 import { Dialog } from "../../../components/Dialog";
 import { useBatchMoveEntriesMutation, useFolderTree } from "../../../hooks/useFilesApi";
 import { useAppStore } from "../../../store";
-import { getBatchMoveDestinationDisabledReason } from "../../../utils/moveValidation";
+import {
+  getBatchMoveDestinationDisabledReason,
+  isBatchMoveDestinationHidden,
+} from "../../../utils/moveValidation";
 import {
   closeBatchMoveTargets,
   replaceDashboardSelectionWithFailedResults,
@@ -170,6 +173,9 @@ export function BatchMoveModal() {
                 Icon={MdiFolderOpenOutline}
                 getDisabledReason={(path) =>
                   getBatchMoveDestinationDisabledReason(path, pendingBatchMoveTargets)
+                }
+                isNodeHidden={(path) =>
+                  isBatchMoveDestinationHidden(path, pendingBatchMoveTargets)
                 }
                 isInteractionDisabled={isInteractionDisabled}
                 onSelect={handleSelect}

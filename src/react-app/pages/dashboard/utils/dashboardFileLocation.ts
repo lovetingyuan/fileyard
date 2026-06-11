@@ -1,5 +1,5 @@
 export const DASHBOARD_FILE_LOCATION_SCROLL_DELAY_MS = 220;
-export const DASHBOARD_FILE_LOCATION_HIGHLIGHT_MS = 1600;
+export const DASHBOARD_FILE_LOCATION_HIGHLIGHT_MS = 3200;
 
 export function getDashboardFileParentPath(filePath: string): string {
   const separatorIndex = filePath.lastIndexOf("/");

@@ -12,6 +12,7 @@ function getFolderLabel(path: string, name: string) {
 function FolderTreeItem({
   Icon,
   getDisabledReason,
+  isNodeHidden,
   isInteractionDisabled,
   node,
   onSelect,
@@ -19,6 +20,7 @@ function FolderTreeItem({
 }: {
   Icon: IconComponent;
   getDisabledReason: (path: string) => string | null;
+  isNodeHidden: (path: string) => boolean;
   isInteractionDisabled: boolean;
   node: FolderTreeNode;
   onSelect: (path: string) => void;
@@ -28,6 +30,7 @@ function FolderTreeItem({
   const isDisabled = Boolean(disabledReason) || isInteractionDisabled;
   const isSelected = selectedPath === node.path;
   const isSelectionVisible = isSelected && !isDisabled;
+  const visibleChildren = node.children.filter((child) => !isNodeHidden(child.path));
 
   return (
     <li className={isDisabled ? "disabled" : undefined}>
@@ -62,13 +65,14 @@ function FolderTreeItem({
           <span className="shrink-0 text-xs text-base-content/45">{disabledReason}</span>
         ) : null}
       </button>
-      {node.children.length > 0 ? (
+      {visibleChildren.length > 0 ? (
         <ul className="!ms-2 !ps-1">
-          {node.children.map((child) => (
+          {visibleChildren.map((child) => (
             <FolderTreeItem
               key={child.path}
               Icon={MdiFolder}
               getDisabledReason={getDisabledReason}
+              isNodeHidden={isNodeHidden}
               isInteractionDisabled={isInteractionDisabled}
               node={child}
               onSelect={onSelect}
@@ -84,6 +88,7 @@ function FolderTreeItem({
 export function FolderTreePicker({
   Icon,
   getDisabledReason,
+  isNodeHidden = () => false,
   isInteractionDisabled,
   onSelect,
   selectedPath,
@@ -91,6 +96,7 @@ export function FolderTreePicker({
 }: {
   Icon: IconComponent;
   getDisabledReason: (path: string) => string | null;
+  isNodeHidden?: (path: string) => boolean;
   isInteractionDisabled: boolean;
   onSelect: (path: string) => void;
   selectedPath: string | null;
@@ -101,6 +107,7 @@ export function FolderTreePicker({
       <FolderTreeItem
         Icon={Icon}
         getDisabledReason={getDisabledReason}
+        isNodeHidden={isNodeHidden}
         isInteractionDisabled={isInteractionDisabled}
         node={tree}
         onSelect={onSelect}
