@@ -1,36 +1,36 @@
-import { type KeyboardEvent, useState } from "react";
-import MdiClipboardFileOutline from "~icons/mdi/clipboard-file-outline";
-import MdiContentPaste from "~icons/mdi/content-paste";
-import type { ClipboardUploadItem } from "../../../../types";
-import { Dialog } from "../../../components/Dialog";
-import { getFileIcon } from "../../../constants/fileIcons";
+import { type KeyboardEvent, useState } from 'react'
+import MdiClipboardFileOutline from '~icons/mdi/clipboard-file-outline'
+import MdiContentPaste from '~icons/mdi/content-paste'
+import type { ClipboardUploadItem } from '../../../../types'
+import { Dialog } from '../../../components/Dialog'
+import { getFileIcon } from '../../../constants/fileIcons'
 import {
   createClipboardUploadItemsFromFiles,
   extractClipboardFilesFromData,
   readClipboardUploadItems,
-} from "../../../utils/clipboardUpload";
-import { cn } from "../../../utils/cn";
-import { formatBytes } from "../../../utils/fileFormatters";
-import { uploadDashboardFiles } from "../uploadFiles";
+} from '../../../utils/clipboardUpload'
+import { cn } from '../../../utils/cn'
+import { formatBytes } from '../../../utils/fileFormatters'
+import { uploadDashboardFiles } from '../uploadFiles'
 
 type ClipboardUploadButtonProps = {
-  isFileMutationDisabled: boolean;
-};
+  isFileMutationDisabled: boolean
+}
 
 type ClipboardUploadDropzoneProps = {
-  isMobileUploadLayout: boolean;
-  statusMessage: string | null;
-  onReadClipboard: () => void;
-};
+  isMobileUploadLayout: boolean
+  statusMessage: string | null
+  onReadClipboard: () => void
+}
 
-const AUTO_READ_TIMEOUT_MS = 2000;
+const AUTO_READ_TIMEOUT_MS = 2000
 
 function getNavigatorClipboardItems(): Promise<ClipboardItem[]> | null {
-  if (typeof navigator === "undefined" || !navigator.clipboard?.read) {
-    return null;
+  if (typeof navigator === 'undefined' || !navigator.clipboard?.read) {
+    return null
   }
 
-  return navigator.clipboard.read();
+  return navigator.clipboard.read()
 }
 
 function withClipboardReadTimeout(
@@ -38,48 +38,50 @@ function withClipboardReadTimeout(
 ): Promise<ClipboardItem[] | null> {
   return Promise.race([
     pendingItems,
-    new Promise<null>((resolve) => {
-      setTimeout(() => resolve(null), AUTO_READ_TIMEOUT_MS);
+    new Promise<null>(resolve => {
+      setTimeout(() => resolve(null), AUTO_READ_TIMEOUT_MS)
     }),
-  ]);
+  ])
 }
 
 function shouldUseMobileUploadLayout(): boolean {
-  if (typeof window !== "undefined" && window.matchMedia?.("(max-width: 639px)").matches) {
-    return true;
+  if (typeof window !== 'undefined' && window.matchMedia?.('(max-width: 639px)').matches) {
+    return true
   }
 
-  return typeof navigator !== "undefined" && navigator.maxTouchPoints > 0;
+  return typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0
 }
 
 export function getClipboardAutoReadUnavailableMessage(isMobileUploadLayout: boolean): string {
   return isMobileUploadLayout
-    ? "未读取到可上传文件"
-    : "无法通过点击读取剪贴板文件，请按 Ctrl+V 粘贴文件";
+    ? '未读取到可上传文件'
+    : '无法通过点击读取剪贴板文件，请按 Ctrl+V 粘贴文件'
 }
 
 export function getClipboardEmptyMessage(isMobileUploadLayout: boolean): string {
   return isMobileUploadLayout
-    ? "未读取到可上传文件"
-    : "未读取到可上传文件；文件管理器复制的文件请按 Ctrl+V";
+    ? '未读取到可上传文件'
+    : '未读取到可上传文件；文件管理器复制的文件请按 Ctrl+V'
 }
 
 function ClipboardUploadFileRow({ item }: { item: ClipboardUploadItem }) {
-  const { Icon, color } = getFileIcon(item.name);
+  const { Icon, color } = getFileIcon(item.name)
 
   return (
-    <li className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-field bg-base-200">
-        <Icon className={cn("h-6 w-6", color)} aria-hidden="true" />
+    <li className="flex items-center gap-2 py-2 first:pt-0 last:pb-0">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-field bg-base-200">
+        <Icon className={cn('h-5 w-5', color)} aria-hidden="true" />
       </span>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium" title={item.name}>
+      <div className="flex min-w-0 flex-1 items-baseline gap-2">
+        <p className="min-w-0 flex-1 truncate text-sm font-medium" title={item.name}>
           {item.name}
         </p>
-        <p className="text-xs text-base-content/60">{formatBytes(item.size)}</p>
+        <span className="shrink-0 whitespace-nowrap text-xs text-base-content/60">
+          {formatBytes(item.size)}
+        </span>
       </div>
     </li>
-  );
+  )
 }
 
 export function ClipboardUploadDropzone({
@@ -88,13 +90,13 @@ export function ClipboardUploadDropzone({
   onReadClipboard,
 }: ClipboardUploadDropzoneProps) {
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key !== "Enter" && event.key !== " ") {
-      return;
+    if (event.key !== 'Enter' && event.key !== ' ') {
+      return
     }
 
-    event.preventDefault();
-    onReadClipboard();
-  };
+    event.preventDefault()
+    onReadClipboard()
+  }
 
   return (
     <div
@@ -108,85 +110,87 @@ export function ClipboardUploadDropzone({
       <MdiContentPaste className="h-8 w-8 text-base-content/50" aria-hidden="true" />
       <div className="space-y-1">
         <p className="text-sm font-medium">
-          {isMobileUploadLayout ? "读取剪贴板文件" : "点击读取图片，或按 Ctrl+V 粘贴文件"}
+          {isMobileUploadLayout ? '读取剪贴板文件' : '点击读取图片，或按 Ctrl+V 粘贴文件'}
         </p>
-        {statusMessage ? <p className="text-xs text-base-content/60">{statusMessage}</p> : null}
+        {statusMessage ? (
+          <p className="text-xs text-base-content/60">{statusMessage.split(/[；，,]/)[0]}</p>
+        ) : null}
       </div>
     </div>
-  );
+  )
 }
 
 export function useClipboardUploadDialog({ isFileMutationDisabled }: ClipboardUploadButtonProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isReadingClipboard, setIsReadingClipboard] = useState(false);
-  const [clipboardItems, setClipboardItems] = useState<ClipboardUploadItem[]>([]);
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const isMobileUploadLayout = shouldUseMobileUploadLayout();
+  const [isOpen, setIsOpen] = useState(false)
+  const [isReadingClipboard, setIsReadingClipboard] = useState(false)
+  const [clipboardItems, setClipboardItems] = useState<ClipboardUploadItem[]>([])
+  const [statusMessage, setStatusMessage] = useState<string | null>(null)
+  const isMobileUploadLayout = shouldUseMobileUploadLayout()
 
   const readClipboard = async () => {
-    const pendingClipboardItems = getNavigatorClipboardItems();
+    const pendingClipboardItems = getNavigatorClipboardItems()
     if (!pendingClipboardItems) {
-      setStatusMessage(getClipboardAutoReadUnavailableMessage(isMobileUploadLayout));
-      return;
+      setStatusMessage(getClipboardAutoReadUnavailableMessage(isMobileUploadLayout))
+      return
     }
 
-    setIsReadingClipboard(true);
-    setStatusMessage(null);
+    setIsReadingClipboard(true)
+    setStatusMessage(null)
     try {
-      const clipboardItems = await withClipboardReadTimeout(pendingClipboardItems);
+      const clipboardItems = await withClipboardReadTimeout(pendingClipboardItems)
       if (!clipboardItems) {
-        setStatusMessage(getClipboardAutoReadUnavailableMessage(isMobileUploadLayout));
-        return;
+        setStatusMessage(getClipboardAutoReadUnavailableMessage(isMobileUploadLayout))
+        return
       }
-      const items = await readClipboardUploadItems(clipboardItems);
-      setClipboardItems(items);
-      setStatusMessage(items.length > 0 ? null : getClipboardEmptyMessage(isMobileUploadLayout));
+      const items = await readClipboardUploadItems(clipboardItems)
+      setClipboardItems(items)
+      setStatusMessage(items.length > 0 ? null : getClipboardEmptyMessage(isMobileUploadLayout))
     } catch {
-      setStatusMessage(getClipboardAutoReadUnavailableMessage(isMobileUploadLayout));
+      setStatusMessage(getClipboardAutoReadUnavailableMessage(isMobileUploadLayout))
     } finally {
-      setIsReadingClipboard(false);
+      setIsReadingClipboard(false)
     }
-  };
+  }
 
   const openModal = () => {
-    setClipboardItems([]);
-    setStatusMessage(null);
-    setIsOpen(true);
-    void readClipboard();
-  };
+    setClipboardItems([])
+    setStatusMessage(null)
+    setIsOpen(true)
+    void readClipboard()
+  }
 
   const closeModal = () => {
-    setIsOpen(false);
-    setClipboardItems([]);
-    setStatusMessage(null);
-    setIsReadingClipboard(false);
-  };
+    setIsOpen(false)
+    setClipboardItems([])
+    setStatusMessage(null)
+    setIsReadingClipboard(false)
+  }
 
   const handlePaste = (event: React.ClipboardEvent<HTMLDivElement>) => {
-    const files = extractClipboardFilesFromData(event.clipboardData);
+    const files = extractClipboardFilesFromData(event.clipboardData)
     if (files.length === 0) {
-      setStatusMessage("粘贴内容中没有可上传的文件");
-      return;
+      setStatusMessage('粘贴内容中没有可上传的文件')
+      return
     }
 
-    event.preventDefault();
-    const items = createClipboardUploadItemsFromFiles(files);
-    setClipboardItems(items);
-    setStatusMessage(null);
-  };
+    event.preventDefault()
+    const items = createClipboardUploadItemsFromFiles(files)
+    setClipboardItems(items)
+    setStatusMessage(null)
+  }
 
   const uploadClipboardFiles = async () => {
     if (clipboardItems.length === 0) {
-      return;
+      return
     }
 
     await uploadDashboardFiles({
-      files: clipboardItems.map((item) => item.file),
-      source: "clipboard",
+      files: clipboardItems.map(item => item.file),
+      source: 'clipboard',
       isFileMutationDisabled,
-    });
-    closeModal();
-  };
+    })
+    closeModal()
+  }
 
   return {
     clipboardUploadDialog: (
@@ -214,7 +218,7 @@ export function useClipboardUploadDialog({ isFileMutationDisabled }: ClipboardUp
           {clipboardItems.length > 0 ? (
             <div className="max-h-[45vh] overflow-y-auto pr-2 [scrollbar-gutter:stable]">
               <ul className="divide-y divide-base-300">
-                {clipboardItems.map((item) => (
+                {clipboardItems.map(item => (
                   <ClipboardUploadFileRow key={item.id} item={item} />
                 ))}
               </ul>
@@ -224,13 +228,13 @@ export function useClipboardUploadDialog({ isFileMutationDisabled }: ClipboardUp
       </Dialog>
     ),
     openClipboardUploadDialog: openModal,
-  };
+  }
 }
 
 export function ClipboardUploadButton({ isFileMutationDisabled }: ClipboardUploadButtonProps) {
   const { clipboardUploadDialog, openClipboardUploadDialog } = useClipboardUploadDialog({
     isFileMutationDisabled,
-  });
+  })
 
   return (
     <>
@@ -248,5 +252,5 @@ export function ClipboardUploadButton({ isFileMutationDisabled }: ClipboardUploa
 
       {clipboardUploadDialog}
     </>
-  );
+  )
 }

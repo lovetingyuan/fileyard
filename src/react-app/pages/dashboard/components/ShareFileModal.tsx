@@ -189,7 +189,7 @@ export function ShareFileModal() {
       onAfterOpen={handleAfterOpen}
       confirmText="分享"
       confirmDisabled={isLoading || Boolean(passwordError) || !shareLink}
-      boxClassName="w-[min(28rem,94vw)] max-w-none border border-base-300/70 bg-base-100 p-0 shadow-2xl"
+      boxClassName="w-[min(34rem,94vw)] max-w-none border border-base-300/70 bg-base-100 p-0 shadow-2xl"
       headerClassName="mb-0 border-b border-base-200 px-4 py-3"
       bodyClassName="px-4 py-3.5"
       footerClassName="mt-0 border-t border-base-200 px-4 py-3"
@@ -200,15 +200,37 @@ export function ShareFileModal() {
         className="mb-3 truncate text-sm font-medium leading-6 text-base-content"
         title={file.name}
       >
-        {file.name}
+        <span className="select-none text-gray-400">文件名： </span>
+        <span>{file.name}</span>
       </div>
 
-      <div className="space-y-3">
-        <div className="grid grid-cols-2 gap-2.5">
-          <label className="flex min-w-0 items-center gap-2">
+      <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3">
+        <div className="grid w-[clamp(8.5rem,38vw,15rem)] place-items-center rounded-lg border border-base-300/80 bg-base-200/25 p-1">
+          {shareLink ? (
+            <QRCode
+              value={shareLink.shareUrl}
+              size={456}
+              className="block h-auto w-full rounded bg-white p-2 [shape-rendering:crispEdges]"
+              bgColor="#ffffff"
+              fgColor="#111827"
+            />
+          ) : (
+            <div className="flex aspect-square w-full flex-col items-center justify-center gap-2 rounded bg-white p-3 text-center text-base-content/55">
+              <div className="text-sm font-medium text-base-content/70">
+                {isLoading ? '正在生成二维码' : '生成后显示二维码'}
+              </div>
+              <div className="max-w-44 text-xs leading-5 text-base-content/50">
+                可设置分享密码，生成后再复制或分享链接
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="grid min-w-0 gap-2.5">
+          <label className="grid min-w-0 gap-1.5 sm:grid-cols-[4.5rem_minmax(0,1fr)] sm:items-center">
             <span className="shrink-0 text-xs font-semibold text-base-content/50">有效时间</span>
             <select
-              className="select select-sm min-w-0 flex-1"
+              className="select select-sm w-full min-w-0"
               value={String(expiresInSeconds)}
               onChange={event => {
                 const nextExpiresInSeconds = Number(event.target.value) as ShareDurationOption
@@ -224,12 +246,14 @@ export function ShareFileModal() {
             </select>
           </label>
 
-          <label className="min-w-0 space-y-1">
-            <span className="flex min-w-0 items-center gap-2">
-              <span className="shrink-0 text-xs font-semibold text-base-content/50">分享密码</span>
+          <label className="grid min-w-0 gap-1.5 sm:grid-cols-[4.5rem_minmax(0,1fr)] sm:items-start">
+            <span className="shrink-0 pt-2 text-xs font-semibold text-base-content/50">
+              分享密码
+            </span>
+            <span className="min-w-0">
               <input
                 type="password"
-                className={cn('input input-sm min-w-0 flex-1', passwordError && 'input-error')}
+                className={cn('input input-sm w-full min-w-0', passwordError && 'input-error')}
                 value={sharePassword}
                 autoComplete="new-password"
                 placeholder="可选，至少 6 位"
@@ -243,15 +267,13 @@ export function ShareFileModal() {
                   }
                 }}
               />
+              {passwordError ? (
+                <span className="mt-1 block text-xs text-error">{passwordError}</span>
+              ) : null}
             </span>
-            {passwordError ? (
-              <span className="block text-xs text-error">{passwordError}</span>
-            ) : null}
           </label>
-        </div>
 
-        <div className="grid gap-1.5">
-          <div className="min-w-0">
+          <div className="grid min-w-0 gap-1.5">
             {loadError ? (
               <div className="rounded-lg border border-error/25 bg-error/5 px-3 py-2 text-sm leading-6 text-error">
                 {loadError}
@@ -278,27 +300,6 @@ export function ShareFileModal() {
               </div>
             )}
           </div>
-        </div>
-
-        <div className="mx-auto grid w-fit place-items-center rounded-lg border border-base-300/80 bg-base-200/25 p-3">
-          {shareLink ? (
-            <QRCode
-              value={shareLink.shareUrl}
-              size={176}
-              className="block h-auto w-full max-w-44 rounded bg-white p-2 [shape-rendering:crispEdges]"
-              bgColor="#ffffff"
-              fgColor="#111827"
-            />
-          ) : (
-            <div className="flex aspect-square w-44 flex-col items-center justify-center gap-2 rounded bg-white p-3 text-center text-base-content/55">
-              <div className="text-sm font-medium text-base-content/70">
-                {isLoading ? '正在生成二维码' : '生成后显示二维码'}
-              </div>
-              <div className="max-w-44 text-xs leading-5 text-base-content/50">
-                可设置分享密码，生成后再复制或分享链接
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </Dialog>

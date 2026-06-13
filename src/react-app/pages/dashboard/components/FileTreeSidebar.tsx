@@ -270,7 +270,7 @@ export function FileTreeSidebar() {
         "absolute inset-y-0 left-0 z-[110] h-full min-h-0 shrink-0 transition-[width] duration-200 ease-in-out md:relative md:inset-auto md:z-10",
         isDashboardTreeSidebarOpen
           ? "w-72 max-w-[calc(100vw-1rem)] overflow-hidden border-r border-base-300/70 bg-base-100/95 shadow-xl md:max-w-none md:bg-base-100/85 md:shadow-none"
-          : "w-0 overflow-visible",
+          : "pointer-events-none w-0 overflow-visible",
       )}
       aria-label="Home 文件树侧栏"
     >
@@ -283,7 +283,7 @@ export function FileTreeSidebar() {
         >
           <button
             type="button"
-            className="btn btn-ghost btn-square btn-sm shrink-0"
+            className="btn btn-ghost btn-square btn-sm pointer-events-auto shrink-0"
             aria-expanded={isDashboardTreeSidebarOpen}
             aria-label={isDashboardTreeSidebarOpen ? "折叠 Home 文件树" : "展开 Home 文件树"}
             title={isDashboardTreeSidebarOpen ? "折叠 Home 文件树" : "展开 Home 文件树"}
