@@ -10,6 +10,13 @@ import type {
 } from "../../types";
 import { SHARE_PASSWORD_MAX_LENGTH, SHARE_PASSWORD_MIN_LENGTH } from "../../types";
 import type { AppContext } from "../context";
+import { createDb } from "../db/client";
+import {
+  createFileShareRecord,
+  findFileShareById,
+  type FileShareRecord,
+  type FileShareRecordFile,
+} from "../shares/shareRecords";
 import { getFileContext } from "../utils/appHelpers";
 import {
   FilePathValidationError,
@@ -24,24 +31,21 @@ import {
   buildShareDownloadUrl,
   buildSharePageUrl,
   createShareDownloadTicket,
-  createShareToken,
+  createSharePasswordVerifier,
   getShareExpiryTimestamp,
-  getShareTokenDigest,
+  getShareIdDigest,
   isShareDownloadTicketValid,
   isShareDurationOption,
   isShareExpired,
   resolveAppOrigin,
   verifySharePassword,
-  verifyShareToken,
-  type ShareFileTokenEntry,
-  type ShareTokenPayload,
 } from "../utils/shareLinks";
 import {
   createShareLinkJsonValidator,
   getValidatedJson,
   getValidatedParam,
-  shareTokenParamValidator,
-  type ShareTokenParam,
+  shareIdParamValidator,
+  type ShareIdParam,
   verifySharePasswordJsonValidator,
 } from "../validation";
 import { getCreateShareLinkPaths, parseShareDownloadFileIndex } from "./shareRouteHelpers";
@@ -107,21 +111,21 @@ function getLockedShareResponse(): SharedFileMetadataResponse {
   };
 }
 
-function getShareFileSummaries(files: ShareFileTokenEntry[]): ShareFileSummary[] {
+function getShareFileSummaries(files: FileShareRecordFile[]): ShareFileSummary[] {
   return files.map((file) => ({
     fileName: file.fileName,
     size: file.size,
   }));
 }
 
-function getShareDisplayName(files: ShareFileTokenEntry[]): string {
+function getShareDisplayName(files: FileShareRecordFile[]): string {
   return files.length === 1 ? (files[0]?.fileName ?? "未知文件") : `${files.length} 个文件`;
 }
 
 function getExpiredShareFiles(
-  payload: ShareTokenPayload,
+  share: FileShareRecord,
 ): ResolvedSharedFileMetadataResponse["files"] {
-  return payload.files.map((file) => ({
+  return share.files.map((file) => ({
     fileName: file.fileName,
     size: file.size,
     status: "active",
@@ -130,36 +134,36 @@ function getExpiredShareFiles(
 }
 
 function getResolvedShareResponse(
-  payload: ShareTokenPayload,
+  share: FileShareRecord,
   status: Exclude<SharedFileMetadataResponse["status"], "locked">,
   files: ResolvedSharedFileMetadataResponse["files"],
 ): SharedFileMetadataResponse {
   return {
     success: true,
     status,
-    fileName: payload.fileName,
-    fileCount: payload.files.length,
+    fileName: share.displayName,
+    fileCount: share.files.length,
     files,
-    expiresAt: new Date(payload.exp).toISOString(),
-    expiresInSeconds: payload.expiresInSeconds,
+    expiresAt: share.expiresAt.toISOString(),
+    expiresInSeconds: share.expiresInSeconds,
     serverNow: new Date().toISOString(),
     downloadUrl: status === "active" ? (files[0]?.downloadUrl ?? null) : null,
-    passwordProtected: payload.passwordProtected,
+    passwordProtected: share.passwordProtected,
   };
 }
 
 async function resolveShareFiles(
   c: ShareRouteContext,
-  payload: ShareTokenPayload,
-  token: string,
+  share: FileShareRecord,
+  shareId: string,
   ticket?: string,
 ): Promise<ResolvedSharedFileMetadataResponse["files"]> {
   const origin = resolveAppOrigin(c.req.url, c.env);
-  const isMultiFileShare = payload.files.length > 1;
+  const isMultiFileShare = share.files.length > 1;
 
   return Promise.all(
-    payload.files.map(async (file, index) => {
-      const object = await c.env.FILES_BUCKET.head(getFileKey(payload.rootDirId, file.path));
+    share.files.map(async (file, index) => {
+      const object = await c.env.FILES_BUCKET.head(getFileKey(share.rootDirId, file.path));
       const isAvailable = Boolean(object && object.etag === file.etag);
 
       return {
@@ -167,7 +171,7 @@ async function resolveShareFiles(
         size: object?.size ?? file.size,
         status: isAvailable ? "active" : "missing",
         downloadUrl: isAvailable
-          ? buildShareDownloadUrl(origin, token, ticket, isMultiFileShare ? index : undefined)
+          ? buildShareDownloadUrl(origin, shareId, ticket, isMultiFileShare ? index : undefined)
           : null,
       };
     }),
@@ -176,22 +180,21 @@ async function resolveShareFiles(
 
 async function resolveSharedFileMetadata(
   c: ShareRouteContext,
-  payload: ShareTokenPayload,
-  token: string,
+  share: FileShareRecord,
   includeDownloadTicket: boolean,
 ): Promise<SharedFileMetadataResponse> {
-  if (isShareExpired(payload)) {
-    return getResolvedShareResponse(payload, "expired", getExpiredShareFiles(payload));
+  if (isShareExpired(share.expiresAt)) {
+    return getResolvedShareResponse(share, "expired", getExpiredShareFiles(share));
   }
 
   const ticket = includeDownloadTicket
-    ? await createShareDownloadTicket(c.env, token, payload)
+    ? await createShareDownloadTicket(c.env, share.id, share.expiresAt.getTime())
     : undefined;
-  const files = await resolveShareFiles(c, payload, token, ticket);
+  const files = await resolveShareFiles(c, share, share.id, ticket);
   const status =
-    payload.files.length === 1 && files[0]?.status === "missing" ? "missing" : "active";
+    share.files.length === 1 && files[0]?.status === "missing" ? "missing" : "active";
 
-  return getResolvedShareResponse(payload, status, files);
+  return getResolvedShareResponse(share, status, files);
 }
 
 function getUnlockClientId(c: ShareRouteContext): string {
@@ -199,26 +202,26 @@ function getUnlockClientId(c: ShareRouteContext): string {
   return c.req.header("cf-connecting-ip") ?? forwardedFor ?? "unknown";
 }
 
-async function getUnlockAttemptKey(c: ShareRouteContext, token: string): Promise<string> {
-  return `share-unlock:${await getShareTokenDigest(`${token}:${getUnlockClientId(c)}`)}`;
+async function getUnlockAttemptKey(c: ShareRouteContext, shareId: string): Promise<string> {
+  return `share-unlock:${await getShareIdDigest(`${shareId}:${getUnlockClientId(c)}`)}`;
 }
 
-async function getFailedUnlockCount(c: ShareRouteContext, token: string): Promise<number> {
-  const raw = await c.env.FILE_YARD_KV.get(await getUnlockAttemptKey(c, token));
+async function getFailedUnlockCount(c: ShareRouteContext, shareId: string): Promise<number> {
+  const raw = await c.env.FILE_YARD_KV.get(await getUnlockAttemptKey(c, shareId));
   const count = raw ? Number(raw) : 0;
   return Number.isInteger(count) && count > 0 ? count : 0;
 }
 
-async function recordFailedUnlock(c: ShareRouteContext, token: string): Promise<void> {
-  const key = await getUnlockAttemptKey(c, token);
-  const currentCount = await getFailedUnlockCount(c, token);
+async function recordFailedUnlock(c: ShareRouteContext, shareId: string): Promise<void> {
+  const key = await getUnlockAttemptKey(c, shareId);
+  const currentCount = await getFailedUnlockCount(c, shareId);
   await c.env.FILE_YARD_KV.put(String(key), String(currentCount + 1), {
     expirationTtl: SHARE_UNLOCK_FAILURE_TTL_SECONDS,
   });
 }
 
-async function clearFailedUnlocks(c: ShareRouteContext, token: string): Promise<void> {
-  await c.env.FILE_YARD_KV.delete(await getUnlockAttemptKey(c, token));
+async function clearFailedUnlocks(c: ShareRouteContext, shareId: string): Promise<void> {
+  await c.env.FILE_YARD_KV.delete(await getUnlockAttemptKey(c, shareId));
 }
 
 shares.post("/api/files/share-links", createShareLinkJsonValidator, async (c) => {
@@ -244,11 +247,11 @@ shares.post("/api/files/share-links", createShareLinkJsonValidator, async (c) =>
       }
     }
 
-    const { rootDirId } = await getFileContext(c);
+    const { rootDirId, user } = await getFileContext(c);
     const objects = await Promise.all(
       paths.map((path) => c.env.FILES_BUCKET.head(getFileKey(rootDirId, path))),
     );
-    const files: ShareFileTokenEntry[] = [];
+    const files: FileShareRecordFile[] = [];
 
     for (let index = 0; index < paths.length; index += 1) {
       const path = paths[index];
@@ -265,26 +268,34 @@ shares.post("/api/files/share-links", createShareLinkJsonValidator, async (c) =>
       });
     }
 
-    const fileName = getShareDisplayName(files);
-    const expiresAtTimestamp = getShareExpiryTimestamp(body.expiresInSeconds);
-    const token = await createShareToken(c.env, {
+    const displayName = getShareDisplayName(files);
+    const startsAt = new Date();
+    const expiresAt = new Date(getShareExpiryTimestamp(body.expiresInSeconds, startsAt.getTime()));
+    const passwordVerifier = password
+      ? await createSharePasswordVerifier(c.env, password)
+      : undefined;
+    const share = await createFileShareRecord(createDb(c.env), {
+      ownerUserId: user.id,
       rootDirId,
-      fileName,
+      displayName,
       files,
-      exp: expiresAtTimestamp,
+      startsAt,
+      expiresAt,
       expiresInSeconds: body.expiresInSeconds,
-      password: password || undefined,
+      passwordProtected: Boolean(passwordVerifier),
+      ...(passwordVerifier ?? {}),
     });
     const origin = resolveAppOrigin(c.req.url, c.env);
     const response: ShareLinkResponse = {
       success: true,
-      fileName,
-      fileCount: files.length,
-      files: getShareFileSummaries(files),
-      expiresAt: new Date(expiresAtTimestamp).toISOString(),
-      expiresInSeconds: body.expiresInSeconds,
-      shareUrl: buildSharePageUrl(origin, token),
-      passwordProtected: Boolean(password),
+      id: share.id,
+      fileName: share.displayName,
+      fileCount: share.files.length,
+      files: getShareFileSummaries(share.files),
+      expiresAt: share.expiresAt.toISOString(),
+      expiresInSeconds: share.expiresInSeconds,
+      shareUrl: buildSharePageUrl(origin, share.id),
+      passwordProtected: share.passwordProtected,
     };
 
     return jsonShareResponse(response);
@@ -298,19 +309,19 @@ shares.post("/api/files/share-links", createShareLinkJsonValidator, async (c) =>
   }
 });
 
-shares.get("/api/share-links/:token", shareTokenParamValidator, async (c) => {
+shares.get("/api/share-links/:id", shareIdParamValidator, async (c) => {
   try {
-    const { token } = getValidatedParam<ShareTokenParam>(c);
-    const payload = await verifyShareToken(c.env, token);
-    if (!payload) {
+    const { id } = getValidatedParam<ShareIdParam>(c);
+    const share = await findFileShareById(createDb(c.env), id);
+    if (!share) {
       return jsonShareError("Invalid share link", 403);
     }
 
-    if (payload.passwordProtected) {
+    if (share.passwordProtected) {
       return jsonShareResponse(getLockedShareResponse());
     }
 
-    return jsonShareResponse(await resolveSharedFileMetadata(c, payload, token, false));
+    return jsonShareResponse(await resolveSharedFileMetadata(c, share, false));
   } catch (error) {
     console.error("Failed to resolve share link", error);
     return jsonShareError("Failed to resolve share link", 500);
@@ -318,12 +329,12 @@ shares.get("/api/share-links/:token", shareTokenParamValidator, async (c) => {
 });
 
 shares.post(
-  "/api/share-links/:token/unlock",
-  shareTokenParamValidator,
+  "/api/share-links/:id/unlock",
+  shareIdParamValidator,
   verifySharePasswordJsonValidator,
   async (c) => {
     try {
-      const { token } = getValidatedParam<ShareTokenParam>(c);
+      const { id } = getValidatedParam<ShareIdParam>(c);
       const body = getValidatedJson<VerifySharePasswordRequest>(c);
       const password = body.password.trim();
       const passwordError = getSharePasswordValidationError(password);
@@ -331,26 +342,26 @@ shares.post(
         return jsonShareError(passwordError, 400);
       }
 
-      const payload = await verifyShareToken(c.env, token);
-      if (!payload) {
+      const share = await findFileShareById(createDb(c.env), id);
+      if (!share) {
         return jsonShareError("Invalid share link", 403);
       }
 
-      if (!payload.passwordProtected) {
+      if (!share.passwordProtected) {
         return jsonShareError("Share link does not require a password", 400);
       }
 
-      if ((await getFailedUnlockCount(c, token)) >= SHARE_UNLOCK_MAX_FAILURES) {
+      if ((await getFailedUnlockCount(c, id)) >= SHARE_UNLOCK_MAX_FAILURES) {
         return jsonShareError("Too many password attempts", 429);
       }
 
-      if (!(await verifySharePassword(c.env, payload, password))) {
-        await recordFailedUnlock(c, token);
+      if (!(await verifySharePassword(c.env, share, password))) {
+        await recordFailedUnlock(c, id);
         return jsonShareError("Invalid password", 403);
       }
 
-      await clearFailedUnlocks(c, token);
-      return jsonShareResponse(await resolveSharedFileMetadata(c, payload, token, true));
+      await clearFailedUnlocks(c, id);
+      return jsonShareResponse(await resolveSharedFileMetadata(c, share, true));
     } catch (error) {
       console.error("Failed to unlock share link", error);
       return jsonShareError("Failed to unlock share link", 500);
@@ -358,37 +369,34 @@ shares.post(
   },
 );
 
-shares.get("/api/share-links/:token/download", shareTokenParamValidator, async (c) => {
+shares.get("/api/share-links/:id/download", shareIdParamValidator, async (c) => {
   try {
-    const { token } = getValidatedParam<ShareTokenParam>(c);
-    const payload = await verifyShareToken(c.env, token);
-    if (!payload) {
+    const { id } = getValidatedParam<ShareIdParam>(c);
+    const share = await findFileShareById(createDb(c.env), id);
+    if (!share) {
       return jsonShareError("Invalid share link", 403);
     }
 
     const ticket = c.req.query("ticket");
-    if (payload.passwordProtected && !ticket) {
+    if (share.passwordProtected && !ticket) {
       return jsonShareError("Password required", 403);
     }
 
-    if (isShareExpired(payload)) {
+    if (isShareExpired(share.expiresAt)) {
       return jsonShareError("Share link has expired", 410);
     }
 
-    if (
-      payload.passwordProtected &&
-      !(await isShareDownloadTicketValid(c.env, token, payload, ticket))
-    ) {
+    if (share.passwordProtected && !(await isShareDownloadTicketValid(c.env, id, ticket))) {
       return jsonShareError("Invalid download ticket", 403);
     }
 
-    const fileIndex = parseShareDownloadFileIndex(c.req.query("file"), payload.files.length);
-    const file = payload.files[fileIndex];
+    const fileIndex = parseShareDownloadFileIndex(c.req.query("file"), share.files.length);
+    const file = share.files[fileIndex];
     if (!file) {
       return jsonShareError("Shared file not found", 404);
     }
 
-    const object = await c.env.FILES_BUCKET.get(getFileKey(payload.rootDirId, file.path));
+    const object = await c.env.FILES_BUCKET.get(getFileKey(share.rootDirId, file.path));
     if (!object || !object.body || object.etag !== file.etag) {
       return jsonShareError("File not found", 404);
     }

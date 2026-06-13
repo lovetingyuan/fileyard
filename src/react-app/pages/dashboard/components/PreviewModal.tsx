@@ -4,7 +4,6 @@ import toast from "react-hot-toast";
 import { Dialog } from "../../../components/Dialog";
 import { buildPreviewUrl, useUpdateFileMutation } from "../../../hooks/useFilesApi";
 import { useAppStore } from "../../../store";
-import { cn } from "../../../utils/cn";
 import { getPreviewInfo } from "../../../utils/previewInfo";
 import { closeFilePreview } from "../actions";
 import { runWithLargeFileUploadToast } from "../fileOperations";
@@ -168,10 +167,13 @@ export function PreviewModal() {
                   </button>
                   <button
                     type="button"
-                    className={cn("btn btn-sm btn-primary", isConfirming && "loading")}
+                    className="btn btn-sm btn-primary"
                     onClick={() => void confirm()}
                     disabled={isConfirming}
                   >
+                    {isConfirming ? (
+                      <span className="loading loading-spinner" aria-hidden="true" />
+                    ) : null}
                     {isConfirming ? "保存中..." : "保存"}
                   </button>
                 </>

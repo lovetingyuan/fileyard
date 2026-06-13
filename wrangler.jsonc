@@ -12,6 +12,9 @@
     "enabled": true,
     "head_sampling_rate": 1,
   },
+  "triggers": {
+    "crons": ["0 * * * *"],
+  },
   "vars": {
     // Set to your production domain before deploying if you need a fixed origin.
     // When empty, auth and share links fall back to the incoming request origin.

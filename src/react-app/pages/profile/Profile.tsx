@@ -8,7 +8,6 @@ import { UserAvatar } from "../../components/UserAvatar";
 import { Dialog } from "../../components/Dialog";
 import { useAuth } from "../../auth/useAuth";
 import { useProfile, useUploadAvatar } from "../../hooks/useProfileApi";
-import { cn } from "../../utils/cn";
 
 const MAX_AVATAR_BYTES = 500 * 1024;
 const ACCEPTED_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
@@ -233,13 +232,17 @@ export function Profile() {
             <div className="self-end md:self-auto">
               <button
                 type="button"
-                className={cn("btn btn-ghost btn-sm gap-2", isAuthMutating && "loading")}
+                className="btn btn-ghost btn-sm gap-2"
                 onClick={handleOpenLogoutConfirm}
                 disabled={isAuthMutating}
                 aria-haspopup="dialog"
                 aria-expanded={isLogoutConfirmOpen}
               >
-                {!isAuthMutating && <MdiLogout className="h-4 w-4" />}
+                {isAuthMutating ? (
+                  <span className="loading loading-spinner" aria-hidden="true" />
+                ) : (
+                  <MdiLogout className="h-4 w-4" />
+                )}
                 退出登录
               </button>
             </div>

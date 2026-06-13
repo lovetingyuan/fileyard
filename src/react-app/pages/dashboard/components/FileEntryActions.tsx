@@ -57,8 +57,14 @@ export function RowActionsMenu({
   return (
     <Dropdown
       placement={placement}
-      trigger={!isLoading && <DotsIcon className="h-4 w-4" />}
-      triggerClassName={cn(buttonClassName, "cursor-pointer", isLoading && "loading")}
+      trigger={
+        isLoading ? (
+          <span className="loading loading-spinner" aria-hidden="true" />
+        ) : (
+          <DotsIcon className="h-4 w-4" />
+        )
+      }
+      triggerClassName={cn(buttonClassName, "cursor-pointer")}
       triggerAriaLabel="更多操作"
       disabled={isActionDisabled}
       contentClassName="menu menu-md bg-base-200 rounded-box z-[100] mt-1 w-40 border border-base-300/60 p-2 shadow-lg space-y-1"

@@ -50,8 +50,8 @@ export type UploadIdQuery = {
   uploadId: string;
 };
 
-export type ShareTokenParam = {
-  token: string;
+export type ShareIdParam = {
+  id: string;
 };
 
 export type AdminUsersQuery = {
@@ -364,9 +364,9 @@ function parseMultipartPartQuery(query: QueryValue): MultipartPartQuery | null {
     : null;
 }
 
-function parseShareTokenParam(params: QueryValue): ShareTokenParam | null {
-  const token = getSingleQueryValue(params, "token");
-  return isString(token) && token.trim().length > 0 ? { token } : null;
+function parseShareIdParam(params: QueryValue): ShareIdParam | null {
+  const id = getSingleQueryValue(params, "id");
+  return isString(id) && id.trim().length > 0 ? { id } : null;
 }
 
 function parseAdminUsersQuery(query: QueryValue): AdminUsersQuery | null {
@@ -404,4 +404,4 @@ export const multipartPartQueryValidator = queryParams(parseMultipartPartQuery);
 export const uploadIdQueryValidator = queryParams(parseUploadIdQuery);
 export const adminUsersQueryValidator = queryParams(parseAdminUsersQuery);
 
-export const shareTokenParamValidator = routeParams(parseShareTokenParam);
+export const shareIdParamValidator = routeParams(parseShareIdParam);

@@ -1,5 +1,6 @@
-import { useRef, useState, type ComponentType } from 'react'
+import { Fragment, useRef, useState, type ComponentType } from 'react'
 import QRCodeImport from 'react-qr-code'
+import MdiQrcodeScan from '~icons/mdi/qrcode-scan'
 import toast from 'react-hot-toast'
 import type { FileOperationTarget, ShareDurationOption, ShareLinkResponse } from '../../../../types'
 import { Dialog } from '../../../components/Dialog'
@@ -24,7 +25,6 @@ type QRCodeComponentProps = {
 }
 
 const DEFAULT_SHARE_DURATION: ShareDurationOption = 3600
-const MAX_VISIBLE_SHARE_TARGETS = 6
 const QRCode = ((QRCodeImport as unknown as { QRCode?: unknown; default?: unknown }).QRCode ??
   (QRCodeImport as unknown as { default?: unknown }).default ??
   QRCodeImport) as ComponentType<QRCodeComponentProps>
@@ -50,6 +50,7 @@ export function ShareFileModal() {
   const [sharePassword, setSharePassword] = useState('')
   const [shareLink, setShareLink] = useState<ShareLinkResponse | null>(null)
   const [isLinkCopied, setIsLinkCopied] = useState(false)
+  const [isQrCodeModalOpen, setIsQrCodeModalOpen] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
   const requestIdRef = useRef(0)
   const hasGeneratedOnOpenRef = useRef(false)
@@ -73,6 +74,7 @@ export function ShareFileModal() {
   const clearGeneratedLink = () => {
     requestIdRef.current += 1
     resetCopyFeedback()
+    setIsQrCodeModalOpen(false)
     setShareLink(null)
     setLoadError(null)
   }
@@ -104,6 +106,7 @@ export function ShareFileModal() {
   const handleClose = () => {
     hasGeneratedOnOpenRef.current = false
     resetCopyFeedback()
+    setIsQrCodeModalOpen(false)
     closeFileShare()
   }
 
@@ -120,6 +123,7 @@ export function ShareFileModal() {
     const currentRequestId = requestIdRef.current + 1
     requestIdRef.current = currentRequestId
     resetCopyFeedback()
+    setIsQrCodeModalOpen(false)
     setLoadError(null)
     setShareLink(null)
 
@@ -200,52 +204,51 @@ export function ShareFileModal() {
   }
 
   return (
-    <Dialog
-      isOpen
-      title={<h3 className="text-lg font-semibold tracking-normal text-base-content">文件分享</h3>}
-      onClose={handleClose}
-      onConfirm={handleShare}
-      onAfterOpen={handleAfterOpen}
-      confirmText="分享"
-      confirmDisabled={isLoading || Boolean(passwordError) || !shareLink}
-      boxClassName="w-[min(34rem,94vw)] max-w-none border border-base-300/70 bg-base-100 p-0 shadow-2xl"
-      headerClassName="mb-0 border-b border-base-200 px-4 py-3"
-      bodyClassName="px-4 py-3.5"
-      footerClassName="mt-0 border-t border-base-200 px-4 py-3"
-      closeButtonAriaLabel="关闭分享弹窗"
-      confirmButtonClassName="btn btn-sm btn-primary min-w-24"
-    >
-      <div
-        className="mb-3 truncate text-sm font-medium leading-6 text-base-content"
-        title={shareTargetTitle}
+    <>
+      <Dialog
+        isOpen
+        title={
+          <h3 className="text-lg font-semibold tracking-normal text-base-content">文件分享</h3>
+        }
+        onClose={handleClose}
+        onConfirm={handleShare}
+        onAfterOpen={handleAfterOpen}
+        confirmText="分享"
+        confirmDisabled={isLoading || Boolean(passwordError) || !shareLink}
+        boxClassName="w-[min(25rem,94vw)] max-w-none border border-base-300/70 bg-base-100 p-0 shadow-2xl"
+        headerClassName="mb-0 border-b border-base-200 px-4 py-3"
+        bodyClassName="px-4 py-3.5"
+        footerClassName="mt-0 border-t border-base-200 px-4 py-3"
+        closeButtonAriaLabel="关闭分享弹窗"
+        confirmButtonClassName="btn btn-sm btn-primary min-w-24"
       >
-        <span className="select-none text-gray-400">
-          {isMultiFileShare ? '文件： ' : '文件名： '}
-        </span>
-        <span>{shareTargetTitle}</span>
-      </div>
-      <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3">
-        <div className="grid w-[clamp(8.5rem,38vw,15rem)] place-items-center rounded-lg border border-base-300/80 bg-base-200/25 p-1">
-          {shareLink ? (
-            <QRCode
-              value={shareLink.shareUrl}
-              size={500}
-              className="block h-auto w-full rounded bg-white p-2 [shape-rendering:crispEdges]"
-              bgColor="#ffffff"
-              fgColor="#111827"
-            />
+        <div
+          className={cn(
+            'mb-3 text-sm font-medium leading-6 text-base-content',
+            isMultiFileShare ? 'break-all' : 'truncate',
+          )}
+          title={shareTargetTitle}
+        >
+          <span className="select-none text-gray-400">
+            {isMultiFileShare ? '文件： ' : '文件名： '}
+          </span>
+          {isMultiFileShare ? (
+            <span>
+              已选择{' '}
+              {activeShareTargets.slice(0, 3).map((target, index) => (
+                <Fragment key={target.path}>
+                  {index > 0 ? ', ' : null}
+                  <code className="rounded bg-base-200 px-1 py-0.5 text-xs text-base-content">
+                    {target.name}
+                  </code>
+                </Fragment>
+              ))}{' '}
+              等{activeShareTargets.length}个文件
+            </span>
           ) : (
-            <div className="flex aspect-square w-full flex-col items-center justify-center gap-2 rounded bg-white p-3 text-center text-base-content/55">
-              <div className="text-sm font-medium text-base-content/70">
-                {isLoading ? '正在生成二维码' : '生成后显示二维码'}
-              </div>
-              <div className="max-w-44 text-xs leading-5 text-base-content/50">
-                可设置分享密码，生成后再复制或分享链接
-              </div>
-            </div>
+            <span>{shareTargetTitle}</span>
           )}
         </div>
-
         <div className="grid min-w-0 gap-2.5">
           <label className="grid min-w-0 gap-1.5 sm:grid-cols-[4.5rem_minmax(0,1fr)] sm:items-center">
             <span className="shrink-0 text-xs font-semibold text-base-content/50">有效时间</span>
@@ -309,6 +312,15 @@ export function ShareFileModal() {
                 >
                   {shareLink.shareUrl}
                 </a>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm btn-square shrink-0"
+                  onClick={() => setIsQrCodeModalOpen(true)}
+                  aria-label="显示二维码"
+                  title="显示二维码"
+                >
+                  <MdiQrcodeScan className="h-4 w-4" />
+                </button>
                 <ShareLinkCopyButton
                   isCopied={isLinkCopied}
                   onClick={() => void handleCopyLink()}
@@ -321,7 +333,36 @@ export function ShareFileModal() {
             )}
           </div>
         </div>
-      </div>
-    </Dialog>
+      </Dialog>
+
+      {shareLink && isQrCodeModalOpen ? (
+        <Dialog
+          isOpen
+          title={
+            <h3 className="text-lg font-semibold tracking-normal text-base-content">分享二维码</h3>
+          }
+          onClose={() => setIsQrCodeModalOpen(false)}
+          showCancelButton={false}
+          showConfirmButton={false}
+          supportFullscreen
+          boxClassName="w-[min(22rem,90vw)] max-w-none border border-base-300/70 bg-base-100 p-0 shadow-2xl"
+          headerClassName="mb-0 border-b border-base-200 px-4 py-3"
+          bodyClassName="flex min-h-0 flex-1 px-4 py-4"
+          closeButtonAriaLabel="关闭二维码弹窗"
+        >
+          <div className="grid min-h-0 w-full place-items-center">
+            <div className="aspect-square w-[min(100%,calc(100dvh-8rem))] max-w-[calc(100vw-2rem)] rounded-lg border border-base-300/80 bg-white p-3">
+              <QRCode
+                value={shareLink.shareUrl}
+                size={256}
+                className="block h-full w-full [shape-rendering:crispEdges]"
+                bgColor="#ffffff"
+                fgColor="#111827"
+              />
+            </div>
+          </div>
+        </Dialog>
+      ) : null}
+    </>
   )
 }

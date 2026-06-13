@@ -3,42 +3,12 @@ import type { AppBindings } from "../context";
 
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
-const LEGACY_SHARE_TOKEN_VERSION = 1;
-const SINGLE_FILE_SHARE_TOKEN_VERSION = 2;
-const SHARE_TOKEN_VERSION = 3;
-const LEGACY_DOWNLOAD_TICKET_VERSION = 1;
-const DOWNLOAD_TICKET_VERSION = 2;
-const DOWNLOAD_TICKET_TTL_MS = 10 * 60 * 1000;
-const SHARE_TOKEN_V2_SIGNATURE_PURPOSE = "fileyard:share-token:v2";
-const SHARE_TOKEN_V3_SIGNATURE_PURPOSE = "fileyard:share-token:v3";
+const SHARE_ID_BYTES = 16;
 const PASSWORD_VERIFIER_PURPOSE = "fileyard:share-password:v1";
 const DOWNLOAD_TICKET_SIGNATURE_PURPOSE = "fileyard:share-download-ticket:v1";
+const DOWNLOAD_TICKET_VERSION = 1;
+const DOWNLOAD_TICKET_TTL_MS = 10 * 60 * 1000;
 export const MAX_SHARE_FILE_COUNT = 50;
-
-type ShareTokenBasePayload = {
-  rootDirId: string;
-  fileName: string;
-  exp: number;
-  expiresInSeconds: ShareDurationOption;
-  files: ShareFileTokenEntry[];
-};
-
-type CurrentShareTokenPayload = ShareTokenBasePayload & {
-  v: typeof SHARE_TOKEN_VERSION;
-  passwordProtected: boolean;
-  passwordSalt?: string;
-  passwordVerifier?: string;
-};
-
-export type ShareTokenPayload = ShareTokenBasePayload & {
-  v:
-    | typeof LEGACY_SHARE_TOKEN_VERSION
-    | typeof SINGLE_FILE_SHARE_TOKEN_VERSION
-    | typeof SHARE_TOKEN_VERSION;
-  passwordProtected: boolean;
-  passwordSalt?: string;
-  passwordVerifier?: string;
-};
 
 export type ShareFileTokenEntry = {
   path: string;
@@ -47,35 +17,23 @@ export type ShareFileTokenEntry = {
   etag: string;
 };
 
-type LegacySingleFileTokenPayload = Omit<ShareTokenBasePayload, "files"> & {
-  path: string;
-  etag: string;
+export type SharePasswordVerifier = {
+  passwordProtected: boolean;
+  passwordSalt?: string | null;
+  passwordVerifier?: string | null;
 };
 
-type CreateShareTokenPayload = Omit<ShareTokenBasePayload, "files"> &
-  (
-    | {
-        files: ShareFileTokenEntry[];
-        password?: string | null;
-      }
-    | {
-        path: string;
-        etag: string;
-        size?: number;
-        password?: string | null;
-      }
-  );
-
-type LegacyShareDownloadTicketPayload = LegacySingleFileTokenPayload & {
-  v: typeof LEGACY_DOWNLOAD_TICKET_VERSION;
-  type: "share-download";
-  shareTokenDigest: string;
+export type SharePasswordVerifierFields = {
+  passwordProtected: true;
+  passwordSalt: string;
+  passwordVerifier: string;
 };
 
-type ShareDownloadTicketPayload = Omit<ShareTokenBasePayload, "files"> & {
+type ShareDownloadTicketPayload = {
   v: typeof DOWNLOAD_TICKET_VERSION;
   type: "share-download";
-  shareTokenDigest: string;
+  shareIdDigest: string;
+  exp: number;
 };
 
 function bytesToBase64(bytes: Uint8Array): string {
@@ -103,250 +61,6 @@ function decodeBase64Url(value: string): Uint8Array {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function isValidFileSize(value: unknown): value is number {
-  return typeof value === "number" && Number.isInteger(value) && value >= 0;
-}
-
-function parseShareFileEntry(value: unknown): ShareFileTokenEntry | null {
-  if (
-    !isRecord(value) ||
-    typeof value.path !== "string" ||
-    typeof value.fileName !== "string" ||
-    typeof value.etag !== "string" ||
-    !isValidFileSize(value.size)
-  ) {
-    return null;
-  }
-
-  return {
-    path: value.path,
-    fileName: value.fileName,
-    size: value.size,
-    etag: value.etag,
-  };
-}
-
-function parseShareCommonPayload(
-  candidate: Record<string, unknown>,
-): Omit<ShareTokenBasePayload, "files"> | null {
-  if (
-    typeof candidate.rootDirId !== "string" ||
-    typeof candidate.fileName !== "string" ||
-    typeof candidate.exp !== "number" ||
-    !Number.isInteger(candidate.exp) ||
-    typeof candidate.expiresInSeconds !== "number" ||
-    !isShareDurationOption(candidate.expiresInSeconds)
-  ) {
-    return null;
-  }
-
-  return {
-    rootDirId: candidate.rootDirId,
-    fileName: candidate.fileName,
-    exp: candidate.exp,
-    expiresInSeconds: candidate.expiresInSeconds,
-  };
-}
-
-function parseLegacySingleFilePayload(
-  value: Record<string, unknown>,
-): LegacySingleFileTokenPayload | null {
-  const commonPayload = parseShareCommonPayload(value);
-  if (!commonPayload || typeof value.path !== "string" || typeof value.etag !== "string") {
-    return null;
-  }
-
-  return {
-    ...commonPayload,
-    path: value.path,
-    etag: value.etag,
-  };
-}
-
-function parseShareFilesPayload(value: Record<string, unknown>): ShareFileTokenEntry[] | null {
-  if (!Array.isArray(value.files) || value.files.length === 0) {
-    return null;
-  }
-
-  if (value.files.length > MAX_SHARE_FILE_COUNT) {
-    return null;
-  }
-
-  const files = value.files.map(parseShareFileEntry);
-  return files.every((file): file is ShareFileTokenEntry => Boolean(file)) ? files : null;
-}
-
-function createSingleFilePayload(
-  payload: LegacySingleFileTokenPayload,
-  version: typeof LEGACY_SHARE_TOKEN_VERSION | typeof SINGLE_FILE_SHARE_TOKEN_VERSION,
-): ShareTokenBasePayload & {
-  v: typeof LEGACY_SHARE_TOKEN_VERSION | typeof SINGLE_FILE_SHARE_TOKEN_VERSION;
-} {
-  return {
-    v: version,
-    rootDirId: payload.rootDirId,
-    fileName: payload.fileName,
-    exp: payload.exp,
-    expiresInSeconds: payload.expiresInSeconds,
-    files: [
-      {
-        path: payload.path,
-        fileName: payload.fileName,
-        size: 0,
-        etag: payload.etag,
-      },
-    ],
-  };
-}
-
-function parseLegacySharePayload(value: Record<string, unknown>): ShareTokenPayload | null {
-  if (value.v !== LEGACY_SHARE_TOKEN_VERSION) {
-    return null;
-  }
-
-  const basePayload = parseLegacySingleFilePayload(value);
-  return basePayload
-    ? {
-        ...createSingleFilePayload(basePayload, LEGACY_SHARE_TOKEN_VERSION),
-        passwordProtected: false,
-      }
-    : null;
-}
-
-function parseSingleFileSharePayload(value: Record<string, unknown>): ShareTokenPayload | null {
-  if (value.v !== SINGLE_FILE_SHARE_TOKEN_VERSION || typeof value.passwordProtected !== "boolean") {
-    return null;
-  }
-
-  const basePayload = parseLegacySingleFilePayload(value);
-  if (!basePayload) {
-    return null;
-  }
-
-  if (!value.passwordProtected) {
-    return {
-      ...createSingleFilePayload(basePayload, SINGLE_FILE_SHARE_TOKEN_VERSION),
-      passwordProtected: false,
-    };
-  }
-
-  if (typeof value.passwordSalt !== "string" || typeof value.passwordVerifier !== "string") {
-    return null;
-  }
-
-  return {
-    ...createSingleFilePayload(basePayload, SINGLE_FILE_SHARE_TOKEN_VERSION),
-    passwordProtected: true,
-    passwordSalt: value.passwordSalt,
-    passwordVerifier: value.passwordVerifier,
-  };
-}
-
-function parseCurrentSharePayload(value: Record<string, unknown>): ShareTokenPayload | null {
-  if (value.v !== SHARE_TOKEN_VERSION || typeof value.passwordProtected !== "boolean") {
-    return null;
-  }
-
-  const commonPayload = parseShareCommonPayload(value);
-  const files = parseShareFilesPayload(value);
-  if (!commonPayload || !files) {
-    return null;
-  }
-
-  if (!value.passwordProtected) {
-    return {
-      v: SHARE_TOKEN_VERSION,
-      ...commonPayload,
-      files,
-      passwordProtected: false,
-    };
-  }
-
-  if (typeof value.passwordSalt !== "string" || typeof value.passwordVerifier !== "string") {
-    return null;
-  }
-
-  return {
-    v: SHARE_TOKEN_VERSION,
-    ...commonPayload,
-    files,
-    passwordProtected: true,
-    passwordSalt: value.passwordSalt,
-    passwordVerifier: value.passwordVerifier,
-  };
-}
-
-function parseSharePayload(value: unknown): ShareTokenPayload | null {
-  if (!isRecord(value)) {
-    return null;
-  }
-
-  return (
-    parseLegacySharePayload(value) ??
-    parseSingleFileSharePayload(value) ??
-    parseCurrentSharePayload(value)
-  );
-}
-
-function parseLegacyDownloadTicketPayload(
-  value: Record<string, unknown>,
-): LegacyShareDownloadTicketPayload | null {
-  if (value.v !== LEGACY_DOWNLOAD_TICKET_VERSION || value.type !== "share-download") {
-    return null;
-  }
-
-  const basePayload = parseLegacySingleFilePayload(value);
-  if (!basePayload || typeof value.shareTokenDigest !== "string") {
-    return null;
-  }
-
-  return {
-    v: LEGACY_DOWNLOAD_TICKET_VERSION,
-    type: "share-download",
-    ...basePayload,
-    shareTokenDigest: value.shareTokenDigest,
-  };
-}
-
-function parseCurrentDownloadTicketPayload(
-  value: Record<string, unknown>,
-): ShareDownloadTicketPayload | null {
-  if (value.v !== DOWNLOAD_TICKET_VERSION || value.type !== "share-download") {
-    return null;
-  }
-
-  const commonPayload = parseShareCommonPayload(value);
-  if (!commonPayload || typeof value.shareTokenDigest !== "string") {
-    return null;
-  }
-
-  return {
-    v: DOWNLOAD_TICKET_VERSION,
-    type: "share-download",
-    ...commonPayload,
-    shareTokenDigest: value.shareTokenDigest,
-  };
-}
-
-function parseDownloadTicketPayload(
-  value: unknown,
-): ShareDownloadTicketPayload | LegacyShareDownloadTicketPayload | null {
-  if (!isRecord(value)) {
-    return null;
-  }
-
-  return parseLegacyDownloadTicketPayload(value) ?? parseCurrentDownloadTicketPayload(value);
-}
-
-function readPayloadVersion(payloadJson: string): number | null {
-  try {
-    const value = JSON.parse(payloadJson);
-    return isRecord(value) && typeof value.v === "number" ? value.v : null;
-  } catch {
-    return null;
-  }
 }
 
 async function importSigningKey(secret: string): Promise<CryptoKey> {
@@ -399,8 +113,8 @@ function getShareSecret(env: AppBindings): string {
   return secret;
 }
 
-function createRandomSalt(): string {
-  const bytes = new Uint8Array(16);
+function createRandomBase64Url(byteLength: number): string {
+  const bytes = new Uint8Array(byteLength);
   crypto.getRandomValues(bytes);
   return encodeBase64Url(bytes);
 }
@@ -416,18 +130,6 @@ async function createPasswordVerifier(
     getShareSecret(env),
   );
   return encodeBase64Url(signature);
-}
-
-async function signSharePayload(
-  payloadJson: string,
-  secret: string,
-  version: number,
-): Promise<Uint8Array> {
-  const purpose =
-    version === SINGLE_FILE_SHARE_TOKEN_VERSION
-      ? SHARE_TOKEN_V2_SIGNATURE_PURPOSE
-      : SHARE_TOKEN_V3_SIGNATURE_PURPOSE;
-  return signPurposePayload(purpose, payloadJson, secret);
 }
 
 async function createSignedToken(
@@ -470,137 +172,64 @@ async function verifySignedToken<T>(
   }
 }
 
-export function isShareDurationOption(value: number): value is ShareDurationOption {
-  return SHARE_DURATION_OPTIONS.includes(value as ShareDurationOption);
-}
-
-export function getShareExpiryTimestamp(
-  expiresInSeconds: ShareDurationOption,
-  now = Date.now(),
-): number {
-  return now + expiresInSeconds * 1000;
-}
-
-function getCreateShareFiles(payload: CreateShareTokenPayload): ShareFileTokenEntry[] {
-  if ("files" in payload) {
-    return payload.files;
+function parseShareDownloadTicketPayload(value: unknown): ShareDownloadTicketPayload | null {
+  if (
+    !isRecord(value) ||
+    value.v !== DOWNLOAD_TICKET_VERSION ||
+    value.type !== "share-download" ||
+    typeof value.shareIdDigest !== "string" ||
+    typeof value.exp !== "number" ||
+    !Number.isInteger(value.exp)
+  ) {
+    return null;
   }
 
-  return [
-    {
-      path: payload.path,
-      fileName: payload.fileName,
-      size: payload.size ?? 0,
-      etag: payload.etag,
-    },
-  ];
-}
-
-function assertShareFiles(files: ShareFileTokenEntry[]): void {
-  if (files.length === 0) {
-    throw new Error("At least one file is required");
-  }
-
-  if (files.length > MAX_SHARE_FILE_COUNT) {
-    throw new Error(`Cannot share more than ${MAX_SHARE_FILE_COUNT} files`);
-  }
-}
-
-export async function createShareToken(
-  env: AppBindings,
-  payload: CreateShareTokenPayload,
-): Promise<string> {
-  const { password } = payload;
-  const normalizedPassword = password?.trim() ?? "";
-  const files = getCreateShareFiles(payload);
-  assertShareFiles(files);
-  const sharePayload: ShareTokenBasePayload = {
-    rootDirId: payload.rootDirId,
-    fileName: payload.fileName,
-    exp: payload.exp,
-    expiresInSeconds: payload.expiresInSeconds,
-    files,
+  return {
+    v: DOWNLOAD_TICKET_VERSION,
+    type: "share-download",
+    shareIdDigest: value.shareIdDigest,
+    exp: value.exp,
   };
-  let tokenPayload: CurrentShareTokenPayload;
-
-  if (normalizedPassword) {
-    const passwordSalt = createRandomSalt();
-    tokenPayload = {
-      v: SHARE_TOKEN_VERSION,
-      ...sharePayload,
-      passwordProtected: true,
-      passwordSalt,
-      passwordVerifier: await createPasswordVerifier(env, passwordSalt, normalizedPassword),
-    };
-  } else {
-    tokenPayload = {
-      v: SHARE_TOKEN_VERSION,
-      ...sharePayload,
-      passwordProtected: false,
-    };
-  }
-
-  const payloadJson = JSON.stringify(tokenPayload);
-  const payloadBytes = textEncoder.encode(payloadJson);
-  const signatureBytes = await signSharePayload(payloadJson, getShareSecret(env), tokenPayload.v);
-
-  return `${encodeBase64Url(payloadBytes)}.${encodeBase64Url(signatureBytes)}`;
 }
 
-export async function verifyShareToken(
+export function createShareId(): string {
+  return createRandomBase64Url(SHARE_ID_BYTES);
+}
+
+export async function createSharePasswordVerifier(
   env: AppBindings,
-  token: string,
-): Promise<ShareTokenPayload | null> {
-  const parts = token.split(".");
-  const [encodedPayload, encodedSignature] = parts;
-  if (!encodedPayload || !encodedSignature || parts.length !== 2) {
-    return null;
-  }
-
-  try {
-    const payloadBytes = decodeBase64Url(encodedPayload);
-    const signatureBytes = decodeBase64Url(encodedSignature);
-    const payloadJson = textDecoder.decode(payloadBytes);
-    const version = readPayloadVersion(payloadJson);
-    const expectedSignature =
-      version === LEGACY_SHARE_TOKEN_VERSION
-        ? await signMessage(payloadJson, getShareSecret(env))
-        : version === SINGLE_FILE_SHARE_TOKEN_VERSION || version === SHARE_TOKEN_VERSION
-          ? await signSharePayload(payloadJson, getShareSecret(env), version)
-          : null;
-
-    if (!expectedSignature || !timingSafeEqualBytes(signatureBytes, expectedSignature)) {
-      return null;
-    }
-
-    return parseSharePayload(JSON.parse(payloadJson));
-  } catch {
-    return null;
-  }
+  password: string,
+): Promise<SharePasswordVerifierFields> {
+  const passwordSalt = createRandomBase64Url(SHARE_ID_BYTES);
+  return {
+    passwordProtected: true,
+    passwordSalt,
+    passwordVerifier: await createPasswordVerifier(env, passwordSalt, password.trim()),
+  };
 }
 
 export async function verifySharePassword(
   env: AppBindings,
-  payload: ShareTokenPayload,
+  verifier: SharePasswordVerifier,
   password: string,
 ): Promise<boolean> {
-  if (!payload.passwordProtected || !payload.passwordSalt || !payload.passwordVerifier) {
+  if (!verifier.passwordProtected || !verifier.passwordSalt || !verifier.passwordVerifier) {
     return false;
   }
 
-  const verifier = await createPasswordVerifier(env, payload.passwordSalt, password.trim());
-  return timingSafeEqualString(verifier, payload.passwordVerifier);
+  const expectedVerifier = await createPasswordVerifier(env, verifier.passwordSalt, password.trim());
+  return timingSafeEqualString(expectedVerifier, verifier.passwordVerifier);
 }
 
-export async function getShareTokenDigest(token: string): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", textEncoder.encode(token));
+export async function getShareIdDigest(shareId: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", textEncoder.encode(shareId));
   return encodeBase64Url(new Uint8Array(digest));
 }
 
 export async function createShareDownloadTicket(
   env: AppBindings,
-  shareToken: string,
-  payload: ShareTokenPayload,
+  shareId: string,
+  shareExpiresAt: number,
   now = Date.now(),
 ): Promise<string> {
   return createSignedToken(
@@ -608,11 +237,8 @@ export async function createShareDownloadTicket(
     {
       v: DOWNLOAD_TICKET_VERSION,
       type: "share-download",
-      rootDirId: payload.rootDirId,
-      fileName: payload.fileName,
-      exp: Math.min(payload.exp, now + DOWNLOAD_TICKET_TTL_MS),
-      expiresInSeconds: payload.expiresInSeconds,
-      shareTokenDigest: await getShareTokenDigest(shareToken),
+      exp: Math.min(shareExpiresAt, now + DOWNLOAD_TICKET_TTL_MS),
+      shareIdDigest: await getShareIdDigest(shareId),
     } satisfies ShareDownloadTicketPayload,
     DOWNLOAD_TICKET_SIGNATURE_PURPOSE,
   );
@@ -620,8 +246,7 @@ export async function createShareDownloadTicket(
 
 export async function isShareDownloadTicketValid(
   env: AppBindings,
-  shareToken: string,
-  payload: ShareTokenPayload,
+  shareId: string,
   ticket: string | undefined,
   now = Date.now(),
 ): Promise<boolean> {
@@ -633,31 +258,24 @@ export async function isShareDownloadTicketValid(
     env,
     ticket,
     DOWNLOAD_TICKET_SIGNATURE_PURPOSE,
-    parseDownloadTicketPayload,
+    parseShareDownloadTicketPayload,
   );
   if (!ticketPayload || now >= ticketPayload.exp) {
     return false;
   }
 
-  const shareTokenDigest = await getShareTokenDigest(shareToken);
-  if (
-    !timingSafeEqualString(ticketPayload.shareTokenDigest, shareTokenDigest) ||
-    ticketPayload.rootDirId !== payload.rootDirId ||
-    ticketPayload.fileName !== payload.fileName
-  ) {
-    return false;
-  }
+  return timingSafeEqualString(ticketPayload.shareIdDigest, await getShareIdDigest(shareId));
+}
 
-  if (ticketPayload.v === LEGACY_DOWNLOAD_TICKET_VERSION) {
-    const firstFile = payload.files[0];
-    return (
-      Boolean(firstFile) &&
-      ticketPayload.path === firstFile.path &&
-      ticketPayload.etag === firstFile.etag
-    );
-  }
+export function isShareDurationOption(value: number): value is ShareDurationOption {
+  return SHARE_DURATION_OPTIONS.includes(value as ShareDurationOption);
+}
 
-  return true;
+export function getShareExpiryTimestamp(
+  expiresInSeconds: ShareDurationOption,
+  now = Date.now(),
+): number {
+  return now + expiresInSeconds * 1000;
 }
 
 export function resolveAppOrigin(requestUrl: string, env: AppBindings): string {
@@ -672,17 +290,17 @@ export function resolveAppOrigin(requestUrl: string, env: AppBindings): string {
   return new URL(requestUrl).origin;
 }
 
-export function buildSharePageUrl(origin: string, token: string): string {
-  return `${origin}/share/${encodeURIComponent(token)}`;
+export function buildSharePageUrl(origin: string, shareId: string): string {
+  return `${origin}/share/${encodeURIComponent(shareId)}`;
 }
 
 export function buildShareDownloadUrl(
   origin: string,
-  token: string,
+  shareId: string,
   ticket?: string,
   fileIndex?: number,
 ): string {
-  const url = `${origin}/api/share-links/${encodeURIComponent(token)}/download`;
+  const url = `${origin}/api/share-links/${encodeURIComponent(shareId)}/download`;
   if (!ticket && fileIndex === undefined) {
     return url;
   }
@@ -697,6 +315,6 @@ export function buildShareDownloadUrl(
   return `${url}?${params.toString()}`;
 }
 
-export function isShareExpired(payload: ShareTokenPayload, now = Date.now()): boolean {
-  return now >= payload.exp;
+export function isShareExpired(expiresAt: Date, now = Date.now()): boolean {
+  return now >= expiresAt.getTime();
 }

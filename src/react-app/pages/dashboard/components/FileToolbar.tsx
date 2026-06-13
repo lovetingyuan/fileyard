@@ -222,12 +222,16 @@ export const FileToolbar = forwardRef<FileToolbarHandle, FileToolbarProps>(funct
             <li>
               <button
                 type="button"
-                className={cn("gap-2", creatingFolder && "loading")}
+                className="gap-2"
                 disabled={creatingFolder || isCreatingNewFolder || isFileMutationDisabled}
                 onClick={() => startCreateFolder(getUniqueFolderName("新建文件夹"))}
                 aria-label="新建文件夹"
               >
-                {!creatingFolder && <MdiFolderPlus className="h-4 w-4 text-secondary" />}
+                {creatingFolder ? (
+                  <span className="loading loading-spinner" aria-hidden="true" />
+                ) : (
+                  <MdiFolderPlus className="h-4 w-4 text-secondary" />
+                )}
                 新建文件夹
               </button>
             </li>
@@ -293,15 +297,16 @@ export const FileToolbar = forwardRef<FileToolbarHandle, FileToolbarProps>(funct
           <div className="tooltip shrink-0" data-tip="Refresh">
             <button
               type="button"
-              className={cn(
-                "btn btn-ghost btn-square btn-sm",
-                isRefreshing && "loading w-8 scale-75",
-              )}
+              className="btn btn-ghost btn-square btn-sm"
               disabled={isRefreshing}
               onClick={() => void refresh()}
               aria-label="刷新文件列表"
             >
-              {!isRefreshing && <MdiRefresh className="w-5 h-5" />}
+              {isRefreshing ? (
+                <span className="loading loading-spinner" aria-hidden="true" />
+              ) : (
+                <MdiRefresh className="w-5 h-5" />
+              )}
             </button>
           </div>
           {clipboardUploadDialog}

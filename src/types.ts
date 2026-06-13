@@ -263,6 +263,7 @@ export interface ShareFileSummary {
 
 export interface ShareLinkResponse {
   success: true;
+  id: string;
   fileName: string;
   fileCount: number;
   files: ShareFileSummary[];

@@ -15,6 +15,13 @@
       "when": 1776007300000,
       "tag": "0001_rate_limit_backfill",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1781362905013,
+      "tag": "0002_nervous_beyonder",
+      "breakpoints": true
     }
   ]
 }

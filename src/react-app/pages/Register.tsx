@@ -7,7 +7,6 @@ import MdiLockOutline from "~icons/mdi/lock-outline";
 import MdiLogin from "~icons/mdi/login";
 import toast from "react-hot-toast";
 import { useAuth } from "../auth/useAuth";
-import { cn } from "../utils/cn";
 import { getPasswordErrors, PASSWORD_REQUIREMENTS_HINT } from "../utils/passwordRules";
 
 export function Register() {
@@ -144,10 +143,14 @@ export function Register() {
             <div className="form-control mt-6">
               <button
                 type="submit"
-                className={cn("btn btn-primary gap-2", loading && "loading")}
+                className="btn btn-primary gap-2"
                 disabled={loading}
               >
-                <MdiAccountPlus className="w-5 h-5" />
+                {loading ? (
+                  <span className="loading loading-spinner" aria-hidden="true" />
+                ) : (
+                  <MdiAccountPlus className="w-5 h-5" />
+                )}
                 {loading ? "Creating account..." : "Register"}
               </button>
             </div>

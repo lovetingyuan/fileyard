@@ -7,7 +7,6 @@ import MdiLockOutline from "~icons/mdi/lock-outline";
 import MdiLogin from "~icons/mdi/login";
 import toast from "react-hot-toast";
 import { useAuth } from "../auth/useAuth";
-import { cn } from "../utils/cn";
 
 const AUTH_FEEDBACK_MESSAGES = {
   registered: "Registration successful. Please check your email to verify your account.",
@@ -164,11 +163,14 @@ export function Login() {
             <div className="form-control mt-6 flex justify-between items-center">
               <button
                 type="submit"
-                className={cn("btn btn-primary gap-2", loading && "loading")}
+                className="btn btn-primary gap-2"
                 disabled={loading}
               >
                 {loading ? (
-                  "Logging in..."
+                  <>
+                    <span className="loading loading-spinner" aria-hidden="true" />
+                    Logging in...
+                  </>
                 ) : (
                   <>
                     <MdiLogin className="w-5 h-5" />

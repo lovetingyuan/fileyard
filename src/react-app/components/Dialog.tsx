@@ -167,6 +167,7 @@ export function Dialog({
     : confirmLoading
       ? (confirmLoadingText ?? confirmText)
       : confirmText
+  const isConfirmLoading = confirmLoading || isConfirming
 
   return (
     <dialog
@@ -238,13 +239,13 @@ export function Dialog({
                 {showConfirmButton && onConfirm && (
                   <button
                     type="button"
-                    className={cn(
-                      confirmButtonClassName || 'btn btn-sm btn-primary',
-                      (confirmLoading || isConfirming) && 'loading',
-                    )}
+                    className={cn(confirmButtonClassName || 'btn btn-sm btn-primary')}
                     onClick={() => void confirm()}
                     disabled={isConfirming || confirmLoading || confirmDisabled}
                   >
+                    {isConfirmLoading ? (
+                      <span className="loading loading-spinner" aria-hidden="true" />
+                    ) : null}
                     {confirmLabel}
                   </button>
                 )}

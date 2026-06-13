@@ -6,7 +6,6 @@ import MdiLockReset from "~icons/mdi/lock-reset";
 import MdiLogin from "~icons/mdi/login";
 import toast from "react-hot-toast";
 import { useForgotPasswordMutation } from "../hooks/useAuthApi";
-import { cn } from "../utils/cn";
 
 export function ForgotPassword() {
   const [searchParams] = useSearchParams();
@@ -75,10 +74,14 @@ export function ForgotPassword() {
             <div className="form-control mt-6">
               <button
                 type="submit"
-                className={cn("btn btn-primary gap-2", isMutating && "loading")}
+                className="btn btn-primary gap-2"
                 disabled={isMutating}
               >
-                {!isMutating && <MdiLockReset className="h-5 w-5" />}
+                {isMutating ? (
+                  <span className="loading loading-spinner" aria-hidden="true" />
+                ) : (
+                  <MdiLockReset className="h-5 w-5" />
+                )}
                 {isMutating ? "Sending reset link..." : "Reset password"}
               </button>
             </div>

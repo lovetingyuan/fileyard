@@ -14,6 +14,7 @@ import fileRoutes from "./routes/files";
 import multipartFileRoutes from "./routes/filesMultipart";
 import shareRoutes from "./routes/shares";
 import topBannerRoutes from "./routes/topBanner";
+import { cleanupExpiredShares } from "./shares/cleanup";
 
 const app = new Hono<AppContext>();
 
@@ -88,4 +89,14 @@ app.route("/", topBannerRoutes);
 app.all("/api/*", (c) => jsonError(c, "Not found", 404));
 app.all("*", async (c) => c.env.ASSETS.fetch(c.req.raw));
 
-export default app;
+const worker = {
+  fetch(request, env, ctx) {
+    return app.fetch(request, env, ctx);
+  },
+  scheduled(controller, env, ctx) {
+    ctx.waitUntil(cleanupExpiredShares(env, controller.scheduledTime));
+  },
+} satisfies ExportedHandler<Env>;
+
+export { app };
+export default worker;
