@@ -1,7 +1,7 @@
 import { useRef, useState, type ComponentType } from 'react'
 import QRCodeImport from 'react-qr-code'
 import toast from 'react-hot-toast'
-import type { ShareDurationOption, ShareLinkResponse } from '../../../../types'
+import type { FileOperationTarget, ShareDurationOption, ShareLinkResponse } from '../../../../types'
 import { Dialog } from '../../../components/Dialog'
 import { ShareLinkCopyButton } from '../../../components/ShareLinkCopyButton'
 import { useCreateShareLinkMutation } from '../../../hooks/useFilesApi'
@@ -24,13 +24,27 @@ type QRCodeComponentProps = {
 }
 
 const DEFAULT_SHARE_DURATION: ShareDurationOption = 3600
+const MAX_VISIBLE_SHARE_TARGETS = 6
 const QRCode = ((QRCodeImport as unknown as { QRCode?: unknown; default?: unknown }).QRCode ??
   (QRCodeImport as unknown as { default?: unknown }).default ??
   QRCodeImport) as ComponentType<QRCodeComponentProps>
 
+function getShareTargetTitle(targets: FileOperationTarget[]): string {
+  const title =
+    targets.length > 1
+      ? `已选择 ${targets
+          .slice(0, 3)
+          .map(v => v.name)
+          .join(', ')} 等${targets.length}个文件`
+      : (targets[0]?.name ?? '未知文件')
+  return title
+}
+
 export function ShareFileModal() {
-  const { currentFile, sharing } = useAppStore()
-  const file = sharing ? currentFile : null
+  const { shareTargets, sharing } = useAppStore()
+  const activeShareTargets = sharing ? shareTargets : []
+  const isMultiFileShare = activeShareTargets.length > 1
+  const shareTargetTitle = getShareTargetTitle(activeShareTargets)
   const [expiresInSeconds, setExpiresInSeconds] =
     useState<ShareDurationOption>(DEFAULT_SHARE_DURATION)
   const [sharePassword, setSharePassword] = useState('')
@@ -63,7 +77,7 @@ export function ShareFileModal() {
     setLoadError(null)
   }
 
-  if (!file) {
+  if (activeShareTargets.length === 0) {
     return null
   }
 
@@ -72,7 +86,12 @@ export function ShareFileModal() {
   const isLoading = isMutating
   const shareText = shareLink
     ? [
-        `文件名：${shareLink.fileName}`,
+        isMultiFileShare
+          ? `文件数量：${shareLink.fileCount} 个文件`
+          : `文件名：${shareLink.fileName}`,
+        isMultiFileShare
+          ? `文件列表：${shareLink.files.map(file => file.fileName).join('、')}`
+          : null,
         `过期时间：${formatShareExpiry(shareLink.expiresAt)}`,
         `有效时长：${shareDurationLabel}`,
         shareLink.passwordProtected ? '该链接需要分享密码，请通过其他渠道发送密码。' : null,
@@ -106,7 +125,7 @@ export function ShareFileModal() {
 
     try {
       const response = await createShareLink(
-        file.path,
+        activeShareTargets.map(target => target.path),
         nextExpiresInSeconds,
         normalizedPassword || undefined,
       )
@@ -198,18 +217,19 @@ export function ShareFileModal() {
     >
       <div
         className="mb-3 truncate text-sm font-medium leading-6 text-base-content"
-        title={file.name}
+        title={shareTargetTitle}
       >
-        <span className="select-none text-gray-400">文件名： </span>
-        <span>{file.name}</span>
+        <span className="select-none text-gray-400">
+          {isMultiFileShare ? '文件： ' : '文件名： '}
+        </span>
+        <span>{shareTargetTitle}</span>
       </div>
-
       <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3">
         <div className="grid w-[clamp(8.5rem,38vw,15rem)] place-items-center rounded-lg border border-base-300/80 bg-base-200/25 p-1">
           {shareLink ? (
             <QRCode
               value={shareLink.shareUrl}
-              size={456}
+              size={500}
               className="block h-auto w-full rounded bg-white p-2 [shape-rendering:crispEdges]"
               bgColor="#ffffff"
               fgColor="#111827"

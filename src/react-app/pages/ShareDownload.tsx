@@ -4,6 +4,7 @@ import { useParams } from "react-router-dom";
 import type { ResolvedSharedFileMetadataResponse, SharedFileMetadataResponse } from "../../types";
 import { ApiError, apiRequest } from "../utils/apiRequest";
 import { cn } from "../utils/cn";
+import { formatBytes } from "../utils/fileFormatters";
 import { getSharePasswordError, normalizeSharePassword } from "../utils/sharePassword";
 import { formatShareDuration } from "../utils/shareDurations";
 
@@ -87,6 +88,7 @@ export function ShareDownload() {
   const status = getSharePageStatus(pageData, error);
   const resolvedData = getResolvedData(pageData);
   const fileName = resolvedData?.fileName ?? "未知文件";
+  const isMultiFileShare = Boolean(resolvedData && resolvedData.fileCount > 1);
   const normalizedPassword = normalizeSharePassword(password);
   const passwordError = getSharePasswordError(password);
   const visibleUnlockError = unlockError ?? passwordError;
@@ -170,23 +172,71 @@ export function ShareDownload() {
                 解锁文件
               </button>
             </form>
-          ) : status === "active" && resolvedData?.downloadUrl ? (
+          ) : status === "active" && resolvedData ? (
             <>
-              <div className="space-y-2 text-base-content">
-                <p className="text-sm text-base-content/70">文件名</p>
-                <p className="break-all text-lg">{fileName}</p>
-                <p className="text-right text-sm italic text-base-content/70">
-                  {formatShareDuration(resolvedData.expiresInSeconds)} 后过期
-                </p>
-              </div>
+              {isMultiFileShare ? (
+                <div className="space-y-3 text-base-content">
+                  <div className="space-y-1">
+                    <p className="text-sm text-base-content/70">文件</p>
+                    <p className="break-all text-lg">{resolvedData.fileCount} 个文件</p>
+                  </div>
+                  <div className="divide-y divide-base-300 rounded-box border border-base-300">
+                    {resolvedData.files.map((file, index) => (
+                      <div
+                        key={`${index}:${file.fileName}`}
+                        className="flex min-w-0 flex-col gap-3 px-3 py-3 sm:flex-row sm:items-center"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium" title={file.fileName}>
+                            {file.fileName}
+                          </p>
+                          <p className="text-xs text-base-content/60">{formatBytes(file.size)}</p>
+                        </div>
+                        {file.status === "active" && file.downloadUrl ? (
+                          <a
+                            href={file.downloadUrl}
+                            download={file.fileName}
+                            className="btn btn-primary btn-sm w-full sm:w-auto"
+                          >
+                            下载
+                          </a>
+                        ) : (
+                          <button type="button" className="btn btn-sm w-full sm:w-auto" disabled>
+                            不可用
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-right text-sm italic text-base-content/70">
+                    {formatShareDuration(resolvedData.expiresInSeconds)} 后过期
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-2 text-base-content">
+                    <p className="text-sm text-base-content/70">文件名</p>
+                    <p className="break-all text-lg">{fileName}</p>
+                    <p className="text-right text-sm italic text-base-content/70">
+                      {formatShareDuration(resolvedData.expiresInSeconds)} 后过期
+                    </p>
+                  </div>
 
-              <a
-                href={resolvedData.downloadUrl}
-                download={fileName}
-                className="btn btn-primary w-full sm:w-auto"
-              >
-                下载文件
-              </a>
+                  {resolvedData.downloadUrl ? (
+                    <a
+                      href={resolvedData.downloadUrl}
+                      download={fileName}
+                      className="btn btn-primary w-full sm:w-auto"
+                    >
+                      下载文件
+                    </a>
+                  ) : (
+                    <button type="button" className="btn btn-primary w-full sm:w-auto" disabled>
+                      文件不可用
+                    </button>
+                  )}
+                </>
+              )}
             </>
           ) : (
             <div className="space-y-2 text-base-content">

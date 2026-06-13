@@ -218,9 +218,15 @@ function parseBatchMoveRequest(value: unknown): BatchMoveRequest | null {
 }
 
 function parseCreateShareLinkRequest(value: unknown): CreateShareLinkRequest | null {
+  const hasPath = isRecord(value) && typeof value.path === "string";
+  const hasPaths =
+    isRecord(value) &&
+    Array.isArray(value.paths) &&
+    value.paths.every((path) => typeof path === "string");
+
   if (
     !isRecord(value) ||
-    typeof value.path !== "string" ||
+    (!hasPath && !hasPaths) ||
     typeof value.expiresInSeconds !== "number" ||
     !isOptionalString(value.password) ||
     !SHARE_DURATION_OPTIONS.includes(
@@ -231,7 +237,8 @@ function parseCreateShareLinkRequest(value: unknown): CreateShareLinkRequest | n
   }
 
   return {
-    path: value.path,
+    ...(hasPath ? { path: value.path as string } : {}),
+    ...(hasPaths ? { paths: value.paths as string[] } : {}),
     expiresInSeconds: value.expiresInSeconds as CreateShareLinkRequest["expiresInSeconds"],
     ...(value.password === undefined ? {} : { password: value.password }),
   };

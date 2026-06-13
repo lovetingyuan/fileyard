@@ -290,12 +290,12 @@ export function useCreateShareLinkMutation() {
   );
 
   const createShareLink = (
-    path: string,
+    paths: string | string[],
     expiresInSeconds: CreateShareLinkRequest["expiresInSeconds"],
     password?: string,
   ) =>
     trigger({
-      path,
+      ...(Array.isArray(paths) ? { paths } : { path: paths }),
       expiresInSeconds,
       ...(password ? { password } : {}),
     });

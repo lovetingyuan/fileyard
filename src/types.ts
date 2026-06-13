@@ -250,14 +250,22 @@ export interface FileMutationResponse {
 }
 
 export interface CreateShareLinkRequest {
-  path: string;
+  path?: string;
+  paths?: string[];
   expiresInSeconds: ShareDurationOption;
   password?: string;
+}
+
+export interface ShareFileSummary {
+  fileName: string;
+  size: number;
 }
 
 export interface ShareLinkResponse {
   success: true;
   fileName: string;
+  fileCount: number;
+  files: ShareFileSummary[];
   expiresAt: string;
   expiresInSeconds: ShareDurationOption;
   shareUrl: string;
@@ -289,6 +297,13 @@ export interface LockedSharedFileMetadataResponse extends SharedFileMetadataBase
 export interface ResolvedSharedFileMetadataResponse extends SharedFileMetadataBaseResponse {
   status: Exclude<SharedFileStatus, "locked">;
   fileName: string;
+  fileCount: number;
+  files: Array<
+    ShareFileSummary & {
+      status: "active" | "missing";
+      downloadUrl: string | null;
+    }
+  >;
   expiresAt: string;
   expiresInSeconds: ShareDurationOption;
   downloadUrl: string | null;

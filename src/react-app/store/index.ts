@@ -3,6 +3,7 @@ import type {
   BatchOperationTarget,
   DeleteTarget,
   FileEntry,
+  FileOperationTarget,
   MoveTarget,
   NewTextFileDraft,
   RenameTarget,
@@ -69,6 +70,8 @@ export const { useStore, getStoreMethods, getStoreState, getStateSnapshot, subsc
     savingTextFile: false,
     /** 当前正在被预览、分享或查看详情的文件。 */
     currentFile: null as FileEntry | null,
+    /** 当前正在分享的文件目标列表。 */
+    shareTargets: [] as FileOperationTarget[],
     /** 是否正在展示文件预览弹窗。 */
     previewing: false,
     /** 是否正在执行文件下载请求。 */

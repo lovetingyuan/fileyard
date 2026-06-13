@@ -4,6 +4,7 @@ import type {
   DashboardLayoutMode,
   DeleteTarget,
   FileEntry,
+  FileOperationTarget,
   MoveTarget,
   NewTextFileDraft,
   RenameTarget,
@@ -81,6 +82,7 @@ export function requestDashboardFileLocation(filePath: string) {
     setDashboardLocatedFilePath,
     setIsDashboardTreeSidebarOpen,
     setPreviewing,
+    setShareTargets,
     setSharing,
     setViewDetail,
   } = getStoreMethods();
@@ -89,6 +91,7 @@ export function requestDashboardFileLocation(filePath: string) {
   setIsDashboardTreeSidebarOpen(false);
   setCurrentFile(null);
   setPreviewing(false);
+  setShareTargets([]);
   setSharing(false);
   setViewDetail(false);
 }
@@ -148,10 +151,12 @@ export function setSavingTextFile(isSaving: boolean) {
 }
 
 export function openFilePreview(file: FileEntry) {
-  const { setCurrentFile, setPreviewing, setSharing, setViewDetail } = getStoreMethods();
+  const { setCurrentFile, setPreviewing, setShareTargets, setSharing, setViewDetail } =
+    getStoreMethods();
 
   setCurrentFile(file);
   setPreviewing(true);
+  setShareTargets([]);
   setSharing(false);
   setViewDetail(false);
 }
@@ -164,10 +169,12 @@ export function closeFilePreview() {
 }
 
 export function openFileDetails(file: FileEntry) {
-  const { setCurrentFile, setPreviewing, setSharing, setViewDetail } = getStoreMethods();
+  const { setCurrentFile, setPreviewing, setShareTargets, setSharing, setViewDetail } =
+    getStoreMethods();
 
   setCurrentFile(file);
   setPreviewing(false);
+  setShareTargets([]);
   setSharing(false);
   setViewDetail(true);
 }
@@ -180,18 +187,32 @@ export function closeFileDetails() {
 }
 
 export function openFileShare(file: FileEntry) {
-  const { setCurrentFile, setPreviewing, setSharing, setViewDetail } = getStoreMethods();
+  const { setCurrentFile, setPreviewing, setShareTargets, setSharing, setViewDetail } =
+    getStoreMethods();
 
   setCurrentFile(file);
   setPreviewing(false);
+  setShareTargets([{ path: file.path, name: file.name }]);
   setSharing(true);
   setViewDetail(false);
 }
 
+export function openBatchFileShare(files: FileOperationTarget[]) {
+  const { setCurrentFile, setPreviewing, setShareTargets, setSharing, setViewDetail } =
+    getStoreMethods();
+
+  setCurrentFile(null);
+  setPreviewing(false);
+  setShareTargets(files);
+  setSharing(files.length > 0);
+  setViewDetail(false);
+}
+
 export function closeFileShare() {
-  const { setCurrentFile, setSharing } = getStoreMethods();
+  const { setCurrentFile, setShareTargets, setSharing } = getStoreMethods();
 
   setSharing(false);
+  setShareTargets([]);
   setCurrentFile(null);
 }
 
