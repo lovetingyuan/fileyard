@@ -92,8 +92,7 @@ export function ShareDownload() {
     (url: string) => apiRequest<SharedFileMetadataResponse>(url, { credentials: 'same-origin' }),
   )
 
-  const unlockedData =
-    unlockResult && unlockResult.shareId === shareId ? unlockResult.data : null
+  const unlockedData = unlockResult && unlockResult.shareId === shareId ? unlockResult.data : null
   const pageData = unlockedData ?? data
   const status = getSharePageStatus(pageData, error)
   const resolvedData = getResolvedData(pageData)
@@ -157,9 +156,9 @@ export function ShareDownload() {
   }
 
   return (
-    <main className="mx-auto flex w-[94%] max-w-2xl flex-1 items-center py-10 sm:py-16">
-      <section className="w-full rounded-[1.75rem] border border-base-300 bg-base-100 px-6 py-8 shadow-lg sm:px-8 sm:py-10">
-        <div className="flex flex-col gap-6">
+    <main className="mx-auto flex min-h-0 w-[94%] max-w-2xl flex-1 items-start overflow-hidden py-5 sm:py-8">
+      <section className="flex max-h-full min-h-0 w-full flex-col rounded-[1.75rem] border border-base-300 bg-base-100 px-6 py-8 shadow-lg sm:px-8 sm:py-10">
+        <div className="flex min-h-0 flex-1 flex-col gap-6">
           <div className="flex min-w-0 items-center justify-between gap-4">
             <h1 className="text-lg font-semibold text-base-content sm:text-xl">
               {status === 'active'
@@ -214,8 +213,8 @@ export function ShareDownload() {
           ) : status === 'active' && resolvedData ? (
             <>
               {isMultiFileShare ? (
-                <div className="space-y-3 text-base-content">
-                  <div className="divide-y divide-base-300 rounded-box border border-base-300">
+                <div className="flex min-h-0 flex-1 flex-col gap-3 text-base-content">
+                  <div className="min-h-0 flex-1 divide-y divide-base-300 overflow-y-auto rounded-box border border-base-300 [scrollbar-gutter:stable]">
                     {resolvedData.files.map((file, index) => (
                       <div
                         key={`${index}:${file.fileName}`}
