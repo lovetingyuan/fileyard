@@ -1,3 +1,5 @@
+import { cn } from "../../../utils/cn";
+
 const RENAME_INPUT_BASE_CLASS_NAME = "input input-bordered w-full";
 const DEFAULT_RENAME_CONFIRM_TEXT = "保存";
 const FILE_TYPE_CHANGE_CONFIRM_TEXT = "更改文件类型并保存";
@@ -78,11 +80,10 @@ export function getRenameInputClassName({
   isUploadBlocked: boolean;
   visibleValidationMessage: string | null;
 }): string {
-  if (visibleValidationMessage || isUploadBlocked) {
-    return `${RENAME_INPUT_BASE_CLASS_NAME} input-error`;
-  }
-
-  return RENAME_INPUT_BASE_CLASS_NAME;
+  return cn(
+    RENAME_INPUT_BASE_CLASS_NAME,
+    (visibleValidationMessage || isUploadBlocked) && "input-error",
+  );
 }
 
 export function isRenameConfirmDisabled({

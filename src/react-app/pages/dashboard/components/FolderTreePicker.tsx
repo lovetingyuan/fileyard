@@ -1,7 +1,7 @@
-import clsx from "clsx/lite";
 import { type ComponentType, type SVGProps } from "react";
 import MdiFolder from "~icons/mdi/folder";
 import type { FolderTreeNode } from "../../../../types";
+import { cn } from "../../../utils/cn";
 
 type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
 
@@ -33,10 +33,10 @@ function FolderTreeItem({
   const visibleChildren = node.children.filter((child) => !isNodeHidden(child.path));
 
   return (
-    <li className={isDisabled ? "disabled" : undefined}>
+    <li className={cn(isDisabled && "disabled")}>
       <button
         type="button"
-        className={clsx(
+        className={cn(
           "gap-2",
           isSelectionVisible && "menu-active",
           isDisabled && "cursor-not-allowed text-base-content/40",
@@ -47,7 +47,7 @@ function FolderTreeItem({
         onClick={() => onSelect(node.path)}
       >
         <Icon
-          className={clsx(
+          className={cn(
             "h-4 w-4 shrink-0",
             isDisabled
               ? "text-base-content/35"

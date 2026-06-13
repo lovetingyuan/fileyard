@@ -1,4 +1,5 @@
 import type { PreviewKind } from "../utils/previewInfo";
+import { cn } from "../utils/cn";
 
 export type DialogWidthMode = "default" | "content";
 const DOCUMENT_VIEWPORT_CLASS = "mx-auto w-[min(48rem,calc(95vw-4rem))] max-w-full";
@@ -10,21 +11,12 @@ export function getDialogBoxClassName(
   boxClassName = "",
   isFullscreen = false,
 ): string {
-  const classes = ["modal-box"];
-
-  if (!isFullscreen && widthMode === "content") {
-    classes.push("!w-fit");
-  }
-
-  if (boxClassName) {
-    classes.push(boxClassName);
-  }
-
-  if (isFullscreen) {
-    classes.push(DIALOG_FULLSCREEN_BOX_CLASS);
-  }
-
-  return classes.join(" ");
+  return cn(
+    "modal-box",
+    !isFullscreen && widthMode === "content" && "!w-fit",
+    boxClassName,
+    isFullscreen && DIALOG_FULLSCREEN_BOX_CLASS,
+  );
 }
 
 export function getPreviewModalBoxClassName(): string {

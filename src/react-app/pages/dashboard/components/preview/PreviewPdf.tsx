@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import useSWR from "swr";
 import type { FileEntry } from "../../../../../types";
 import { STANDARD_PDF_CLASS_NAME } from "../../../../components/previewModalLayout";
+import { cn } from "../../../../utils/cn";
 import { PreviewUnsupportedMessage } from "./PreviewUnsupportedMessage";
 import { PREVIEW_SIZE_LIMITS } from "./previewLimits";
 
@@ -64,7 +65,7 @@ export function PdfPreview({
     <iframe
       src={blobUrl}
       title="PDF Preview"
-      className={isFullscreen ? "w-full rounded border-0 h-full" : STANDARD_PDF_CLASS_NAME}
+      className={cn(isFullscreen ? "w-full rounded border-0 h-full" : STANDARD_PDF_CLASS_NAME)}
     />
   );
 }

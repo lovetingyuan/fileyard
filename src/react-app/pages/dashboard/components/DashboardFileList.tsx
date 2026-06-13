@@ -2,6 +2,7 @@ import MdiFolderOpenOutline from "~icons/mdi/folder-open-outline";
 import MdiMagnifyRemoveOutline from "~icons/mdi/magnify-remove-outline";
 import type { BatchOperationTarget, FileEntry, FolderEntry } from "../../../../types";
 import { useAppStore } from "../../../store";
+import { cn } from "../../../utils/cn";
 import { toggleDashboardSelectAll } from "../actions";
 import { createDashboardGridSections } from "../utils/dashboardLayoutMode";
 import {
@@ -127,7 +128,7 @@ function DashboardSelectAllCheckbox({
       <input
         ref={setCheckboxRef}
         type="checkbox"
-        className={`${SELECT_ALL_CHECKBOX_CLASS} ${className}`.trim()}
+        className={cn(SELECT_ALL_CHECKBOX_CLASS, className)}
         checked={selectAllState.checked}
         readOnly
         onClick={handleClick}
@@ -144,17 +145,13 @@ function DashboardSelectAllCheckbox({
 function DashboardTableEmptyRows({ searchInputValue }: { searchInputValue: string }) {
   return (
     <>
-      <tr className={searchInputValue ? "@min-[40rem]:hidden" : "bg-base-100 @min-[40rem]:hidden"}>
+      <tr className={cn("@min-[40rem]:hidden", !searchInputValue && "bg-base-100")}>
         <td colSpan={2}>
           <DashboardEmptyState searchInputValue={searchInputValue} />
         </td>
       </tr>
       <tr
-        className={
-          searchInputValue
-            ? "hidden @min-[40rem]:table-row"
-            : "hidden bg-base-100 @min-[40rem]:table-row"
-        }
+        className={cn("hidden @min-[40rem]:table-row", !searchInputValue && "bg-base-100")}
       >
         <td colSpan={4}>
           <DashboardEmptyState searchInputValue={searchInputValue} />

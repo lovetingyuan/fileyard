@@ -11,6 +11,7 @@ import toast from "react-hot-toast";
 import type { FileEntry, FolderEntry } from "../../../../types";
 import { Dropdown } from "../../../components/Dropdown";
 import { useAppStore } from "../../../store";
+import { cn } from "../../../utils/cn";
 import {
   openDirectoryStats,
   openFileDetails,
@@ -57,7 +58,7 @@ export function RowActionsMenu({
     <Dropdown
       placement={placement}
       trigger={!isLoading && <DotsIcon className="h-4 w-4" />}
-      triggerClassName={`${buttonClassName} cursor-pointer ${isLoading ? "loading" : ""}`}
+      triggerClassName={cn(buttonClassName, "cursor-pointer", isLoading && "loading")}
       triggerAriaLabel="更多操作"
       disabled={isActionDisabled}
       contentClassName="menu menu-md bg-base-200 rounded-box z-[100] mt-1 w-40 border border-base-300/60 p-2 shadow-lg space-y-1"
@@ -67,7 +68,7 @@ export function RowActionsMenu({
           <li key={item.label}>
             <button
               type="button"
-              className={`gap-2 ${item.tone === "danger" ? "text-error" : ""}`}
+              className={cn("gap-2", item.tone === "danger" && "text-error")}
               onClick={item.onClick}
             >
               <item.Icon className="h-4 w-4" />

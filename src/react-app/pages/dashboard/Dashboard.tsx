@@ -3,6 +3,7 @@ import MdiAlertCircleOutline from "~icons/mdi/alert-circle-outline";
 import toast from "react-hot-toast";
 import { useUploadUnloadProtection } from "../../hooks/useUploadUnloadProtection";
 import { useAppStore } from "../../store";
+import { cn } from "../../utils/cn";
 import { getDroppedUploadFiles } from "../../utils/uploadDrop";
 import { DashboardFileList } from "./components/DashboardFileList";
 import { BatchDeleteConfirmModal } from "./components/BatchDeleteConfirmModal";
@@ -167,9 +168,10 @@ export function Dashboard() {
               <div className="mx-auto flex w-[96%] max-w-300 flex-1 flex-col gap-4 py-6 md:w-[90%]">
                 <section className="card bg-base-100 shadow-sm">
                   <div
-                    className={`card-body gap-6 rounded-box border border-transparent transition-colors duration-150 ${
-                      isDraggingUpload ? "border-primary bg-primary/30 ring-2 ring-primary/40" : ""
-                    }`}
+                    className={cn(
+                      "card-body gap-6 rounded-box border border-transparent transition-colors duration-150",
+                      isDraggingUpload && "border-primary bg-primary/30 ring-2 ring-primary/40",
+                    )}
                     onDragEnter={handleDragEnter}
                     onDragLeave={handleDragLeave}
                     onDragOver={handleDragOver}

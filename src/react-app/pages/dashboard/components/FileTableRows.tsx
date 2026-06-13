@@ -1,7 +1,7 @@
-import clsx from "clsx/lite";
 import MdiFolder from "~icons/mdi/folder";
 import type { BatchOperationTarget, FileEntry, FolderEntry } from "../../../../types";
 import { getFileIcon } from "../../../constants/fileIcons";
+import { cn } from "../../../utils/cn";
 import { formatBytes, formatDate, formatDetailedDate } from "../../../utils/fileFormatters";
 import { openFilePreview } from "../actions";
 import { useDashboardEntrySelection } from "../hooks/useDashboardEntrySelection";
@@ -30,7 +30,7 @@ function TableEntryCheckbox({
   return (
     <input
       type="checkbox"
-      className={`${ENTRY_CHECKBOX_CLASS} ${className}`.trim()}
+      className={cn(ENTRY_CHECKBOX_CLASS, className)}
       checked={checked}
       readOnly
       onClick={onClick}
@@ -48,7 +48,7 @@ function TableActionsSlot({
 }) {
   return (
     <div
-      className={`flex justify-end ${isSelectionActive ? "invisible pointer-events-none" : ""}`.trim()}
+      className={cn("flex justify-end", isSelectionActive && "invisible pointer-events-none")}
       aria-hidden={isSelectionActive}
     >
       {children}
@@ -84,9 +84,12 @@ export function FolderRow({
 
   return (
     <tr
-      className={`group ${STRIPED_ROW_CLASS} ${selection.isSelectionActive ? "cursor-pointer" : ""} ${
-        selection.isSelected ? SELECTED_ROW_CLASS : ""
-      }`.trim()}
+      className={cn(
+        "group",
+        STRIPED_ROW_CLASS,
+        selection.isSelectionActive && "cursor-pointer",
+        selection.isSelected && SELECTED_ROW_CLASS,
+      )}
       onClick={selection.handleActiveSelectionClick}
       onPointerDown={selection.handlePointerDown}
       onPointerUp={selection.handlePointerEnd}
@@ -117,9 +120,10 @@ export function FolderRow({
           )}
           <button
             type="button"
-            className={`block min-w-0 truncate text-left font-bold ${
+            className={cn(
+              "block min-w-0 truncate text-left font-bold",
               selection.isSelectionActive ? "cursor-pointer text-base-content" : "link link-hover"
-            }`.trim()}
+            )}
             onClick={(event) => {
               if (selection.handleActiveSelectionClick(event)) {
                 return;
@@ -170,7 +174,7 @@ export function FileRow({
   return (
     <tr
       ref={locatedFile.elementRef}
-      className={clsx(
+      className={cn(
         "group",
         STRIPED_ROW_CLASS,
         selection.isSelectionActive && "cursor-pointer",
@@ -193,12 +197,15 @@ export function FileRow({
                 checked={selection.isSelected}
                 onClick={selection.handleSelectionClick}
               />
-              <fileIcon.Icon className={`h-5 w-5 shrink-0 ${fileIcon.color}`} />
+              <fileIcon.Icon className={cn("h-5 w-5 shrink-0", fileIcon.color)} />
             </>
           ) : (
             <span className="relative h-5 w-5 shrink-0">
               <fileIcon.Icon
-                className={`absolute inset-0 h-5 w-5 transition-opacity group-hover:opacity-0 ${fileIcon.color}`}
+                className={cn(
+                  "absolute inset-0 h-5 w-5 transition-opacity group-hover:opacity-0",
+                  fileIcon.color,
+                )}
               />
               <TableEntryCheckbox
                 ariaLabel={`选择文件 ${file.name}`}
@@ -210,9 +217,10 @@ export function FileRow({
           )}
           <button
             type="button"
-            className={`min-w-0 truncate text-left ${
+            className={cn(
+              "min-w-0 truncate text-left",
               selection.isSelectionActive ? "cursor-pointer text-base-content" : "link link-hover"
-            }`.trim()}
+            )}
             onClick={(event) => {
               if (selection.handleActiveSelectionClick(event)) {
                 return;

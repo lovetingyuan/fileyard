@@ -12,6 +12,7 @@ import {
   getDropdownPlacementClassName,
   isPopoverAnchorDropdownSupported,
 } from "./dropdownSupport";
+import { cn } from "../utils/cn";
 
 type AnchorPositionStyle = CSSProperties & {
   anchorName?: string;
@@ -37,10 +38,6 @@ type DropdownProps = {
   closeOnContentClick?: boolean;
   children: ReactNode;
 };
-
-function joinClassNames(...classNames: Array<string | false | null | undefined>) {
-  return classNames.filter(Boolean).join(" ");
-}
 
 export function Dropdown({
   trigger,
@@ -100,7 +97,7 @@ export function Dropdown({
           ref={contentRef}
           popover="auto"
           id={popoverId}
-          className={joinClassNames("dropdown", placementClassName, contentClassName)}
+          className={cn("dropdown", placementClassName, contentClassName)}
           style={contentAnchorStyle}
           onClick={closeDropdown}
         >
@@ -113,12 +110,12 @@ export function Dropdown({
   return (
     <div
       {...containerProps}
-      className={joinClassNames("dropdown", placementClassName, containerClassName)}
+      className={cn("dropdown", placementClassName, containerClassName)}
     >
       <div
         tabIndex={disabled ? -1 : 0}
         role="button"
-        className={joinClassNames(triggerClassName, disabled && "pointer-events-none opacity-40")}
+        className={cn(triggerClassName, disabled && "pointer-events-none opacity-40")}
         aria-label={triggerAriaLabel}
         aria-disabled={disabled || undefined}
         onKeyDown={handleFallbackTriggerKeyDown}
@@ -128,7 +125,7 @@ export function Dropdown({
       <ul
         ref={contentRef}
         tabIndex={-1}
-        className={joinClassNames("dropdown-content", contentClassName)}
+        className={cn("dropdown-content", contentClassName)}
         onClick={closeDropdown}
       >
         {children}

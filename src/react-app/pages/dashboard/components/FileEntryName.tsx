@@ -5,6 +5,7 @@ import {
 } from "../utils/dashboardSearchHighlight";
 import type { SearchMatchRange } from "../utils/searchMatch";
 import { useAppStore } from "../../../store";
+import { cn } from "../../../utils/cn";
 
 const EMPTY_SEARCH_MATCH_RANGES: SearchMatchRange[] = [];
 
@@ -46,7 +47,7 @@ export function FileEntryName({
     <span
       ref={registerTextNode}
       title={name}
-      className={selectedDashboardTargets.length > 0 ? "select-none" : ""}
+      className={cn(selectedDashboardTargets.length > 0 && "select-none")}
     >
       {name}
     </span>

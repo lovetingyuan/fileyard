@@ -1,6 +1,7 @@
 import useSWR from "swr";
 import type { FileEntry } from "../../../../../types";
 import { STANDARD_TEXT_CLASS_NAME } from "../../../../components/previewModalLayout";
+import { cn } from "../../../../utils/cn";
 import { PreviewUnsupportedMessage } from "./PreviewUnsupportedMessage";
 import { PREVIEW_SIZE_LIMITS } from "./previewLimits";
 
@@ -57,7 +58,10 @@ export function TextPreview({
   if (isEditing) {
     return (
       <textarea
-        className={`textarea textarea-bordered w-full bg-info/5 font-mono text-sm resize-none ${isFullscreen ? "h-full" : "h-[60vh]"}`}
+        className={cn(
+          "textarea textarea-bordered w-full resize-none bg-info/5 font-mono text-sm",
+          isFullscreen ? "h-full" : "h-[60vh]",
+        )}
         value={editContent}
         onChange={(e) => onEditContentChange(e.target.value)}
         disabled={isBusy}
@@ -67,11 +71,11 @@ export function TextPreview({
 
   return (
     <pre
-      className={
+      className={cn(
         isFullscreen
-          ? "overflow-auto text-sm bg-base-200 rounded-box p-4 whitespace-pre h-full"
-          : STANDARD_TEXT_CLASS_NAME
-      }
+          ? "h-full overflow-auto whitespace-pre rounded-box bg-base-200 p-4 text-sm"
+          : STANDARD_TEXT_CLASS_NAME,
+      )}
     >
       {data}
     </pre>

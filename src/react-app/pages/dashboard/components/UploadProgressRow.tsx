@@ -6,6 +6,7 @@ import {
   getUploadQueueItemProgress,
   retryDashboardUpload,
 } from "../hooks/useUploadQueue";
+import { cn } from "../../../utils/cn";
 import { formatBytes } from "../../../utils/fileFormatters";
 import { getUploadProgressRowBackgroundStyle } from "./uploadProgressRowStyle";
 
@@ -54,7 +55,7 @@ export function UploadProgressRow({ item }: UploadProgressRowProps) {
         </p>
         <span className="shrink-0 text-xs text-base-content/60">{formatBytes(item.size)}</span>
         <span
-          className={`badge badge-xs shrink-0 ${STATUS_BADGE_CLASS_NAMES[item.status]}`}
+          className={cn("badge badge-xs shrink-0", STATUS_BADGE_CLASS_NAMES[item.status])}
           title={statusMessage}
         >
           {STATUS_LABELS[item.status]}

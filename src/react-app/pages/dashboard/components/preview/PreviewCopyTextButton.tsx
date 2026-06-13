@@ -1,5 +1,6 @@
 import MdiCheck from "~icons/mdi/check";
 import MdiContentCopy from "~icons/mdi/content-copy";
+import { cn } from "../../../../utils/cn";
 
 interface PreviewCopyTextButtonProps {
   disabled: boolean;
@@ -13,7 +14,10 @@ export function PreviewCopyTextButton({ disabled, isCopied, onClick }: PreviewCo
   return (
     <button
       type="button"
-      className={`btn btn-ghost btn-sm min-w-24 transition-colors duration-200 ${isCopied ? "text-success" : ""}`}
+      className={cn(
+        "btn btn-ghost btn-sm min-w-24 transition-colors duration-200",
+        isCopied && "text-success",
+      )}
       onClick={onClick}
       disabled={disabled}
       data-copy-state={isCopied ? "copied" : "idle"}

@@ -10,6 +10,7 @@ import {
   getBatchMoveDestinationDisabledReason,
   isBatchMoveDestinationHidden,
 } from "../../../utils/moveValidation";
+import { cn } from "../../../utils/cn";
 import {
   closeBatchMoveTargets,
   replaceDashboardSelectionWithFailedResults,
@@ -155,9 +156,10 @@ export function BatchMoveModal() {
           </p>
 
           <div
-            className={`${
-              isFullscreen ? "flex-1 min-h-0" : "max-h-80"
-            } overflow-auto rounded-box border border-base-300 bg-base-200/40 p-2`}
+            className={cn(
+              "overflow-auto rounded-box border border-base-300 bg-base-200/40 p-2",
+              isFullscreen ? "flex-1 min-h-0" : "max-h-80",
+            )}
           >
             {isLoading && !tree ? (
               <div className="flex items-center justify-center py-10">

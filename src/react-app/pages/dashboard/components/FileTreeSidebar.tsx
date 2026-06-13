@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import clsx from "clsx/lite";
 import MdiAlertCircleOutline from "~icons/mdi/alert-circle-outline";
 import MdiChevronDown from "~icons/mdi/chevron-down";
 import MdiChevronRight from "~icons/mdi/chevron-right";
@@ -10,6 +9,7 @@ import type { FileEntry, FolderEntry } from "../../../../types";
 import { useFileList } from "../../../hooks/useFilesApi";
 import { getFileIcon } from "../../../constants/fileIcons";
 import { useAppStore } from "../../../store";
+import { cn } from "../../../utils/cn";
 import { requestDashboardFileLocation, toggleDashboardTreeSidebar } from "../actions";
 import { useDashboardPath } from "../hooks/useDashboardPath";
 import { getDashboardFileParentPath } from "../utils/dashboardFileLocation";
@@ -43,7 +43,7 @@ type FileTreeLevelProps = {
 };
 
 function getFileTreeLevelClassName(isRootLevel = false) {
-  return clsx(
+  return cn(
     isRootLevel
       ? "menu menu-md w-[calc(100%-0.5rem)] rounded-box bg-transparent p-1 [&_li_ul]:ms-2"
       : "w-[calc(100%-0.5rem)]",
@@ -119,7 +119,7 @@ function FileTreeFolderRow({
     <li className="w-full max-w-full min-w-0 overflow-hidden">
       <div
         ref={rowRef}
-        className={clsx(
+        className={cn(
           "flex w-full max-w-full min-w-0 items-center gap-1 overflow-hidden rounded-md px-1 py-0.5",
           isCurrent && "menu-active",
         )}
@@ -183,7 +183,7 @@ function FileTreeFileRow({
           setPath(getDashboardFileParentPath(file.path));
         }}
       >
-        <fileIcon.Icon className={clsx("h-4 w-4 shrink-0", fileIcon.color)} />
+        <fileIcon.Icon className={cn("h-4 w-4 shrink-0", fileIcon.color)} />
         <span className="min-w-0 flex-1 truncate">{file.name}</span>
       </button>
     </li>
@@ -266,7 +266,7 @@ export function FileTreeSidebar() {
 
   return (
     <aside
-      className={clsx(
+      className={cn(
         "absolute inset-y-0 left-0 z-[110] h-full min-h-0 shrink-0 transition-[width] duration-200 ease-in-out md:relative md:inset-auto md:z-10",
         isDashboardTreeSidebarOpen
           ? "w-72 max-w-[calc(100vw-1rem)] overflow-hidden border-r border-base-300/70 bg-base-100/95 shadow-xl md:max-w-none md:bg-base-100/85 md:shadow-none"
@@ -274,9 +274,9 @@ export function FileTreeSidebar() {
       )}
       aria-label="Home 文件树侧栏"
     >
-      <div className={clsx("flex h-full min-h-0 flex-col", !isDashboardTreeSidebarOpen && "w-12")}>
+      <div className={cn("flex h-full min-h-0 flex-col", !isDashboardTreeSidebarOpen && "w-12")}>
         <div
-          className={clsx(
+          className={cn(
             "flex h-13 shrink-0 items-center gap-2",
             isDashboardTreeSidebarOpen ? "px-2" : "justify-center",
           )}
@@ -294,7 +294,7 @@ export function FileTreeSidebar() {
           {isDashboardTreeSidebarOpen ? (
             <button
               type="button"
-              className={clsx(
+              className={cn(
                 "flex min-w-0 flex-1 items-center gap-2 overflow-hidden rounded-md px-2 py-2 text-left text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50",
                 isRootCurrent
                   ? "bg-primary text-primary-content hover:bg-primary/90"
@@ -306,7 +306,7 @@ export function FileTreeSidebar() {
               onClick={() => setPath("")}
             >
               <MdiFolderOpen
-                className={clsx(
+                className={cn(
                   "h-4 w-4 shrink-0",
                   isRootCurrent ? "text-primary-content" : "text-primary",
                 )}

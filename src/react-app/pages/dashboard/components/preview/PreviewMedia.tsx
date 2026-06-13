@@ -1,14 +1,19 @@
 import { useState, type SyntheticEvent } from "react";
-import clsx from "clsx/lite";
 import type { FileEntry } from "../../../../../types";
 import {
   STANDARD_AUDIO_CLASS_NAME,
   STANDARD_VIDEO_CLASS_NAME,
 } from "../../../../components/previewModalLayout";
+import { cn } from "../../../../utils/cn";
 import { PreviewUnsupportedMessage } from "./PreviewUnsupportedMessage";
+import {
+  formatImageOriginalDimensions,
+  type ImageOriginalDimensions,
+} from "./previewImageDimensions";
 import { PREVIEW_MEDIA_VOLUME_STORAGE_KEY } from "./previewLimits";
 
 type ImagePreviewLoadState = {
+  dimensions?: ImageOriginalDimensions;
   previewUrl: string;
   status: "error" | "loaded" | "loading";
 };
@@ -90,6 +95,8 @@ export function ImagePreview({
     status: "loading",
   });
   const loadStatus = loadState.previewUrl === previewUrl ? loadState.status : "loading";
+  const originalDimensions =
+    loadState.previewUrl === previewUrl && loadStatus === "loaded" ? loadState.dimensions : null;
 
   if (loadStatus === "error") {
     return <PreviewUnsupportedMessage reason="图片加载失败，请稍后重试" />;
@@ -97,28 +104,52 @@ export function ImagePreview({
 
   return (
     <div
-      className={clsx(
-        "relative flex items-center justify-center",
+      className={cn(
+        "relative flex flex-col items-center justify-center gap-2",
         isFullscreen ? "h-full w-full" : "max-w-full",
         !isFullscreen && loadStatus === "loading" && "min-h-40 w-[min(24rem,80vw)]",
       )}
     >
-      {loadStatus === "loading" ? (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="loading loading-spinner loading-lg text-primary" aria-label="图片加载中" />
-        </div>
+      {originalDimensions ? (
+        <p className="text-xs text-base-content/70">
+          {formatImageOriginalDimensions(originalDimensions)}
+        </p>
       ) : null}
-      <img
-        src={previewUrl}
-        alt={file.name}
-        onLoad={() => setLoadState({ previewUrl, status: "loaded" })}
-        onError={() => setLoadState({ previewUrl, status: "error" })}
-        className={clsx(
-          "block h-auto w-auto max-w-full object-contain rounded",
-          isFullscreen ? "max-h-full" : "max-h-[70vh]",
-          loadStatus === "loading" && "opacity-0",
+      <div
+        className={cn(
+          "relative flex min-h-0 max-w-full items-center justify-center",
+          isFullscreen && "h-full w-full flex-1",
         )}
-      />
+      >
+        {loadStatus === "loading" ? (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span
+              className="loading loading-spinner loading-lg text-primary"
+              aria-label="图片加载中"
+            />
+          </div>
+        ) : null}
+        <img
+          src={previewUrl}
+          alt={file.name}
+          onLoad={(event) =>
+            setLoadState({
+              dimensions: {
+                height: event.currentTarget.naturalHeight,
+                width: event.currentTarget.naturalWidth,
+              },
+              previewUrl,
+              status: "loaded",
+            })
+          }
+          onError={() => setLoadState({ previewUrl, status: "error" })}
+          className={cn(
+            "block h-auto w-auto max-w-full object-contain rounded",
+            isFullscreen ? "max-h-full" : "max-h-[calc(70vh-1.5rem)]",
+            loadStatus === "loading" && "opacity-0",
+          )}
+        />
+      </div>
     </div>
   );
 }
@@ -136,7 +167,7 @@ export function VideoPreview({
       src={previewUrl}
       controls
       onVolumeChange={handlePreviewMediaVolumeChange}
-      className={isFullscreen ? "max-h-full max-w-full rounded" : STANDARD_VIDEO_CLASS_NAME}
+      className={cn(isFullscreen ? "max-h-full max-w-full rounded" : STANDARD_VIDEO_CLASS_NAME)}
     />
   );
 }
@@ -150,9 +181,9 @@ export function AudioPreview({
 }) {
   return (
     <div
-      className={
-        isFullscreen ? "flex h-full items-center justify-center" : "flex justify-center py-8"
-      }
+      className={cn(
+        isFullscreen ? "flex h-full items-center justify-center" : "flex justify-center py-8",
+      )}
     >
       <audio
         ref={restoreStoredPreviewMediaVolume}

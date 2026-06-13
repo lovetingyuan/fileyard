@@ -12,6 +12,7 @@ import MdiViewGrid from "~icons/mdi/view-grid";
 import MdiViewList from "~icons/mdi/view-list";
 import { Dropdown } from "../../../components/Dropdown";
 import { useAppStore } from "../../../store";
+import { cn } from "../../../utils/cn";
 import { takeFileInputSelection } from "../../../utils/uploadInputSelection";
 import {
   openNewTextFile,
@@ -221,7 +222,7 @@ export const FileToolbar = forwardRef<FileToolbarHandle, FileToolbarProps>(funct
             <li>
               <button
                 type="button"
-                className={`gap-2 ${creatingFolder ? "loading" : ""}`}
+                className={cn("gap-2", creatingFolder && "loading")}
                 disabled={creatingFolder || isCreatingNewFolder || isFileMutationDisabled}
                 onClick={() => startCreateFolder(getUniqueFolderName("新建文件夹"))}
                 aria-label="新建文件夹"
@@ -234,21 +235,23 @@ export const FileToolbar = forwardRef<FileToolbarHandle, FileToolbarProps>(funct
           <LayoutToggleButton />
           <FileSortMenu />
           <div
-            className={`group/search relative h-8 max-w-full min-w-0 shrink-0 transition-[width] duration-200 ease-in-out focus-within:order-last focus-within:basis-full focus-within:w-full sm:focus-within:order-0 sm:focus-within:basis-auto sm:focus-within:w-52 ${
+            className={cn(
+              "group/search relative h-8 max-w-full min-w-0 shrink-0 transition-[width] duration-200 ease-in-out focus-within:order-last focus-within:basis-full focus-within:w-full sm:focus-within:order-0 sm:focus-within:basis-auto sm:focus-within:w-52",
               isSearchExpanded
                 ? "order-last basis-full w-full sm:order-0 sm:basis-auto sm:w-52"
-                : "basis-8 w-8"
-            }`}
+                : "basis-8 w-8",
+            )}
           >
             <div className="absolute inset-0 overflow-hidden rounded-field">
               <input
                 ref={searchInputRef}
                 type="text"
-                className={`placeholder:text-[12px] input input-sm input-bordered absolute top-0 right-0 h-8 w-full min-w-0 transition-opacity duration-150 ease-in-out sm:w-52 group-focus-within/search:border-base-300 group-focus-within/search:bg-base-100 group-focus-within/search:opacity-100 group-focus-within/search:outline-none ${
+                className={cn(
+                  "placeholder:text-[12px] input input-sm input-bordered absolute top-0 right-0 h-8 w-full min-w-0 transition-opacity duration-150 ease-in-out sm:w-52 group-focus-within/search:border-base-300 group-focus-within/search:bg-base-100 group-focus-within/search:opacity-100 group-focus-within/search:outline-none",
                   isSearchExpanded
                     ? "border-base-300 bg-base-100 pr-9 opacity-100"
-                    : "border-transparent bg-transparent pr-9 opacity-0"
-                }`}
+                    : "border-transparent bg-transparent pr-9 opacity-0",
+                )}
                 placeholder="Search current folder"
                 value={searchInputValue}
                 onChange={(event) => setDashboardSearchInput(event.target.value)}
@@ -264,9 +267,10 @@ export const FileToolbar = forwardRef<FileToolbarHandle, FileToolbarProps>(funct
             <div className="tooltip absolute inset-y-0 right-0 z-10" data-tip="Search">
               <button
                 type="button"
-                className={`btn btn-ghost btn-square btn-sm h-8 w-8 transition-opacity duration-150 ease-in-out group-focus-within/search:pointer-events-none group-focus-within/search:opacity-0 ${
-                  isSearchExpanded ? "pointer-events-none opacity-0" : ""
-                }`}
+                className={cn(
+                  "btn btn-ghost btn-square btn-sm h-8 w-8 transition-opacity duration-150 ease-in-out group-focus-within/search:pointer-events-none group-focus-within/search:opacity-0",
+                  isSearchExpanded && "pointer-events-none opacity-0",
+                )}
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={focusSearchInput}
                 aria-label="搜索文件"
@@ -289,7 +293,10 @@ export const FileToolbar = forwardRef<FileToolbarHandle, FileToolbarProps>(funct
           <div className="tooltip shrink-0" data-tip="Refresh">
             <button
               type="button"
-              className={`btn btn-ghost btn-square btn-sm ${isRefreshing ? "loading w-8 scale-75" : ""}`}
+              className={cn(
+                "btn btn-ghost btn-square btn-sm",
+                isRefreshing && "loading w-8 scale-75",
+              )}
               disabled={isRefreshing}
               onClick={() => void refresh()}
               aria-label="刷新文件列表"

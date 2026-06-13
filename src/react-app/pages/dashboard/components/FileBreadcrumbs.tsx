@@ -1,7 +1,7 @@
-import clsx from "clsx/lite";
 import MdiChevronRight from "~icons/mdi/chevron-right";
 import MdiHomeOutline from "~icons/mdi/home-outline";
 import MdiInformationOutline from "~icons/mdi/information-outline";
+import { cn } from "../../../utils/cn";
 import { openDirectoryStats } from "../actions";
 import { useDashboardPath } from "../hooks/useDashboardPath";
 import { getBreadcrumbButtonClassName } from "./fileBreadcrumbsClasses";
@@ -25,7 +25,7 @@ export function FileBreadcrumbs({
         <li className="flex min-w-0 items-center">
           <button
             type="button"
-            className={clsx(
+            className={cn(
               isRootPath ? "text-base-content" : getBreadcrumbButtonClassName(isNavigationDisabled),
               "inline-flex items-center gap-1",
             )}
@@ -50,9 +50,10 @@ export function FileBreadcrumbs({
               ) : (
                 <button
                   type="button"
-                  className={`${getBreadcrumbButtonClassName(
-                    isNavigationDisabled,
-                  )} min-w-0 break-all text-left`}
+                  className={cn(
+                    getBreadcrumbButtonClassName(isNavigationDisabled),
+                    "min-w-0 break-all text-left",
+                  )}
                   disabled={isNavigationDisabled}
                   onClick={() => setPath(path)}
                 >
@@ -64,7 +65,7 @@ export function FileBreadcrumbs({
         })}
         <li className="flex shrink-0 items-center">
           <div
-            className={isActionDisabled ? "shrink-0" : "tooltip shrink-0"}
+            className={cn("shrink-0", !isActionDisabled && "tooltip")}
             data-tip={isActionDisabled ? undefined : "查看当前文件夹详情"}
           >
             <button

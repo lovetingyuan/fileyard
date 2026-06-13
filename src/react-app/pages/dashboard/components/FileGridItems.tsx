@@ -1,7 +1,7 @@
-import clsx from "clsx/lite";
 import MdiFolder from "~icons/mdi/folder";
 import type { BatchOperationTarget, FileEntry, FolderEntry } from "../../../../types";
 import { getFileIcon } from "../../../constants/fileIcons";
+import { cn } from "../../../utils/cn";
 import { openFilePreview } from "../actions";
 import { useDashboardEntrySelection } from "../hooks/useDashboardEntrySelection";
 import { useDashboardLocatedFileHighlight } from "../hooks/useDashboardLocatedFileHighlight";
@@ -46,11 +46,12 @@ function GridEntryCheckbox({
   return (
     <input
       type="checkbox"
-      className={`${GRID_CHECKBOX_CLASS} ${
+      className={cn(
+        GRID_CHECKBOX_CLASS,
         isSelectionActive
           ? "opacity-100"
-          : "pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100"
-      }`.trim()}
+          : "pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100",
+      )}
       checked={checked}
       readOnly
       onClick={onClick}
@@ -79,7 +80,7 @@ export function FolderGridItem({
 
   return (
     <div
-      className={`${GRID_ITEM_CLASS} ${selection.isSelected ? GRID_SELECTED_ITEM_CLASS : ""}`.trim()}
+      className={cn(GRID_ITEM_CLASS, selection.isSelected && GRID_SELECTED_ITEM_CLASS)}
       role="listitem"
       onClick={selection.handleActiveSelectionClick}
       onPointerDown={selection.handlePointerDown}
@@ -94,9 +95,10 @@ export function FolderGridItem({
         onClick={selection.handleSelectionClick}
       />
       <div
-        className={`${GRID_ACTIONS_CLASS} ${
-          selection.isSelectionActive ? "invisible pointer-events-none" : ""
-        }`.trim()}
+        className={cn(
+          GRID_ACTIONS_CLASS,
+          selection.isSelectionActive && "invisible pointer-events-none",
+        )}
         aria-hidden={selection.isSelectionActive}
       >
         <FolderActionsMenu folder={folder} variant="grid" />
@@ -116,7 +118,7 @@ export function FolderGridItem({
         title={folder.name}
       >
         <MdiFolder className="h-10 w-10 shrink-0 text-warning" />
-        <span className={`${GRID_ITEM_NAME_CLASS} font-bold`}>
+        <span className={cn(GRID_ITEM_NAME_CLASS, "font-bold")}>
           <FileEntryName name={folder.name} ranges={folder.searchMatchRanges} entryKey={entryKey} />
         </span>
       </button>
@@ -146,7 +148,7 @@ export function FileGridItem({
   return (
     <div
       ref={locatedFile.elementRef}
-      className={clsx(
+      className={cn(
         GRID_ITEM_CLASS,
         selection.isSelected && GRID_SELECTED_ITEM_CLASS,
         locatedFile.isHighlighted && GRID_LOCATED_FILE_ITEM_CLASS,
@@ -166,9 +168,10 @@ export function FileGridItem({
         onClick={selection.handleSelectionClick}
       />
       <div
-        className={`${GRID_ACTIONS_CLASS} ${
-          selection.isSelectionActive ? "invisible pointer-events-none" : ""
-        }`.trim()}
+        className={cn(
+          GRID_ACTIONS_CLASS,
+          selection.isSelectionActive && "invisible pointer-events-none",
+        )}
         aria-hidden={selection.isSelectionActive}
       >
         <FileActionsMenu file={file} variant="grid" />
@@ -187,7 +190,7 @@ export function FileGridItem({
         }}
         title={file.name}
       >
-        <fileIcon.Icon className={`h-10 w-10 shrink-0 ${fileIcon.color}`} />
+        <fileIcon.Icon className={cn("h-10 w-10 shrink-0", fileIcon.color)} />
         <span className={GRID_ITEM_NAME_CLASS}>
           <FileEntryName name={file.name} ranges={file.searchMatchRanges} entryKey={entryKey} />
         </span>

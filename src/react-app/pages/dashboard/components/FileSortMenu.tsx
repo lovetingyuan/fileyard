@@ -4,6 +4,7 @@ import MdiSwapVertical from "~icons/mdi/swap-vertical";
 import type { SortKey } from "../../../../types";
 import { Dropdown } from "../../../components/Dropdown";
 import { useAppStore } from "../../../store";
+import { cn } from "../../../utils/cn";
 import { toggleDashboardSort } from "../actions";
 
 const SORT_OPTIONS: Array<{ key: SortKey; label: string }> = [
@@ -38,12 +39,12 @@ export function FileSortMenu() {
             <li key={option.key}>
               <button
                 type="button"
-                className={`gap-2 ${isActive ? "active font-medium" : ""}`}
+                className={cn("gap-2", isActive && "active font-medium")}
                 aria-current={isActive ? "true" : undefined}
                 aria-label={option.label}
                 onClick={() => toggleDashboardSort(option.key)}
               >
-                <SortIcon className={`h-4 w-4 ${isActive ? "" : "opacity-50"}`} />
+                <SortIcon className={cn("h-4 w-4", !isActive && "opacity-50")} />
                 {option.label}
               </button>
             </li>

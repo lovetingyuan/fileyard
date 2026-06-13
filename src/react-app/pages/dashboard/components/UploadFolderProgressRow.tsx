@@ -1,5 +1,6 @@
 import MdiCloseCircleOutline from "~icons/mdi/close-circle-outline";
 import MdiFolderUpload from "~icons/mdi/folder-upload";
+import { cn } from "../../../utils/cn";
 import { formatBytes } from "../../../utils/fileFormatters";
 import { cancelDashboardUploadsInFolderAndWait } from "../hooks/useUploadQueue";
 import type { UploadFolderProgressDisplayRow } from "./uploadProgressDisplay";
@@ -68,7 +69,7 @@ export function UploadFolderProgressRow({ row }: UploadFolderProgressRowProps) {
             </p>
           ) : null}
         </div>
-        <span className={`badge badge-xs shrink-0 ${statusBadge.className}`}>
+        <span className={cn("badge badge-xs shrink-0", statusBadge.className)}>
           {statusBadge.text}
         </span>
         <span className="shrink-0 text-xs font-medium tabular-nums">{progress}%</span>

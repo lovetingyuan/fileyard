@@ -2,6 +2,7 @@ import MdiCloseCircleOutline from "~icons/mdi/close-circle-outline";
 import MdiRefresh from "~icons/mdi/refresh";
 import type { UploadQueueItem, UploadQueueStatus } from "../../../../types";
 import { Dialog } from "../../../components/Dialog";
+import { cn } from "../../../utils/cn";
 import { formatBytes } from "../../../utils/fileFormatters";
 import { countUploadQueueStats } from "../hooks/useUploadQueue";
 
@@ -82,7 +83,7 @@ function UploadItemRow({
           </p>
           <span className="shrink-0 text-xs text-base-content/60">{formatBytes(item.size)}</span>
           <span className="shrink-0 text-xs font-medium tabular-nums">{progress}%</span>
-          <span className={`badge badge-xs ${getStatusClassName(item.status)}`}>
+          <span className={cn("badge badge-xs", getStatusClassName(item.status))}>
             {STATUS_LABELS[item.status]}
           </span>
           {item.errorMessage ? <span className="text-xs text-error">{statusMessage}</span> : null}
@@ -143,7 +144,7 @@ export function UploadDetailsModal({
           </div>
           <button
             type="button"
-            className={`btn btn-outline ${isUploadComplete ? "btn-success" : "btn-error"} btn-sm`}
+            className={cn("btn btn-outline btn-sm", isUploadComplete ? "btn-success" : "btn-error")}
             onClick={onCancelRemaining}
             disabled={isUploadComplete}
           >

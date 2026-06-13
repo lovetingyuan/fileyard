@@ -1,65 +1,66 @@
-import MdiClose from "~icons/mdi/close";
-import MdiFullscreen from "~icons/mdi/fullscreen";
-import MdiFullscreenExit from "~icons/mdi/fullscreen-exit";
-import { type ReactNode, useEffect, useState } from "react";
-import { useNativeDialog } from "../hooks/useNativeDialog";
-import { getDialogClosedBy } from "./dialogDismissal";
-import { getDialogBoxClassName, type DialogWidthMode } from "./previewModalLayout";
+import MdiClose from '~icons/mdi/close'
+import MdiFullscreen from '~icons/mdi/fullscreen'
+import MdiFullscreenExit from '~icons/mdi/fullscreen-exit'
+import { type ReactNode, useEffect, useState } from 'react'
+import { useNativeDialog } from '../hooks/useNativeDialog'
+import { cn } from '../utils/cn'
+import { getDialogClosedBy } from './dialogDismissal'
+import { getDialogBoxClassName, type DialogWidthMode } from './previewModalLayout'
 
-type DialogAction = () => void | Promise<void>;
+type DialogAction = () => void | Promise<void>
 
 interface DialogRenderState {
-  isConfirming: boolean;
-  isFullscreen: boolean;
-  isInteractionDisabled: boolean;
-  requestClose: () => void;
-  cancel: () => void;
-  confirm: () => Promise<void>;
+  isConfirming: boolean
+  isFullscreen: boolean
+  isInteractionDisabled: boolean
+  requestClose: () => void
+  cancel: () => void
+  confirm: () => Promise<void>
 }
 
-type DialogSlot = ReactNode | ((state: DialogRenderState) => ReactNode);
+type DialogSlot = ReactNode | ((state: DialogRenderState) => ReactNode)
 
 interface DialogProps {
-  isOpen: boolean;
-  title?: ReactNode;
-  children: DialogSlot;
-  footer?: DialogSlot;
-  headerActions?: DialogSlot;
-  onClose: () => void;
-  onCancel?: () => void;
-  onConfirm?: DialogAction;
-  onAfterOpen?: () => void;
-  cancelText?: string;
-  confirmText?: string;
-  confirmPendingText?: string;
-  confirmLoadingText?: string;
-  showCancelButton?: boolean;
-  showConfirmButton?: boolean;
-  showCloseButton?: boolean;
-  isDismissDisabled?: boolean;
-  cancelDisabled?: boolean;
-  confirmDisabled?: boolean;
-  confirmLoading?: boolean;
-  supportFullscreen?: boolean;
-  widthMode?: DialogWidthMode;
-  dialogClassName?: string;
-  boxClassName?: string;
-  bodyClassName?: string;
-  headerClassName?: string;
-  footerClassName?: string;
-  titleClassName?: string;
-  closeButtonAriaLabel?: string;
-  closeButtonClassName?: string;
-  cancelButtonClassName?: string;
-  confirmButtonClassName?: string;
+  isOpen: boolean
+  title?: ReactNode
+  children: DialogSlot
+  footer?: DialogSlot
+  headerActions?: DialogSlot
+  onClose: () => void
+  onCancel?: () => void
+  onConfirm?: DialogAction
+  onAfterOpen?: () => void
+  cancelText?: string
+  confirmText?: string
+  confirmPendingText?: string
+  confirmLoadingText?: string
+  showCancelButton?: boolean
+  showConfirmButton?: boolean
+  showCloseButton?: boolean
+  isDismissDisabled?: boolean
+  cancelDisabled?: boolean
+  confirmDisabled?: boolean
+  confirmLoading?: boolean
+  supportFullscreen?: boolean
+  widthMode?: DialogWidthMode
+  dialogClassName?: string
+  boxClassName?: string
+  bodyClassName?: string
+  headerClassName?: string
+  footerClassName?: string
+  titleClassName?: string
+  closeButtonAriaLabel?: string
+  closeButtonClassName?: string
+  cancelButtonClassName?: string
+  confirmButtonClassName?: string
 }
 
 function renderSlot(slot: DialogSlot | undefined, state: DialogRenderState) {
-  if (typeof slot === "function") {
-    return slot(state);
+  if (typeof slot === 'function') {
+    return slot(state)
   }
 
-  return slot ?? null;
+  return slot ?? null
 }
 
 export function Dialog({
@@ -72,8 +73,8 @@ export function Dialog({
   onCancel,
   onConfirm,
   onAfterOpen,
-  cancelText = "取消",
-  confirmText = "确定",
+  cancelText = '取消',
+  confirmText = '确定',
   confirmPendingText,
   confirmLoadingText,
   showCancelButton = true,
@@ -84,70 +85,70 @@ export function Dialog({
   confirmDisabled = false,
   confirmLoading = false,
   supportFullscreen = false,
-  widthMode = "default",
-  dialogClassName = "",
-  boxClassName = "",
-  bodyClassName = "",
-  headerClassName = "",
-  footerClassName = "",
-  titleClassName = "",
-  closeButtonAriaLabel = "关闭弹窗",
-  closeButtonClassName = "",
-  cancelButtonClassName = "",
-  confirmButtonClassName = "",
+  widthMode = 'default',
+  dialogClassName = '',
+  boxClassName = '',
+  bodyClassName = '',
+  headerClassName = '',
+  footerClassName = '',
+  titleClassName = '',
+  closeButtonAriaLabel = '关闭弹窗',
+  closeButtonClassName = '',
+  cancelButtonClassName = '',
+  confirmButtonClassName = '',
 }: DialogProps) {
-  const [isConfirming, setIsConfirming] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const isActiveFullscreen = supportFullscreen && isFullscreen;
-  const isInteractionDisabled = isDismissDisabled || isConfirming;
+  const [isConfirming, setIsConfirming] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const isActiveFullscreen = supportFullscreen && isFullscreen
+  const isInteractionDisabled = isDismissDisabled || isConfirming
 
   useEffect(() => {
     if (!isOpen) {
-      setIsConfirming(false);
-      setIsFullscreen(false);
+      setIsConfirming(false)
+      setIsFullscreen(false)
     }
     if (!supportFullscreen) {
-      setIsFullscreen(false);
+      setIsFullscreen(false)
     }
-  }, [isOpen, supportFullscreen]);
+  }, [isOpen, supportFullscreen])
 
   const requestClose = () => {
     if (isInteractionDisabled) {
-      return;
+      return
     }
-    onClose();
-  };
+    onClose()
+  }
 
   const cancel = () => {
     if (isInteractionDisabled || cancelDisabled) {
-      return;
+      return
     }
-    onCancel?.();
-    onClose();
-  };
+    onCancel?.()
+    onClose()
+  }
 
   const confirm = async () => {
     if (!onConfirm || isConfirming || confirmDisabled || confirmLoading) {
-      return;
+      return
     }
 
-    setIsConfirming(true);
+    setIsConfirming(true)
     try {
-      await onConfirm();
+      await onConfirm()
     } finally {
-      setIsConfirming(false);
+      setIsConfirming(false)
     }
-  };
+  }
 
   const dialogRef = useNativeDialog({
     isOpen,
     isDismissDisabled: isInteractionDisabled,
     onCancel: requestClose,
     onAfterOpen,
-  });
+  })
 
   if (!isOpen) {
-    return null;
+    return null
   }
 
   const renderState: DialogRenderState = {
@@ -157,28 +158,28 @@ export function Dialog({
     requestClose,
     cancel,
     confirm,
-  };
+  }
 
   const shouldRenderFooter =
-    footer !== undefined || showCancelButton || (showConfirmButton && Boolean(onConfirm));
+    footer !== undefined || showCancelButton || (showConfirmButton && Boolean(onConfirm))
   const confirmLabel = isConfirming
     ? (confirmPendingText ?? confirmText)
     : confirmLoading
       ? (confirmLoadingText ?? confirmText)
-      : confirmText;
+      : confirmText
 
   return (
     <dialog
       ref={dialogRef}
       closedby={getDialogClosedBy(isInteractionDisabled)}
-      className={`modal ${dialogClassName}`.trim()}
+      className={cn('modal', dialogClassName)}
     >
       <div className={getDialogBoxClassName(widthMode, boxClassName, isActiveFullscreen)}>
         {(title || supportFullscreen || showCloseButton || headerActions !== undefined) && (
-          <div className={`mb-4 flex items-center justify-between gap-4 ${headerClassName}`.trim()}>
+          <div className={cn('mb-4 flex items-center justify-between gap-4', headerClassName)}>
             <div className="min-w-0 flex-1">
-              {typeof title === "string" ? (
-                <h3 className={`font-bold text-base ${titleClassName}`.trim()}>{title}</h3>
+              {typeof title === 'string' ? (
+                <h3 className={cn('font-bold text-base', titleClassName)}>{title}</h3>
               ) : (
                 title
               )}
@@ -189,10 +190,10 @@ export function Dialog({
                 <button
                   type="button"
                   className="btn btn-ghost btn-sm btn-square"
-                  onClick={() => setIsFullscreen((value) => !value)}
+                  onClick={() => setIsFullscreen(value => !value)}
                   disabled={isInteractionDisabled}
-                  title={isActiveFullscreen ? "退出全屏" : "全屏"}
-                  aria-label={isActiveFullscreen ? "退出全屏" : "全屏"}
+                  title={isActiveFullscreen ? '退出全屏' : '全屏'}
+                  aria-label={isActiveFullscreen ? '退出全屏' : '全屏'}
                 >
                   {isActiveFullscreen ? (
                     <MdiFullscreenExit className="h-5 w-5" />
@@ -204,7 +205,7 @@ export function Dialog({
               {showCloseButton && (
                 <button
                   type="button"
-                  className={`btn btn-ghost btn-sm btn-square ${closeButtonClassName}`.trim()}
+                  className={cn('btn btn-ghost btn-sm btn-square', closeButtonClassName)}
                   onClick={requestClose}
                   disabled={isInteractionDisabled}
                   aria-label={closeButtonAriaLabel}
@@ -219,7 +220,7 @@ export function Dialog({
         <div className={bodyClassName}>{renderSlot(children, renderState)}</div>
 
         {shouldRenderFooter && (
-          <div className={`modal-action ${footerClassName}`.trim()}>
+          <div className={cn('modal-action', footerClassName)}>
             {footer !== undefined ? (
               renderSlot(footer, renderState)
             ) : (
@@ -227,7 +228,7 @@ export function Dialog({
                 {showCancelButton && (
                   <button
                     type="button"
-                    className={(cancelButtonClassName || "btn btn-sm btn-ghost").trim()}
+                    className={cn(cancelButtonClassName || 'btn btn-sm btn-ghost')}
                     onClick={cancel}
                     disabled={isInteractionDisabled || cancelDisabled}
                   >
@@ -237,7 +238,10 @@ export function Dialog({
                 {showConfirmButton && onConfirm && (
                   <button
                     type="button"
-                    className={`${(confirmButtonClassName || "btn btn-sm btn-primary").trim()} ${confirmLoading || isConfirming ? "loading" : ""}`.trim()}
+                    className={cn(
+                      confirmButtonClassName || 'btn btn-sm btn-primary',
+                      (confirmLoading || isConfirming) && 'loading',
+                    )}
                     onClick={() => void confirm()}
                     disabled={isConfirming || confirmLoading || confirmDisabled}
                   >
@@ -255,5 +259,5 @@ export function Dialog({
         </button>
       </form>
     </dialog>
-  );
+  )
 }

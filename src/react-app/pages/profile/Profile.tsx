@@ -8,6 +8,7 @@ import { UserAvatar } from "../../components/UserAvatar";
 import { Dialog } from "../../components/Dialog";
 import { useAuth } from "../../auth/useAuth";
 import { useProfile, useUploadAvatar } from "../../hooks/useProfileApi";
+import { cn } from "../../utils/cn";
 
 const MAX_AVATAR_BYTES = 500 * 1024;
 const ACCEPTED_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
@@ -232,7 +233,7 @@ export function Profile() {
             <div className="self-end md:self-auto">
               <button
                 type="button"
-                className={`btn btn-ghost btn-sm gap-2 ${isAuthMutating ? "loading" : ""}`}
+                className={cn("btn btn-ghost btn-sm gap-2", isAuthMutating && "loading")}
                 onClick={handleOpenLogoutConfirm}
                 disabled={isAuthMutating}
                 aria-haspopup="dialog"

@@ -3,6 +3,7 @@ import toast from "react-hot-toast";
 import { Dialog } from "../../../components/Dialog";
 import { useCreateFolderMutation } from "../../../hooks/useFilesApi";
 import { useAppStore } from "../../../store";
+import { cn } from "../../../utils/cn";
 import { validateFolderName } from "../../../utils/folderValidation";
 import { closeCreateFolder, setCreatingFolder } from "../actions";
 import { useDashboardFileView } from "../hooks/useDashboardFileView";
@@ -102,7 +103,7 @@ export function NewFolderModal() {
           <input
             ref={setInputRef}
             type="text"
-            className={`input input-bordered w-full ${fieldErrorMessage ? "input-error" : ""}`}
+            className={cn("input input-bordered w-full", fieldErrorMessage && "input-error")}
             value={name}
             onChange={(event) => {
               setName(event.target.value);

@@ -9,6 +9,7 @@ import {
   extractClipboardFilesFromData,
   readClipboardUploadItems,
 } from "../../../utils/clipboardUpload";
+import { cn } from "../../../utils/cn";
 import { formatBytes } from "../../../utils/fileFormatters";
 import { uploadDashboardFiles } from "../uploadFiles";
 
@@ -69,7 +70,7 @@ function ClipboardUploadFileRow({ item }: { item: ClipboardUploadItem }) {
   return (
     <li className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-field bg-base-200">
-        <Icon className={`h-6 w-6 ${color}`} aria-hidden="true" />
+        <Icon className={cn("h-6 w-6", color)} aria-hidden="true" />
       </span>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium" title={item.name}>

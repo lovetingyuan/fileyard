@@ -3,6 +3,7 @@ import useSWR from "swr";
 import { useParams } from "react-router-dom";
 import type { ResolvedSharedFileMetadataResponse, SharedFileMetadataResponse } from "../../types";
 import { ApiError, apiRequest } from "../utils/apiRequest";
+import { cn } from "../utils/cn";
 import { getSharePasswordError, normalizeSharePassword } from "../utils/sharePassword";
 import { formatShareDuration } from "../utils/shareDurations";
 
@@ -149,7 +150,7 @@ export function ShareDownload() {
                 <span className="text-sm text-base-content/70">输入分享密码</span>
                 <input
                   type="password"
-                  className={`input input-bordered w-full ${visibleUnlockError ? "input-error" : ""}`.trim()}
+                  className={cn("input input-bordered w-full", visibleUnlockError && "input-error")}
                   value={password}
                   autoComplete="current-password"
                   onChange={(event) => {
@@ -163,7 +164,7 @@ export function ShareDownload() {
               ) : null}
               <button
                 type="submit"
-                className={`btn btn-primary w-full sm:w-auto ${unlockLoading ? "loading" : ""}`.trim()}
+                className={cn("btn btn-primary w-full sm:w-auto", unlockLoading && "loading")}
                 disabled={unlockLoading || Boolean(passwordError) || !normalizedPassword}
               >
                 解锁文件

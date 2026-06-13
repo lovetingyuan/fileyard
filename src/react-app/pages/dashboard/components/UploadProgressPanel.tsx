@@ -4,6 +4,7 @@ import MdiChevronDown from "~icons/mdi/chevron-down";
 import MdiChevronUp from "~icons/mdi/chevron-up";
 import { Fragment } from "react";
 import { useAppStore } from "../../../store";
+import { cn } from "../../../utils/cn";
 import type { UploadQueuePanelState } from "../hooks/useUploadQueue";
 import {
   cancelRemainingDashboardUploads,
@@ -91,7 +92,10 @@ export function UploadProgressPanel() {
   if (isMinimized) {
     return (
       <aside
-        className={`fixed right-4 bottom-4 z-50 w-[min(16rem,calc(100vw-2rem))] ${PANEL_SURFACE_CLASS}`}
+        className={cn(
+          "fixed right-4 bottom-4 z-50 w-[min(16rem,calc(100vw-2rem))]",
+          PANEL_SURFACE_CLASS,
+        )}
         aria-label="上传进度"
       >
         <div className="space-y-1">
@@ -136,7 +140,10 @@ export function UploadProgressPanel() {
 
   return (
     <aside
-      className={`fixed right-4 bottom-4 z-50 w-[min(24rem,calc(100vw-2rem))] ${PANEL_SURFACE_CLASS}`}
+      className={cn(
+        "fixed right-4 bottom-4 z-50 w-[min(24rem,calc(100vw-2rem))]",
+        PANEL_SURFACE_CLASS,
+      )}
       aria-label="上传进度"
     >
       <div className="space-y-1">

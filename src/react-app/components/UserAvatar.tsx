@@ -1,3 +1,5 @@
+import { cn } from "../utils/cn";
+
 type UserAvatarProps = {
   email: string | undefined;
   avatarUrl?: string | null;
@@ -21,7 +23,7 @@ export function UserAvatar({
 
   if (effectiveAvatarUrl) {
     return (
-      <div className={`shrink-0 rounded-full bg-base-200 overflow-hidden ${className}`}>
+      <div className={cn("shrink-0 overflow-hidden rounded-full bg-base-200", className)}>
         <img
           src={effectiveAvatarUrl}
           alt={`${email ?? "User"} avatar`}
@@ -33,9 +35,12 @@ export function UserAvatar({
 
   return (
     <div
-      className={`shrink-0 flex items-center justify-center rounded-full bg-primary text-primary-content ${className}`}
+      className={cn(
+        "flex shrink-0 items-center justify-center rounded-full bg-primary text-primary-content",
+        className,
+      )}
     >
-      <span className={`font-bold ${textClassName}`}>{fallback}</span>
+      <span className={cn("font-bold", textClassName)}>{fallback}</span>
     </div>
   );
 }
