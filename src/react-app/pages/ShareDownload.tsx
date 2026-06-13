@@ -185,30 +185,35 @@ export function ShareDownload() {
             <form className="space-y-4" onSubmit={event => void handleUnlock(event)}>
               <label className="form-control gap-1.5">
                 <span className="text-sm text-base-content/70">输入分享密码</span>
-                <input
-                  type="password"
-                  className={cn('input input-bordered w-full', visibleUnlockError && 'input-error')}
-                  value={password}
-                  autoComplete="current-password"
-                  onChange={event => {
-                    setPassword(event.target.value)
-                    setUnlockError(null)
-                  }}
-                />
+                <div className="flex gap-3">
+                  <input
+                    type="password"
+                    className={cn(
+                      'input input-bordered min-w-0 flex-1',
+                      visibleUnlockError && 'input-error',
+                    )}
+                    value={password}
+                    autoComplete="current-password"
+                    onChange={event => {
+                      setPassword(event.target.value)
+                      setUnlockError(null)
+                    }}
+                  />
+                  <button
+                    type="submit"
+                    className="btn btn-primary shrink-0"
+                    disabled={unlockLoading || Boolean(passwordError) || !normalizedPassword}
+                  >
+                    {unlockLoading ? (
+                      <span className="loading loading-spinner" aria-hidden="true" />
+                    ) : null}
+                    解锁文件
+                  </button>
+                </div>
               </label>
               {visibleUnlockError ? (
                 <p className="text-sm text-error">{visibleUnlockError}</p>
               ) : null}
-              <button
-                type="submit"
-                className="btn btn-primary w-full sm:w-auto"
-                disabled={unlockLoading || Boolean(passwordError) || !normalizedPassword}
-              >
-                {unlockLoading ? (
-                  <span className="loading loading-spinner" aria-hidden="true" />
-                ) : null}
-                解锁文件
-              </button>
             </form>
           ) : status === 'active' && resolvedData ? (
             <>
