@@ -7,13 +7,20 @@ import type {
   CreateShareLinkRequest,
   FileMutationResponse,
   MoveRequest,
+  RemoveFolderPasswordRequest,
   RenameRequest,
   ShareLinkResponse,
+  SetFolderPasswordRequest,
+  VerifyFolderPasswordRequest,
+  VerifyFolderPasswordResponse,
 } from "../../types";
 import { ApiError, apiRequest } from "../utils/apiRequest";
+import { getFolderUnlockHeadersForPath } from "../utils/folderUnlockTokens";
 import {
   FILE_BATCH_DELETE_ENDPOINT,
   FILE_BATCH_MOVE_ENDPOINT,
+  FILE_FOLDER_PASSWORD_ENDPOINT,
+  FILE_FOLDER_PASSWORD_VERIFY_ENDPOINT,
   FILE_FOLDERS_ENDPOINT,
   FILE_MOVE_ENDPOINT,
   FILE_OBJECT_ENDPOINT,
@@ -35,12 +42,13 @@ export function useCreateFolderMutation() {
     FileMutationResponse,
     ApiError,
     string,
-    CreateFolderRequest
-  >(
+  CreateFolderRequest
+>(
     FILE_FOLDERS_ENDPOINT,
     (url, { arg }) =>
       apiRequest<FileMutationResponse>(url, {
         method: "POST",
+        headers: getFolderUnlockHeadersForPath(arg.parentPath),
         body: JSON.stringify(arg),
       }),
     {
@@ -74,11 +82,10 @@ export function useUploadFileMutation() {
 
       return apiRequest<FileMutationResponse>(`${url}?${params.toString()}`, {
         method: "PUT",
-        headers: arg.file.type
-          ? {
-              "Content-Type": arg.file.type,
-            }
-          : undefined,
+        headers: {
+          ...(getFolderUnlockHeadersForPath(arg.parentPath) ?? {}),
+          ...(arg.file.type ? { "Content-Type": arg.file.type } : {}),
+        },
         body: arg.file,
       });
     },
@@ -102,6 +109,7 @@ export function useDeleteFileMutation() {
       const params = new URLSearchParams({ path: arg });
       return apiRequest<FileMutationResponse>(`${url}?${params.toString()}`, {
         method: "DELETE",
+        headers: getFolderUnlockHeadersForPath(arg),
       });
     },
     {
@@ -128,6 +136,7 @@ export function useRenameFileMutation() {
     (url, { arg }) =>
       apiRequest<FileMutationResponse>(url, {
         method: "PATCH",
+        headers: getFolderUnlockHeadersForPath(arg.path),
         body: JSON.stringify(arg),
       }),
     {
@@ -150,6 +159,7 @@ export function useDeleteFolderMutation() {
       const params = new URLSearchParams({ path: arg });
       return apiRequest<FileMutationResponse>(`${url}?${params.toString()}`, {
         method: "DELETE",
+        headers: getFolderUnlockHeadersForPath(arg),
       });
     },
     {
@@ -176,6 +186,7 @@ export function useRenameFolderMutation() {
     (url, { arg }) =>
       apiRequest<FileMutationResponse>(url, {
         method: "PATCH",
+        headers: getFolderUnlockHeadersForPath(arg.path),
         body: JSON.stringify(arg),
       }),
     {
@@ -202,6 +213,7 @@ export function useMoveEntryMutation() {
     (url, { arg }) =>
       apiRequest<FileMutationResponse>(url, {
         method: "PATCH",
+        headers: getFolderUnlockHeadersForPath(arg.targetParentPath),
         body: JSON.stringify(arg),
       }),
     {
@@ -229,6 +241,9 @@ export function useBatchDeleteEntriesMutation() {
     (url, { arg }) =>
       apiRequest<BatchFileMutationResponse>(url, {
         method: "DELETE",
+        headers: arg.targets[0]
+          ? getFolderUnlockHeadersForPath(arg.targets[0].path)
+          : undefined,
         body: JSON.stringify(arg),
       }),
     {
@@ -255,6 +270,7 @@ export function useBatchMoveEntriesMutation() {
     (url, { arg }) =>
       apiRequest<BatchFileMutationResponse>(url, {
         method: "PATCH",
+        headers: getFolderUnlockHeadersForPath(arg.targetParentPath),
         body: JSON.stringify(arg),
       }),
     {
@@ -325,11 +341,10 @@ export function useUpdateFileMutation() {
 
       return apiRequest<FileMutationResponse>(`${url}?${params.toString()}`, {
         method: "PUT",
-        headers: arg.file.type
-          ? {
-              "Content-Type": arg.file.type,
-            }
-          : undefined,
+        headers: {
+          ...(getFolderUnlockHeadersForPath(arg.parentPath) ?? {}),
+          ...(arg.file.type ? { "Content-Type": arg.file.type } : {}),
+        },
         body: arg.file,
       });
     },
@@ -342,6 +357,85 @@ export function useUpdateFileMutation() {
 
   return {
     updateFile,
+    isMutating,
+  };
+}
+
+export function useSetFolderPasswordMutation() {
+  const { trigger, isMutating } = useSWRMutation<
+    FileMutationResponse,
+    ApiError,
+    string,
+    SetFolderPasswordRequest
+  >(
+    FILE_FOLDER_PASSWORD_ENDPOINT,
+    (url, { arg }) =>
+      apiRequest<FileMutationResponse>(url, {
+        method: "PUT",
+        body: JSON.stringify(arg),
+      }),
+    {
+      throwOnError: true,
+    },
+  );
+
+  const setFolderPassword = (path: string, password: string) => trigger({ path, password });
+
+  return {
+    setFolderPassword,
+    isMutating,
+  };
+}
+
+export function useVerifyFolderPasswordMutation() {
+  const { trigger, isMutating } = useSWRMutation<
+    VerifyFolderPasswordResponse,
+    ApiError,
+    string,
+    VerifyFolderPasswordRequest
+  >(
+    FILE_FOLDER_PASSWORD_VERIFY_ENDPOINT,
+    (url, { arg }) =>
+      apiRequest<VerifyFolderPasswordResponse>(url, {
+        method: "POST",
+        body: JSON.stringify(arg),
+      }),
+    {
+      throwOnError: true,
+    },
+  );
+
+  const verifyFolderPassword = (path: string, password: string) => trigger({ path, password });
+
+  return {
+    verifyFolderPassword,
+    isMutating,
+  };
+}
+
+export function useRemoveFolderPasswordMutation() {
+  const { trigger, isMutating } = useSWRMutation<
+    FileMutationResponse,
+    ApiError,
+    string,
+    RemoveFolderPasswordRequest
+  >(
+    FILE_FOLDER_PASSWORD_ENDPOINT,
+    (url, { arg }) =>
+      apiRequest<FileMutationResponse>(url, {
+        method: "DELETE",
+        headers: getFolderUnlockHeadersForPath(arg.path),
+        body: JSON.stringify(arg),
+      }),
+    {
+      throwOnError: true,
+    },
+  );
+
+  const removeFolderPassword = (path: string) => trigger({ path });
+
+  return {
+    removeFolderPassword,
     isMutating,
   };
 }

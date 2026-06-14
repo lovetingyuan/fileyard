@@ -7,6 +7,12 @@ import type {
 import type { AppContext } from "../context";
 import { folderExists, getFileContext, getUploadLimitBytes } from "../utils/appHelpers";
 import {
+  assertPathAccess,
+  getFileProtectedBy,
+  getFolderProtectionStates,
+  handleFolderPasswordError,
+} from "../utils/folderPasswords";
+import {
   MULTIPART_UPLOAD_PART_BYTES,
   SYSTEM_PROFILE_FOLDER_NAME,
   getFolderPrefix,
@@ -85,6 +91,7 @@ export async function listFiles(c: Context<AppContext>) {
     const path = normalizeRelativePath(query.path, { allowEmpty: true, label: "Path" });
     assertPathNotReserved(path);
     const { rootDirId } = await getFileContext(c);
+    await assertPathAccess(c, rootDirId, path);
 
     if (path && !(await folderExists(c.env, rootDirId, path))) {
       return jsonError(c, "Folder not found", 404);
@@ -124,13 +131,21 @@ export async function listFiles(c: Context<AppContext>) {
           name,
           path: folderPath,
           createdAt: await getFolderCreatedAt(c.env.FILES_BUCKET, rootDirId, folderPath),
+          passwordProtected: false,
+          protectedBy: null,
         };
       }),
     );
+    const folderProtectionStates = await getFolderProtectionStates(
+      c.env,
+      rootDirId,
+      folders.map((folder) => folder.path),
+    );
 
-    const fileItems = allObjects
-      .filter((object) => !isFolderMarkerKey(object.key, prefix))
-      .map((object) => {
+    const fileItems = await Promise.all(
+      allObjects
+        .filter((object) => !isFolderMarkerKey(object.key, prefix))
+        .map(async (object) => {
         const name = object.key.slice(prefix.length);
         return {
           name,
@@ -140,18 +155,33 @@ export async function listFiles(c: Context<AppContext>) {
           uploadedAt: object.uploaded.toISOString(),
           contentType: object.httpMetadata?.contentType ?? null,
           checksums: getFileChecksumMetadata(object.checksums),
+          protectedBy: await getFileProtectedBy(c.env, rootDirId, joinRelativePath(path, name)),
         };
-      });
+      }),
+    );
 
     const response: FileListResponse = {
       success: true,
       path,
-      folders: sortFolders(folders, sortParams),
+      folders: sortFolders(
+        folders.map((folder) => ({
+          ...folder,
+          ...(folderProtectionStates.get(folder.path) ?? {
+            passwordProtected: false,
+            protectedBy: null,
+          }),
+        })),
+        sortParams,
+      ),
       files: sortFiles(fileItems, sortParams),
     };
 
     return c.json(response);
   } catch (error) {
+    const folderPasswordError = handleFolderPasswordError(error);
+    if (folderPasswordError) {
+      return folderPasswordError;
+    }
     const validationError = handlePathValidationError(c, error);
     if (validationError) {
       return validationError;
@@ -167,6 +197,7 @@ export async function getDirectoryStats(c: Context<AppContext>) {
     const path = normalizeRelativePath(query.path, { allowEmpty: true, label: "Path" });
     assertPathNotReserved(path);
     const { rootDirId } = await getFileContext(c);
+    await assertPathAccess(c, rootDirId, path);
 
     if (path && !(await folderExists(c.env, rootDirId, path))) {
       return jsonError(c, "Folder not found", 404);
@@ -202,6 +233,10 @@ export async function getDirectoryStats(c: Context<AppContext>) {
 
     return c.json(response);
   } catch (error) {
+    const folderPasswordError = handleFolderPasswordError(error);
+    if (folderPasswordError) {
+      return folderPasswordError;
+    }
     const validationError = handlePathValidationError(c, error);
     if (validationError) {
       return validationError;

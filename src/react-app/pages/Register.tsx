@@ -55,9 +55,9 @@ export function Register() {
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="form-control">
-              <label className="label" htmlFor={emailId}>
-                <span className="label-text flex items-center gap-1">
+            <div className="flex flex-col gap-1.5">
+              <label className="flex items-center gap-1 text-sm" htmlFor={emailId}>
+                <span className="flex items-center gap-1">
                   <MdiEmailOutline className="w-4 h-4" />
                   Email
                 </span>
@@ -77,9 +77,9 @@ export function Register() {
               />
             </div>
 
-            <div className="form-control">
-              <label className="label" htmlFor={passwordId}>
-                <span className="label-text flex items-center gap-1">
+            <div className="flex flex-col gap-1.5">
+              <label className="flex items-center gap-1 text-sm" htmlFor={passwordId}>
+                <span className="flex items-center gap-1">
                   <MdiLockOutline className="w-4 h-4" />
                   Password
                 </span>
@@ -99,7 +99,7 @@ export function Register() {
                 maxLength={64}
               />
               {passwordErrors.length > 0 && (
-                <div className="label">
+                <div>
                   <ul className="text-error text-sm list-disc list-inside">
                     {passwordErrors.map((err) => (
                       <li key={err}>{err}</li>
@@ -107,16 +107,16 @@ export function Register() {
                   </ul>
                 </div>
               )}
-              <div className="label">
-                <span className="label-text-alt text-xs text-base-content/80">
+              <div>
+                <span className="text-xs text-base-content/80">
                   {PASSWORD_REQUIREMENTS_HINT}
                 </span>
               </div>
             </div>
 
-            <div className="form-control">
-              <label className="label" htmlFor={confirmPasswordId}>
-                <span className="label-text flex items-center gap-1">
+            <div className="flex flex-col gap-1.5">
+              <label className="flex items-center gap-1 text-sm" htmlFor={confirmPasswordId}>
+                <span className="flex items-center gap-1">
                   <MdiLockCheckOutline className="w-4 h-4" />
                   Confirm Password
                 </span>
@@ -134,13 +134,13 @@ export function Register() {
                 required
               />
               {confirmPassword && password !== confirmPassword && (
-                <div className="label">
-                  <span className="label-text-alt text-error">Passwords do not match</span>
+                <div>
+                  <span className="text-error">Passwords do not match</span>
                 </div>
               )}
             </div>
 
-            <div className="form-control mt-6">
+            <div className="mt-6 flex">
               <button
                 type="submit"
                 className="btn btn-primary gap-2"

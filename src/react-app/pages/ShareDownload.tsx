@@ -183,7 +183,7 @@ export function ShareDownload() {
             </div>
           ) : status === 'locked' ? (
             <form className="space-y-4" onSubmit={event => void handleUnlock(event)}>
-              <label className="form-control gap-1.5">
+              <label className="flex flex-col gap-1.5">
                 <span className="text-sm text-base-content/70">输入分享密码</span>
                 <div className="flex gap-3">
                   <input

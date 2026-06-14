@@ -1,11 +1,14 @@
 import MdiFolder from "~icons/mdi/folder";
+import MdiLock from "~icons/mdi/lock";
 import type { BatchOperationTarget, FileEntry, FolderEntry } from "../../../../types";
 import { getFileIcon } from "../../../constants/fileIcons";
 import { cn } from "../../../utils/cn";
-import { openFilePreview } from "../actions";
+import { useAppStore } from "../../../store";
+import { openFilePreview, openFolderPasswordModal } from "../actions";
 import { useDashboardEntrySelection } from "../hooks/useDashboardEntrySelection";
 import { useDashboardLocatedFileHighlight } from "../hooks/useDashboardLocatedFileHighlight";
 import { useDashboardPath } from "../hooks/useDashboardPath";
+import { getDashboardFolderOpenAction } from "../utils/dashboardFolderNavigation";
 import type { SearchMatchRange } from "../utils/searchMatch";
 import { FileActionsMenu, FolderActionsMenu } from "./FileEntryActions";
 import { FileEntryName } from "./FileEntryName";
@@ -68,12 +71,15 @@ export function FolderGridItem({
   visibleTargets: BatchOperationTarget[];
 }) {
   const { setPath } = useDashboardPath();
+  const { folderUnlockTokens } = useAppStore();
   const entryKey = `folder:${folder.path}`;
   const selection = useDashboardEntrySelection(
     {
       type: "folder",
       path: folder.path,
       name: folder.name,
+      passwordProtected: folder.passwordProtected,
+      protectedBy: folder.protectedBy,
     },
     visibleTargets,
   );
@@ -113,11 +119,24 @@ export function FolderGridItem({
           if (selection.shouldIgnoreEntryOpen()) {
             return;
           }
-          setPath(folder.path);
+          const action = getDashboardFolderOpenAction(folder, folderUnlockTokens);
+          if (action.type === "navigate") {
+            setPath(action.path);
+            return;
+          }
+
+          openFolderPasswordModal(action.target);
         }}
         title={folder.name}
       >
-        <MdiFolder className="h-10 w-10 shrink-0 text-warning" />
+        <span className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center">
+          <MdiFolder className="h-10 w-10 text-warning" />
+          {folder.passwordProtected ? (
+            <span className="absolute right-0 top-0 grid h-4 w-4 place-items-center rounded-full bg-base-100 text-base-content shadow-sm ring-1 ring-base-300/70">
+              <MdiLock className="h-2.5 w-2.5" />
+            </span>
+          ) : null}
+        </span>
         <span className={cn(GRID_ITEM_NAME_CLASS, "font-bold")}>
           <FileEntryName name={folder.name} ranges={folder.searchMatchRanges} entryKey={entryKey} />
         </span>
@@ -141,6 +160,7 @@ export function FileGridItem({
       type: "file",
       path: file.path,
       name: file.name,
+      protectedBy: file.protectedBy,
     },
     visibleTargets,
   );

@@ -8,6 +8,7 @@ import type {
 } from "../../types";
 import type { AppContext } from "../context";
 import { folderExists, getFileContext, getUploadLimitBytes } from "../utils/appHelpers";
+import { assertPathAccess, handleFolderPasswordError } from "../utils/folderPasswords";
 import {
   FilePathValidationError,
   MULTIPART_UPLOAD_PART_BYTES,
@@ -98,6 +99,8 @@ export async function createMultipartUpload(c: Context<AppContext>) {
     }
 
     const { rootDirId, user } = await getFileContext(c);
+    await assertPathAccess(c, rootDirId, parentPath);
+
     if (!(await folderExists(c.env, rootDirId, parentPath))) {
       return jsonError(c, "Parent folder not found", 404);
     }
@@ -144,6 +147,10 @@ export async function createMultipartUpload(c: Context<AppContext>) {
     };
     return c.json(response, 201);
   } catch (error) {
+    const folderPasswordError = handleFolderPasswordError(error);
+    if (folderPasswordError) {
+      return folderPasswordError;
+    }
     const validationError = handlePathValidationError(c, error);
     if (validationError) {
       return validationError;
@@ -217,6 +224,8 @@ export async function completeMultipartUpload(c: Context<AppContext>) {
     }
 
     const parentPath = getParentPath(session.filePath);
+    await assertPathAccess(c, session.rootDirId, parentPath);
+
     if (!(await folderExists(c.env, session.rootDirId, parentPath))) {
       await abortMultipartSession(c, session);
       return jsonError(c, "Parent folder not found", 404);
@@ -237,6 +246,10 @@ export async function completeMultipartUpload(c: Context<AppContext>) {
     };
     return c.json(response, 201);
   } catch (error) {
+    const folderPasswordError = handleFolderPasswordError(error);
+    if (folderPasswordError) {
+      return folderPasswordError;
+    }
     const validationError = handlePathValidationError(c, error);
     if (validationError) {
       return validationError;

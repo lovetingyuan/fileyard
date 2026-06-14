@@ -11,6 +11,7 @@ import {
   setBatchDeleting,
 } from "../actions";
 import { useDashboardFileView } from "../hooks/useDashboardFileView";
+import { getBatchDeleteBlockedReason } from "../utils/batchDeleteSelection";
 
 function getTargetKey(target: Pick<BatchOperationTarget, "path" | "type">) {
   return `${target.type}:${target.path}`;
@@ -60,6 +61,8 @@ export function BatchDeleteConfirmModal() {
     return null;
   }
 
+  const blockedReason = getBatchDeleteBlockedReason(pendingBatchDeleteTargets);
+
   const handleClose = () => {
     if (!batchDeleting) {
       closeBatchDeleteTargets();
@@ -68,7 +71,7 @@ export function BatchDeleteConfirmModal() {
   };
 
   const handleConfirm = async () => {
-    if (batchDeleting) {
+    if (batchDeleting || blockedReason) {
       return;
     }
 
@@ -103,6 +106,7 @@ export function BatchDeleteConfirmModal() {
       onConfirm={handleConfirm}
       confirmText="确认删除"
       confirmPendingText="删除中..."
+      confirmDisabled={Boolean(blockedReason)}
       confirmLoading={batchDeleting}
       isDismissDisabled={batchDeleting}
       boxClassName="max-w-md border border-error/10 bg-base-100"
@@ -118,6 +122,12 @@ export function BatchDeleteConfirmModal() {
             <p>确认删除选中的 {pendingBatchDeleteTargets.length} 项吗？此操作无法撤销。</p>
           </div>
         </div>
+        {blockedReason ? (
+          <div className="alert alert-warning items-start py-3 text-sm">
+            <MdiAlertCircleOutline className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{blockedReason}</span>
+          </div>
+        ) : null}
         <BatchFailureList results={failureResults} sourceTargets={pendingBatchDeleteTargets} />
       </div>
     </Dialog>

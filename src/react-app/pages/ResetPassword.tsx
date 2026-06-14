@@ -86,9 +86,9 @@ export function ResetPassword() {
           </p>
 
           <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-            <div className="form-control">
-              <label className="label" htmlFor={passwordId}>
-                <span className="label-text flex items-center gap-1">
+            <div className="flex flex-col gap-1.5">
+              <label className="flex items-center gap-1 text-sm" htmlFor={passwordId}>
+                <span className="flex items-center gap-1">
                   <MdiLockOutline className="h-4 w-4" />
                   New Password
                 </span>
@@ -108,7 +108,7 @@ export function ResetPassword() {
                 maxLength={64}
               />
               {passwordErrors.length > 0 && (
-                <div className="label">
+                <div>
                   <ul className="list-inside list-disc text-sm text-error">
                     {passwordErrors.map((error) => (
                       <li key={error}>{error}</li>
@@ -116,16 +116,16 @@ export function ResetPassword() {
                   </ul>
                 </div>
               )}
-              <div className="label">
-                <span className="label-text-alt text-xs text-base-content/80">
+              <div>
+                <span className="text-xs text-base-content/80">
                   {PASSWORD_REQUIREMENTS_HINT}
                 </span>
               </div>
             </div>
 
-            <div className="form-control">
-              <label className="label" htmlFor={confirmPasswordId}>
-                <span className="label-text flex items-center gap-1">
+            <div className="flex flex-col gap-1.5">
+              <label className="flex items-center gap-1 text-sm" htmlFor={confirmPasswordId}>
+                <span className="flex items-center gap-1">
                   <MdiLockCheckOutline className="h-4 w-4" />
                   Confirm Password
                 </span>
@@ -143,13 +143,13 @@ export function ResetPassword() {
                 required
               />
               {confirmPassword && password !== confirmPassword && (
-                <div className="label">
-                  <span className="label-text-alt text-error">Passwords do not match</span>
+                <div>
+                  <span className="text-error">Passwords do not match</span>
                 </div>
               )}
             </div>
 
-            <div className="form-control mt-6">
+            <div className="mt-6 flex">
               <button
                 type="submit"
                 className="btn btn-primary gap-2"

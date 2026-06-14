@@ -5,6 +5,7 @@ import { Dialog } from "../../../components/Dialog";
 import { buildPreviewUrl, useUpdateFileMutation } from "../../../hooks/useFilesApi";
 import { useAppStore } from "../../../store";
 import { getPreviewInfo } from "../../../utils/previewInfo";
+import { getFolderUnlockTokenForPath } from "../../../utils/folderUnlockTokens";
 import { closeFilePreview } from "../actions";
 import { runWithLargeFileUploadToast } from "../fileOperations";
 import { useDashboardFileView } from "../hooks/useDashboardFileView";
@@ -38,7 +39,7 @@ function getPreviewSizeError(
 }
 
 export function PreviewModal() {
-  const { currentFile, previewing } = useAppStore();
+  const { currentFile, folderUnlockTokens, previewing } = useAppStore();
   const { refresh } = useDashboardFileView();
   const { updateFile } = useUpdateFileMutation();
   const [isEditing, setIsEditing] = useState(false);
@@ -70,7 +71,8 @@ export function PreviewModal() {
   };
 
   const file = previewing ? currentFile : null;
-  const previewUrl = file ? buildPreviewUrl(file.path) : "";
+  const previewUrl = file ? buildPreviewUrl(file.path, getFolderUnlockTokenForPath(file.path)) : "";
+  void folderUnlockTokens;
   const info = file ? getPreviewInfo(file) : { kind: "unsupported" as const };
   const effectiveInfo = forceTextPreview ? { kind: "text" as const } : info;
 

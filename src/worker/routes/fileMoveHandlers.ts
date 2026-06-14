@@ -2,6 +2,11 @@ import type { Context } from "hono";
 import type { FileMutationResponse, FolderTreeResponse, MoveRequest } from "../../types";
 import type { AppContext } from "../context";
 import { folderExists, getFileContext } from "../utils/appHelpers";
+import {
+  assertPathAccess,
+  assertPathNotPasswordProtected,
+  handleFolderPasswordError,
+} from "../utils/folderPasswords";
 import { FilePathValidationError, getFileKey, normalizeRelativePath } from "../utils/fileManager";
 import { handlePathValidationError, jsonError } from "../utils/response";
 import { assertPathNotReserved, listAllObjects } from "./filesShared";
@@ -60,6 +65,14 @@ export async function moveEntry(c: Context<AppContext>) {
     assertPathNotReserved(targetParentPath);
 
     const { rootDirId } = await getFileContext(c);
+    await assertPathNotPasswordProtected(
+      c.env,
+      rootDirId,
+      path,
+      "Password protected entries cannot be moved",
+    );
+    await assertPathAccess(c, rootDirId, targetParentPath);
+
     if (!(await folderExists(c.env, rootDirId, targetParentPath))) {
       return jsonError(c, "Target folder not found", 404);
     }
@@ -90,6 +103,10 @@ export async function moveEntry(c: Context<AppContext>) {
     const response: FileMutationResponse = { success: true, message: "Entry moved successfully" };
     return c.json(response);
   } catch (error) {
+    const folderPasswordError = handleFolderPasswordError(error);
+    if (folderPasswordError) {
+      return folderPasswordError;
+    }
     const validationError = handlePathValidationError(c, error);
     if (validationError) {
       return validationError;

@@ -13,6 +13,7 @@ import { DirectoryStatsModal } from "./components/DirectoryStatsModal";
 import { FileDetailsModal } from "./components/FileDetailsModal";
 import { FileTreeSidebar } from "./components/FileTreeSidebar";
 import { FileToolbar, type FileToolbarHandle } from "./components/FileToolbar";
+import { FolderPasswordModal } from "./components/FolderPasswordModal";
 import { MoveModal } from "./components/MoveModal";
 import { NewFolderModal } from "./components/NewFolderModal";
 import { NewTextFileModal } from "./components/NewTextFileModal";
@@ -39,6 +40,7 @@ export function Dashboard() {
     pendingMoveTarget,
     pendingBatchDeleteTargets,
     pendingBatchMoveTargets,
+    pendingFolderPasswordTarget,
     movingPath,
     renamingPath,
     savingTextFile,
@@ -155,6 +157,9 @@ export function Dashboard() {
       {pendingRenameTarget ? <RenameModal key={pendingRenameTarget.path} /> : null}
       {pendingMoveTarget ? <MoveModal key={pendingMoveTarget.path} /> : null}
       {pendingBatchMoveTargets ? <BatchMoveModal /> : null}
+      {pendingFolderPasswordTarget ? (
+        <FolderPasswordModal key={`${pendingFolderPasswordTarget.mode}:${pendingFolderPasswordTarget.path}`} />
+      ) : null}
       {sharing && shareTargets.length > 0 ? (
         <ShareFileModal key={shareTargets.map((target) => target.path).join("\n")} />
       ) : null}

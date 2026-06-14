@@ -117,9 +117,9 @@ export function Login() {
               </div>
             )}
 
-            <div className="form-control">
-              <label className="label" htmlFor={emailId}>
-                <span className="label-text flex items-center gap-1">
+            <div className="flex flex-col gap-1.5">
+              <label className="flex items-center gap-1 text-sm" htmlFor={emailId}>
+                <span className="flex items-center gap-1">
                   <MdiEmailOutline className="w-4 h-4" />
                   Email
                 </span>
@@ -139,9 +139,9 @@ export function Login() {
               />
             </div>
 
-            <div className="form-control">
-              <label className="label" htmlFor={passwordId}>
-                <span className="label-text flex items-center gap-1">
+            <div className="flex flex-col gap-1.5">
+              <label className="flex items-center gap-1 text-sm" htmlFor={passwordId}>
+                <span className="flex items-center gap-1">
                   <MdiLockOutline className="w-4 h-4" />
                   Password
                 </span>
@@ -160,7 +160,7 @@ export function Login() {
               />
             </div>
 
-            <div className="form-control mt-6 flex justify-between items-center">
+            <div className="mt-6 flex items-center justify-between">
               <button
                 type="submit"
                 className="btn btn-primary gap-2"

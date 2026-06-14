@@ -7,6 +7,7 @@ import type {
   SortOrder,
 } from "../../types";
 import { ApiError, apiRequest } from "../utils/apiRequest";
+import { getFolderUnlockHeadersForPath } from "../utils/folderUnlockTokens";
 import {
   FILES_ENDPOINT,
   FILE_FOLDER_TREE_ENDPOINT,
@@ -18,7 +19,9 @@ import {
 } from "./filesApiUrls";
 
 export function getDirectoryStats(path: string) {
-  return apiRequest<DirectoryStatsResponse>(buildStatsUrl(path));
+  return apiRequest<DirectoryStatsResponse>(buildStatsUrl(path), {
+    headers: getFolderUnlockHeadersForPath(path),
+  });
 }
 
 export function useDirectoryStats(path: string, enabled: boolean) {
@@ -26,7 +29,9 @@ export function useDirectoryStats(path: string, enabled: boolean) {
     enabled ? [FILE_STATS_ENDPOINT, path] : null,
     (key) => {
       const [, currentPath] = key as [string, string];
-      return apiRequest<DirectoryStatsResponse>(buildStatsUrl(currentPath));
+      return apiRequest<DirectoryStatsResponse>(buildStatsUrl(currentPath), {
+        headers: getFolderUnlockHeadersForPath(currentPath),
+      });
     },
   );
 
@@ -58,7 +63,9 @@ export function useFileList(path: string, sort: SortKey, order: SortOrder) {
     [FILES_ENDPOINT, path, sort, order] as FileListKey,
     (key) => {
       const [, currentPath, currentSort, currentOrder] = key as FileListKey;
-      return apiRequest<FileListResponse>(buildListUrl(currentPath, currentSort, currentOrder));
+      return apiRequest<FileListResponse>(buildListUrl(currentPath, currentSort, currentOrder), {
+        headers: getFolderUnlockHeadersForPath(currentPath),
+      });
     },
   );
 

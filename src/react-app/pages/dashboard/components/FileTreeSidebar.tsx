@@ -5,17 +5,24 @@ import MdiChevronRight from "~icons/mdi/chevron-right";
 import MdiFileTree from "~icons/mdi/file-tree";
 import MdiFolder from "~icons/mdi/folder";
 import MdiFolderOpen from "~icons/mdi/folder-open";
+import MdiLock from "~icons/mdi/lock";
 import type { FileEntry, FolderEntry } from "../../../../types";
 import { useFileList } from "../../../hooks/useFilesApi";
 import { getFileIcon } from "../../../constants/fileIcons";
 import { useAppStore } from "../../../store";
 import { cn } from "../../../utils/cn";
-import { requestDashboardFileLocation, toggleDashboardTreeSidebar } from "../actions";
+import {
+  openFolderPasswordModal,
+  requestDashboardFileLocation,
+  toggleDashboardTreeSidebar,
+} from "../actions";
 import { useDashboardPath } from "../hooks/useDashboardPath";
+import { getDashboardFolderOpenAction } from "../utils/dashboardFolderNavigation";
 import { getDashboardFileParentPath } from "../utils/dashboardFileLocation";
 import {
   getDashboardTreeAutoOpenPaths,
   mergeDashboardTreeOpenPaths,
+  shouldLoadDashboardTreeFolderChildren,
   toggleDashboardTreeOpenPath,
 } from "../utils/fileTreeSidebarState";
 
@@ -34,6 +41,7 @@ export function scrollCurrentFileTreeRowIntoView(row: HTMLDivElement | null, isC
 
 type FileTreeLevelProps = {
   currentPath: string;
+  folderUnlockTokens: Record<string, string>;
   isNavigationDisabled: boolean;
   onToggleFolder: (path: string) => void;
   openPaths: string[];
@@ -95,14 +103,17 @@ function FileTreeErrorRow({
 }
 
 function FileTreeFolderRow({
+  canLoadChildren,
   currentPath,
   folder,
+  folderUnlockTokens,
   isNavigationDisabled,
   isOpen,
   onToggleFolder,
   openPaths,
   setPath,
 }: Omit<FileTreeLevelProps, "path"> & {
+  canLoadChildren: boolean;
   folder: FolderEntry;
   isOpen: boolean;
 }) {
@@ -110,6 +121,15 @@ function FileTreeFolderRow({
   const FolderIcon = isOpen ? MdiFolderOpen : MdiFolder;
   const ChevronIcon = isOpen ? MdiChevronDown : MdiChevronRight;
   const rowRef = useRef<HTMLDivElement>(null);
+  const openFolder = () => {
+    const action = getDashboardFolderOpenAction(folder, folderUnlockTokens);
+    if (action.type === "navigate") {
+      setPath(action.path);
+      return;
+    }
+
+    openFolderPasswordModal(action.target);
+  };
 
   useEffect(() => {
     scrollCurrentFileTreeRowIntoView(rowRef.current, isCurrent);
@@ -127,9 +147,22 @@ function FileTreeFolderRow({
         <button
           type="button"
           className="btn btn-ghost btn-square btn-xs h-5 min-h-5 w-5 shrink-0"
-          aria-expanded={isOpen}
-          aria-label={isOpen ? `折叠文件夹 ${folder.name}` : `展开文件夹 ${folder.name}`}
-          onClick={() => onToggleFolder(folder.path)}
+          aria-expanded={canLoadChildren ? isOpen : false}
+          aria-label={
+            canLoadChildren
+              ? isOpen
+                ? `折叠文件夹 ${folder.name}`
+                : `展开文件夹 ${folder.name}`
+              : `验证后展开文件夹 ${folder.name}`
+          }
+          onClick={() => {
+            if (canLoadChildren) {
+              onToggleFolder(folder.path);
+              return;
+            }
+
+            openFolder();
+          }}
         >
           <ChevronIcon className="h-4 w-4" />
         </button>
@@ -139,15 +172,23 @@ function FileTreeFolderRow({
           disabled={isNavigationDisabled}
           aria-current={isCurrent ? "page" : undefined}
           title={folder.name}
-          onClick={() => setPath(folder.path)}
+          onClick={openFolder}
         >
-          <FolderIcon className="h-4 w-4 shrink-0 text-warning" />
+          <span className="relative inline-flex h-4 w-4 shrink-0 items-center justify-center">
+            <FolderIcon className="h-4 w-4 text-warning" />
+            {folder.passwordProtected ? (
+              <span className="absolute -right-1 -top-1 grid h-3 w-3 place-items-center rounded-full bg-base-100 text-base-content shadow-sm ring-1 ring-base-300/70">
+                <MdiLock className="h-2 w-2" />
+              </span>
+            ) : null}
+          </span>
           <span className="min-w-0 flex-1 truncate font-medium">{folder.name}</span>
         </button>
       </div>
-      {isOpen ? (
+      {canLoadChildren && isOpen ? (
         <FileTreeLevel
           currentPath={currentPath}
+          folderUnlockTokens={folderUnlockTokens}
           isNavigationDisabled={isNavigationDisabled}
           onToggleFolder={onToggleFolder}
           openPaths={openPaths}
@@ -192,6 +233,7 @@ function FileTreeFileRow({
 
 function FileTreeLevel({
   currentPath,
+  folderUnlockTokens,
   isNavigationDisabled,
   isRootLevel = false,
   onToggleFolder,
@@ -217,11 +259,17 @@ function FileTreeLevel({
   return (
     <ul className={getFileTreeLevelClassName(isRootLevel)} aria-busy="false">
       {data.folders.map((folder) => {
-        const isOpen = openPaths.includes(folder.path);
+        const canLoadChildren = shouldLoadDashboardTreeFolderChildren(
+          folder,
+          folderUnlockTokens,
+        );
+        const isOpen = canLoadChildren && openPaths.includes(folder.path);
         return (
           <FileTreeFolderRow
             key={`folder:${folder.path}`}
+            canLoadChildren={canLoadChildren}
             currentPath={currentPath}
+            folderUnlockTokens={folderUnlockTokens}
             folder={folder}
             isNavigationDisabled={isNavigationDisabled}
             isOpen={isOpen}
@@ -244,7 +292,8 @@ function FileTreeLevel({
 }
 
 export function FileTreeSidebar() {
-  const { isDashboardTreeSidebarOpen, selectedDashboardTargets } = useAppStore();
+  const { folderUnlockTokens, isDashboardTreeSidebarOpen, selectedDashboardTargets } =
+    useAppStore();
   const { currentPath, setPath } = useDashboardPath();
   const [openPaths, setOpenPaths] = useState(() => getDashboardTreeAutoOpenPaths(currentPath));
   const isNavigationDisabled = selectedDashboardTargets.length > 0;
@@ -323,6 +372,7 @@ export function FileTreeSidebar() {
           >
             <FileTreeLevel
               currentPath={currentPath}
+              folderUnlockTokens={folderUnlockTokens}
               isNavigationDisabled={isNavigationDisabled}
               isRootLevel
               onToggleFolder={handleToggleFolder}

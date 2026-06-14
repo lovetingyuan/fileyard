@@ -42,9 +42,9 @@ export function ForgotPassword() {
           </p>
 
           <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-            <div className="form-control">
-              <label className="label" htmlFor={emailId}>
-                <span className="label-text flex items-center gap-1">
+            <div className="flex flex-col gap-1.5">
+              <label className="flex items-center gap-1 text-sm" htmlFor={emailId}>
+                <span className="flex items-center gap-1">
                   <MdiEmailOutline className="h-4 w-4" />
                   Email
                 </span>
@@ -71,7 +71,7 @@ export function ForgotPassword() {
               </div>
             )}
 
-            <div className="form-control mt-6">
+            <div className="mt-6 flex">
               <button
                 type="submit"
                 className="btn btn-primary gap-2"

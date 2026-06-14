@@ -30,19 +30,22 @@ export function getDashboardSelectionKey(target: Pick<BatchOperationTarget, "pat
 }
 
 export function createDashboardSelectionTargets<
-  TFolder extends Pick<FolderEntry, "name" | "path">,
-  TFile extends Pick<FileEntry, "name" | "path">,
+  TFolder extends Pick<FolderEntry, "name" | "passwordProtected" | "path" | "protectedBy">,
+  TFile extends Pick<FileEntry, "name" | "path" | "protectedBy">,
 >(folders: TFolder[], files: TFile[]): BatchOperationTarget[] {
   return [
     ...folders.map((folder) => ({
       type: "folder" as const,
       path: folder.path,
       name: folder.name,
+      passwordProtected: folder.passwordProtected,
+      protectedBy: folder.protectedBy,
     })),
     ...files.map((file) => ({
       type: "file" as const,
       path: file.path,
       name: file.name,
+      protectedBy: file.protectedBy,
     })),
   ];
 }

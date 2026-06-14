@@ -7,9 +7,12 @@ import type {
   MultipartUploadCompleteRequest,
   MultipartUploadCreateRequest,
   MultipartUploadPart,
+  RemoveFolderPasswordRequest,
   RenameRequest,
+  SetFolderPasswordRequest,
   SortKey,
   SortOrder,
+  VerifyFolderPasswordRequest,
   VerifySharePasswordRequest,
 } from "../types";
 import { SHARE_DURATION_OPTIONS } from "../types";
@@ -160,6 +163,38 @@ function parseCreateFolderRequest(value: unknown): CreateFolderRequest | null {
     parentPath: value.parentPath,
     name: value.name,
     ...(value.ensure === undefined ? {} : { ensure: value.ensure }),
+  };
+}
+
+function parseSetFolderPasswordRequest(value: unknown): SetFolderPasswordRequest | null {
+  if (!isRecord(value) || typeof value.path !== "string" || typeof value.password !== "string") {
+    return null;
+  }
+
+  return {
+    path: value.path,
+    password: value.password,
+  };
+}
+
+function parseVerifyFolderPasswordRequest(value: unknown): VerifyFolderPasswordRequest | null {
+  if (!isRecord(value) || typeof value.path !== "string" || typeof value.password !== "string") {
+    return null;
+  }
+
+  return {
+    path: value.path,
+    password: value.password,
+  };
+}
+
+function parseRemoveFolderPasswordRequest(value: unknown): RemoveFolderPasswordRequest | null {
+  if (!isRecord(value) || typeof value.path !== "string") {
+    return null;
+  }
+
+  return {
+    path: value.path,
   };
 }
 
@@ -387,6 +422,9 @@ function parseAdminUsersQuery(query: QueryValue): AdminUsersQuery | null {
 }
 
 export const createFolderJsonValidator = jsonBody(parseCreateFolderRequest);
+export const setFolderPasswordJsonValidator = jsonBody(parseSetFolderPasswordRequest);
+export const verifyFolderPasswordJsonValidator = jsonBody(parseVerifyFolderPasswordRequest);
+export const removeFolderPasswordJsonValidator = jsonBody(parseRemoveFolderPasswordRequest);
 export const renameJsonValidator = jsonBody(parseRenameRequest);
 export const moveJsonValidator = jsonBody(parseMoveRequest);
 export const batchDeleteJsonValidator = jsonBody(parseBatchDeleteRequest);

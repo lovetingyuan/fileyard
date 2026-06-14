@@ -1,5 +1,6 @@
 import type { CreateFolderRequest, FileUploadLimitsResponse } from "../../../../types";
 import { apiRequest } from "../../../utils/apiRequest";
+import { getFolderUnlockHeadersForPath } from "../../../utils/folderUnlockTokens";
 
 const FILE_UPLOAD_LIMITS_ENDPOINT = "/api/files/upload-limits";
 const FILE_FOLDERS_ENDPOINT = "/api/files/folders";
@@ -11,6 +12,7 @@ export async function fetchUploadLimits(): Promise<FileUploadLimitsResponse> {
 export async function createFolder(parentPath: string, name: string): Promise<void> {
   await apiRequest(FILE_FOLDERS_ENDPOINT, {
     method: "POST",
+    headers: getFolderUnlockHeadersForPath(parentPath),
     body: JSON.stringify({ parentPath, name, ensure: true } satisfies CreateFolderRequest),
   });
 }

@@ -19,6 +19,10 @@ import {
 } from "../shares/shareRecords";
 import { getFileContext } from "../utils/appHelpers";
 import {
+  assertPathNotPasswordProtected,
+  findProtectedPath,
+} from "../utils/folderPasswords";
+import {
   FilePathValidationError,
   getBaseName,
   getFileKey,
@@ -178,6 +182,19 @@ async function resolveShareFiles(
   );
 }
 
+async function isShareBlockedByFolderPassword(
+  c: ShareRouteContext,
+  share: FileShareRecord,
+): Promise<boolean> {
+  for (const file of share.files) {
+    if (await findProtectedPath(c.env, share.rootDirId, file.path)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 async function resolveSharedFileMetadata(
   c: ShareRouteContext,
   share: FileShareRecord,
@@ -248,6 +265,16 @@ shares.post("/api/files/share-links", createShareLinkJsonValidator, async (c) =>
     }
 
     const { rootDirId, user } = await getFileContext(c);
+    await Promise.all(
+      paths.map((path) =>
+        assertPathNotPasswordProtected(
+          c.env,
+          rootDirId,
+          path,
+          "Password protected files cannot be shared",
+        ),
+      ),
+    );
     const objects = await Promise.all(
       paths.map((path) => c.env.FILES_BUCKET.head(getFileKey(rootDirId, path))),
     );
@@ -317,6 +344,10 @@ shares.get("/api/share-links/:id", shareIdParamValidator, async (c) => {
       return jsonShareError("Invalid share link", 403);
     }
 
+    if (await isShareBlockedByFolderPassword(c, share)) {
+      return jsonShareError("Password protected files cannot be shared", 403);
+    }
+
     if (share.passwordProtected) {
       return jsonShareResponse(getLockedShareResponse());
     }
@@ -347,6 +378,10 @@ shares.post(
         return jsonShareError("Invalid share link", 403);
       }
 
+      if (await isShareBlockedByFolderPassword(c, share)) {
+        return jsonShareError("Password protected files cannot be shared", 403);
+      }
+
       if (!share.passwordProtected) {
         return jsonShareError("Share link does not require a password", 400);
       }
@@ -375,6 +410,10 @@ shares.get("/api/share-links/:id/download", shareIdParamValidator, async (c) => 
     const share = await findFileShareById(createDb(c.env), id);
     if (!share) {
       return jsonShareError("Invalid share link", 403);
+    }
+
+    if (await isShareBlockedByFolderPassword(c, share)) {
+      return jsonShareError("Password protected files cannot be shared", 403);
     }
 
     const ticket = c.req.query("ticket");

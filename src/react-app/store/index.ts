@@ -4,6 +4,7 @@ import type {
   DeleteTarget,
   FileEntry,
   FileOperationTarget,
+  FolderPasswordModalTarget,
   MoveTarget,
   NewTextFileDraft,
   RenameTarget,
@@ -96,6 +97,10 @@ export const { useStore, getStoreMethods, getStoreState, getStateSnapshot, subsc
     pendingBatchDeleteTargets: null as BatchOperationTarget[] | null,
     /** 当前等待选择批量移动目标目录的文件和文件夹。 */
     pendingBatchMoveTargets: null as BatchOperationTarget[] | null,
+    /** 当前正在处理的文件夹访问密码弹窗目标。 */
+    pendingFolderPasswordTarget: null as FolderPasswordModalTarget | null,
+    /** 当前标签页内已经验证通过的文件夹访问 token，key 为加密文件夹路径。 */
+    folderUnlockTokens: {} as Record<string, string>,
     /** 是否正在执行批量删除。 */
     batchDeleting: false,
     /** 是否正在执行批量移动。 */

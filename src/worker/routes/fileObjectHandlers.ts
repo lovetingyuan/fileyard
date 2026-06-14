@@ -8,6 +8,10 @@ import {
   getUploadLimitBytes,
 } from "../utils/appHelpers";
 import {
+  assertPathAccess,
+  handleFolderPasswordError,
+} from "../utils/folderPasswords";
+import {
   getBaseName,
   getFileKey,
   joinRelativePath,
@@ -61,6 +65,7 @@ export async function uploadFile(c: Context<AppContext>) {
     const filePath = joinRelativePath(parentPath, name);
     assertPathNotReserved(filePath);
     const { rootDirId } = await getFileContext(c);
+    await assertPathAccess(c, rootDirId, parentPath);
 
     if (!(await folderExists(c.env, rootDirId, parentPath))) {
       return jsonError(c, "Parent folder not found", 404);
@@ -113,6 +118,10 @@ export async function uploadFile(c: Context<AppContext>) {
     const response: FileMutationResponse = { success: true, message: "File uploaded successfully" };
     return c.json(response, 201);
   } catch (error) {
+    const folderPasswordError = handleFolderPasswordError(error);
+    if (folderPasswordError) {
+      return folderPasswordError;
+    }
     const validationError = handlePathValidationError(c, error);
     if (validationError) {
       return validationError;
@@ -138,6 +147,7 @@ export async function renameFile(c: Context<AppContext>) {
     const targetPath = joinRelativePath(parentPath, name);
     assertPathNotReserved(targetPath);
     const { rootDirId } = await getFileContext(c);
+    await assertPathAccess(c, rootDirId, path);
     const sourceKey = getFileKey(rootDirId, path);
     const targetKey = getFileKey(rootDirId, targetPath);
     const sourceHead = await c.env.FILES_BUCKET.head(sourceKey);
@@ -188,6 +198,10 @@ export async function renameFile(c: Context<AppContext>) {
       await cleanupCopiedKeys(c.env.FILES_BUCKET, [copiedKey]);
     }
 
+    const folderPasswordError = handleFolderPasswordError(error);
+    if (folderPasswordError) {
+      return folderPasswordError;
+    }
     const validationError = handlePathValidationError(c, error);
     if (validationError) {
       return validationError;
@@ -203,6 +217,7 @@ export async function downloadFile(c: Context<AppContext>) {
     const path = normalizeRelativePath(query.path, { allowEmpty: false, label: "Path" });
     assertPathNotReserved(path);
     const { rootDirId } = await getFileContext(c);
+    await assertPathAccess(c, rootDirId, path);
     const object = await c.env.FILES_BUCKET.get(getFileKey(rootDirId, path));
 
     if (!object || !object.body) {
@@ -222,6 +237,10 @@ export async function downloadFile(c: Context<AppContext>) {
 
     return new Response(object.body, { headers, status: 200 });
   } catch (error) {
+    const folderPasswordError = handleFolderPasswordError(error);
+    if (folderPasswordError) {
+      return folderPasswordError;
+    }
     const validationError = handlePathValidationError(c, error);
     if (validationError) {
       return validationError;
@@ -237,6 +256,7 @@ export async function deleteFile(c: Context<AppContext>) {
     const path = normalizeRelativePath(query.path, { allowEmpty: false, label: "Path" });
     assertPathNotReserved(path);
     const { rootDirId } = await getFileContext(c);
+    await assertPathAccess(c, rootDirId, path);
     const fileKey = getFileKey(rootDirId, path);
     const object = await c.env.FILES_BUCKET.head(fileKey);
 
@@ -249,6 +269,10 @@ export async function deleteFile(c: Context<AppContext>) {
     const response: FileMutationResponse = { success: true, message: "File deleted successfully" };
     return c.json(response);
   } catch (error) {
+    const folderPasswordError = handleFolderPasswordError(error);
+    if (folderPasswordError) {
+      return folderPasswordError;
+    }
     const validationError = handlePathValidationError(c, error);
     if (validationError) {
       return validationError;

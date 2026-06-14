@@ -3,6 +3,13 @@ import type { BatchDeleteRequest, BatchMoveRequest } from "../../types";
 import type { AppContext } from "../context";
 import { folderExists, getFileContext } from "../utils/appHelpers";
 import {
+  ENCRYPTED_FOLDER_BATCH_DELETE_MESSAGE,
+  assertPathAccess,
+  assertPathNotPasswordProtected,
+  getFolderProtectionState,
+  handleFolderPasswordError,
+} from "../utils/folderPasswords";
+import {
   FilePathValidationError,
   getFileKey,
   getFolderPrefix,
@@ -47,6 +54,16 @@ export async function batchDeleteEntries(c: Context<AppContext>) {
 
     for (const target of targets) {
       try {
+        if (
+          target.type === "folder" &&
+          (await getFolderProtectionState(c.env, rootDirId, target.path)).passwordProtected
+        ) {
+          results.push(createBatchFailureResult(target, ENCRYPTED_FOLDER_BATCH_DELETE_MESSAGE));
+          continue;
+        }
+
+        await assertPathAccess(c, rootDirId, target.path);
+
         if (target.type === "file") {
           const fileKey = getFileKey(rootDirId, target.path);
           const object = await c.env.FILES_BUCKET.head(fileKey);
@@ -92,6 +109,10 @@ export async function batchDeleteEntries(c: Context<AppContext>) {
     const response = createBatchFileMutationResponse("delete", results);
     return c.json(response, getBatchMutationStatus(response));
   } catch (error) {
+    const folderPasswordError = handleFolderPasswordError(error);
+    if (folderPasswordError) {
+      return folderPasswordError;
+    }
     const validationError = handlePathValidationError(c, error);
     if (validationError) {
       return validationError;
@@ -115,6 +136,8 @@ export async function batchMoveEntries(c: Context<AppContext>) {
     }
 
     const { rootDirId } = await getFileContext(c);
+    await assertPathAccess(c, rootDirId, targetParentPath);
+
     if (!(await folderExists(c.env, rootDirId, targetParentPath))) {
       return jsonError(c, "Target folder not found", 404);
     }
@@ -122,6 +145,13 @@ export async function batchMoveEntries(c: Context<AppContext>) {
     const results = [];
     for (const target of targets) {
       try {
+        await assertPathNotPasswordProtected(
+          c.env,
+          rootDirId,
+          target.path,
+          "Password protected entries cannot be moved",
+        );
+
         const validationMessage = getBatchMoveValidationMessage(target, targetParentPath);
         if (validationMessage) {
           results.push(createBatchFailureResult(target, validationMessage));
@@ -163,6 +193,10 @@ export async function batchMoveEntries(c: Context<AppContext>) {
     const response = createBatchFileMutationResponse("move", results);
     return c.json(response, getBatchMutationStatus(response));
   } catch (error) {
+    const folderPasswordError = handleFolderPasswordError(error);
+    if (folderPasswordError) {
+      return folderPasswordError;
+    }
     const validationError = handlePathValidationError(c, error);
     if (validationError) {
       return validationError;

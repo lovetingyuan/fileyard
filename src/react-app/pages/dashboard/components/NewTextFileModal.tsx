@@ -60,9 +60,9 @@ export function NewTextFileModal() {
     >
       {({ isConfirming }) => (
         <>
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text text-sm">文件名</span>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm">
+              <span>文件名</span>
             </label>
             <input
               type="text"
@@ -75,9 +75,9 @@ export function NewTextFileModal() {
             />
           </div>
 
-          <div className="form-control flex-1">
-            <label className="label">
-              <span className="label-text text-sm">文件内容</span>
+          <div className="flex flex-1 flex-col gap-1.5">
+            <label className="text-sm">
+              <span>文件内容</span>
             </label>
             <textarea
               className="textarea textarea-bordered w-full h-80 font-mono text-sm"

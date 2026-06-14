@@ -1,7 +1,21 @@
 import type { Context } from "hono";
-import type { CreateFolderRequest, FileMutationResponse, RenameRequest } from "../../types";
+import type {
+  CreateFolderRequest,
+  FileMutationResponse,
+  RemoveFolderPasswordRequest,
+  RenameRequest,
+  SetFolderPasswordRequest,
+  VerifyFolderPasswordRequest,
+} from "../../types";
 import type { AppContext } from "../context";
 import { folderExists, getFileContext } from "../utils/appHelpers";
+import {
+  assertPathAccess,
+  handleFolderPasswordError,
+  removeFolderPassword,
+  setFolderPassword,
+  verifyFolderPasswordForPath,
+} from "../utils/folderPasswords";
 import {
   FilePathValidationError,
   getFileKey,
@@ -39,6 +53,7 @@ export async function createFolder(c: Context<AppContext>) {
     const folderPath = joinRelativePath(parentPath, name);
     assertPathNotReserved(folderPath);
     const { rootDirId } = await getFileContext(c);
+    await assertPathAccess(c, rootDirId, parentPath);
 
     if (!(await folderExists(c.env, rootDirId, parentPath))) {
       return jsonError(c, "Parent folder not found", 404);
@@ -84,6 +99,10 @@ export async function createFolder(c: Context<AppContext>) {
     };
     return c.json(response, 201);
   } catch (error) {
+    const folderPasswordError = handleFolderPasswordError(error);
+    if (folderPasswordError) {
+      return folderPasswordError;
+    }
     const validationError = handlePathValidationError(c, error);
     if (validationError) {
       return validationError;
@@ -99,6 +118,7 @@ export async function deleteFolder(c: Context<AppContext>) {
     const path = normalizeRelativePath(query.path, { allowEmpty: false, label: "Path" });
     assertPathNotReserved(path);
     const { rootDirId } = await getFileContext(c);
+    await assertPathAccess(c, rootDirId, path);
 
     if (!(await folderExists(c.env, rootDirId, path))) {
       return jsonError(c, "Folder not found", 404);
@@ -124,6 +144,10 @@ export async function deleteFolder(c: Context<AppContext>) {
     };
     return c.json(response);
   } catch (error) {
+    const folderPasswordError = handleFolderPasswordError(error);
+    if (folderPasswordError) {
+      return folderPasswordError;
+    }
     const validationError = handlePathValidationError(c, error);
     if (validationError) {
       return validationError;
@@ -146,6 +170,7 @@ export async function renameFolder(c: Context<AppContext>) {
     const targetPath = joinRelativePath(parentPath, name);
     assertPathNotReserved(targetPath);
     const { rootDirId } = await getFileContext(c);
+    await assertPathAccess(c, rootDirId, path);
 
     if (!(await folderExists(c.env, rootDirId, path))) {
       return jsonError(c, "Folder not found", 404);
@@ -205,11 +230,90 @@ export async function renameFolder(c: Context<AppContext>) {
     };
     return c.json(response);
   } catch (error) {
+    const folderPasswordError = handleFolderPasswordError(error);
+    if (folderPasswordError) {
+      return folderPasswordError;
+    }
     const validationError = handlePathValidationError(c, error);
     if (validationError) {
       return validationError;
     }
     console.error("Failed to rename folder", error);
     return jsonError(c, "Failed to rename folder", 500);
+  }
+}
+
+export async function setFolderAccessPassword(c: Context<AppContext>) {
+  try {
+    const body = getValidatedJson<SetFolderPasswordRequest>(c);
+    const path = normalizeRelativePath(body.path, { allowEmpty: false, label: "Path" });
+    assertPathNotReserved(path);
+    const { rootDirId } = await getFileContext(c);
+
+    if (!(await folderExists(c.env, rootDirId, path))) {
+      return jsonError(c, "Folder not found", 404);
+    }
+
+    await setFolderPassword(c.env, rootDirId, path, body.password);
+
+    const response: FileMutationResponse = {
+      success: true,
+      message: "Folder password set successfully",
+    };
+    return c.json(response);
+  } catch (error) {
+    const validationError = handlePathValidationError(c, error);
+    if (validationError) {
+      return validationError;
+    }
+    console.error("Failed to set folder password", error);
+    return jsonError(c, "Failed to set folder password", 500);
+  }
+}
+
+export async function verifyFolderAccessPassword(c: Context<AppContext>) {
+  try {
+    const body = getValidatedJson<VerifyFolderPasswordRequest>(c);
+    const path = normalizeRelativePath(body.path, { allowEmpty: false, label: "Path" });
+    assertPathNotReserved(path);
+    const { rootDirId } = await getFileContext(c);
+    const response = await verifyFolderPasswordForPath(c, rootDirId, path, body.password);
+
+    return c.json(response);
+  } catch (error) {
+    const validationError = handlePathValidationError(c, error);
+    if (validationError) {
+      return validationError;
+    }
+    console.error("Failed to verify folder password", error);
+    return jsonError(c, "Failed to verify folder password", 500);
+  }
+}
+
+export async function removeFolderAccessPassword(c: Context<AppContext>) {
+  try {
+    const body = getValidatedJson<RemoveFolderPasswordRequest>(c);
+    const path = normalizeRelativePath(body.path, { allowEmpty: false, label: "Path" });
+    assertPathNotReserved(path);
+    const { rootDirId } = await getFileContext(c);
+
+    await removeFolderPassword(c, rootDirId, path);
+
+    const response: FileMutationResponse = {
+      success: true,
+      message: "Folder password removed successfully",
+    };
+    return c.json(response);
+  } catch (error) {
+    const folderPasswordError = handleFolderPasswordError(error);
+    if (folderPasswordError) {
+      return folderPasswordError;
+    }
+    const validationError = handlePathValidationError(c, error);
+    if (validationError) {
+      return validationError;
+    }
+    console.error("Failed to remove folder password", error);
+    return jsonError(c, "Failed to remove folder password", 500);
   }
 }

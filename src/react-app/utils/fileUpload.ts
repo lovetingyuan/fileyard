@@ -5,6 +5,7 @@ import type {
   MultipartUploadPart,
   MultipartUploadPartResponse,
 } from "../../types";
+import { getFolderUnlockHeadersForPath } from "./folderUnlockTokens";
 
 type UploadFileWithProgressArgs = {
   file: File;
@@ -156,6 +157,10 @@ function uploadSinglePutWithProgress({
     if (file.type) {
       xhr.setRequestHeader("Content-Type", file.type);
     }
+    const unlockHeaders = getFolderUnlockHeadersForPath(parentPath);
+    for (const [key, value] of Object.entries(unlockHeaders ?? {})) {
+      xhr.setRequestHeader(key, value);
+    }
     xhr.send(file);
   });
 
@@ -179,6 +184,7 @@ async function createMultipartUpload(
 
   return requestJson<MultipartUploadCreateResponse>(MULTIPART_ENDPOINT, {
     method: "POST",
+    headers: getFolderUnlockHeadersForPath(parentPath),
     body: JSON.stringify(body),
     signal,
   });
@@ -187,10 +193,12 @@ async function createMultipartUpload(
 async function completeMultipartUpload(
   uploadId: string,
   parts: MultipartUploadPart[],
+  parentPath: string,
   signal: AbortSignal,
 ): Promise<FileMutationResponse> {
   return requestJson<FileMutationResponse>(MULTIPART_COMPLETE_ENDPOINT, {
     method: "POST",
+    headers: getFolderUnlockHeadersForPath(parentPath),
     body: JSON.stringify({ uploadId, parts }),
     signal,
   });
@@ -307,7 +315,12 @@ export function uploadFileWithProgress(args: UploadFileWithProgressArgs): Upload
         uploadedParts.push(part.part);
       }
 
-      return await completeMultipartUpload(upload.uploadId, uploadedParts, controller.signal);
+      return await completeMultipartUpload(
+        upload.uploadId,
+        uploadedParts,
+        args.parentPath,
+        controller.signal,
+      );
     } catch (error) {
       if (uploadId) {
         await abortMultipartUpload(uploadId).catch(() => undefined);

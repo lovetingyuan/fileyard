@@ -10,7 +10,14 @@ import {
 import { getDirectoryStats, getUploadLimits, listFiles } from "./fileListHandlers";
 import { listFolderTree, moveEntry } from "./fileMoveHandlers";
 import { batchDeleteEntries, batchMoveEntries } from "./fileBatchHandlers";
-import { createFolder, deleteFolder, renameFolder } from "./folderHandlers";
+import {
+  createFolder,
+  deleteFolder,
+  removeFolderAccessPassword,
+  renameFolder,
+  setFolderAccessPassword,
+  verifyFolderAccessPassword,
+} from "./folderHandlers";
 import {
   batchDeleteJsonValidator,
   batchMoveJsonValidator,
@@ -19,8 +26,11 @@ import {
   moveJsonValidator,
   optionalPathQueryValidator,
   pathQueryValidator,
+  removeFolderPasswordJsonValidator,
   renameJsonValidator,
+  setFolderPasswordJsonValidator,
   uploadObjectQueryValidator,
+  verifyFolderPasswordJsonValidator,
 } from "../validation";
 
 const files = new Hono<AppContext>();
@@ -33,6 +43,17 @@ files.patch("/api/files/move", moveJsonValidator, moveEntry);
 files.delete("/api/files/batch-delete", batchDeleteJsonValidator, batchDeleteEntries);
 files.patch("/api/files/batch-move", batchMoveJsonValidator, batchMoveEntries);
 files.post("/api/files/folders", createFolderJsonValidator, createFolder);
+files.put("/api/files/folders/password", setFolderPasswordJsonValidator, setFolderAccessPassword);
+files.post(
+  "/api/files/folders/password/verify",
+  verifyFolderPasswordJsonValidator,
+  verifyFolderAccessPassword,
+);
+files.delete(
+  "/api/files/folders/password",
+  removeFolderPasswordJsonValidator,
+  removeFolderAccessPassword,
+);
 files.delete("/api/files/folders", pathQueryValidator, deleteFolder);
 files.patch("/api/files/folders", renameJsonValidator, renameFolder);
 files.put("/api/files/object", uploadObjectQueryValidator, uploadFile);

@@ -5,6 +5,7 @@ import type {
   DeleteTarget,
   FileEntry,
   FileOperationTarget,
+  FolderPasswordModalTarget,
   MoveTarget,
   NewTextFileDraft,
   RenameTarget,
@@ -250,6 +251,27 @@ export function closeMoveTarget() {
   const { setPendingMoveTarget } = getStoreMethods();
 
   setPendingMoveTarget(null);
+}
+
+export function openFolderPasswordModal(target: FolderPasswordModalTarget) {
+  const { setPendingFolderPasswordTarget } = getStoreMethods();
+
+  setPendingFolderPasswordTarget(target);
+}
+
+export function closeFolderPasswordModal() {
+  const { setPendingFolderPasswordTarget } = getStoreMethods();
+
+  setPendingFolderPasswordTarget(null);
+}
+
+export function saveFolderUnlockToken(protectedPath: string, unlockToken: string) {
+  const { setFolderUnlockTokens } = getStoreMethods();
+
+  setFolderUnlockTokens((tokens) => ({
+    ...tokens,
+    [protectedPath]: unlockToken,
+  }));
 }
 
 type DashboardSelectionOptions = {

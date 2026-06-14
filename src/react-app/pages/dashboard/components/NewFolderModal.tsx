@@ -98,8 +98,8 @@ export function NewFolderModal() {
       closeButtonAriaLabel="关闭新建文件夹弹窗"
     >
       {({ isInteractionDisabled }) => (
-        <label className="form-control gap-1.5">
-          <span className="label-text text-sm">文件夹名称</span>
+        <label className="flex flex-col gap-1.5">
+          <span className="text-sm">文件夹名称</span>
           <input
             ref={setInputRef}
             type="text"

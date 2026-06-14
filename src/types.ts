@@ -54,6 +54,8 @@ export interface FolderEntry {
   name: string;
   path: string;
   createdAt: string;
+  passwordProtected: boolean;
+  protectedBy: string | null;
 }
 
 export interface FileEntry {
@@ -64,6 +66,7 @@ export interface FileEntry {
   uploadedAt: string;
   contentType: string | null;
   checksums: FileChecksumMetadata | null;
+  protectedBy: string | null;
 }
 
 export type FileChecksumMetadata = {
@@ -77,6 +80,8 @@ export type FileChecksumMetadata = {
 export type FileOperationTarget = {
   name: string;
   path: string;
+  passwordProtected?: boolean;
+  protectedBy?: string | null;
 };
 
 export type DeleteTarget = FileOperationTarget & {
@@ -95,9 +100,33 @@ export type BatchOperationTarget = FileOperationTarget & {
   type: "file" | "folder";
 };
 
+export type FolderPasswordAfterUnlockAction =
+  | {
+      type: "rename";
+      target: RenameTarget;
+    }
+  | {
+      type: "delete";
+      target: DeleteTarget;
+    };
+
+export type FolderPasswordModalTarget = {
+  mode: "remove" | "set" | "unlock";
+  path: string;
+  name: string;
+  protectedPath?: string;
+  returnPath?: string;
+  afterUnlock?: FolderPasswordAfterUnlockAction;
+};
+
 export type BatchOperationRequestTarget = {
   type: "file" | "folder";
   path: string;
+};
+
+export type FolderProtectionState = {
+  passwordProtected: boolean;
+  protectedBy: string | null;
 };
 
 export type NewTextFileDraft = {
@@ -119,6 +148,8 @@ export interface FileListResponse {
 export interface FolderTreeNode {
   name: string;
   path: string;
+  passwordProtected: boolean;
+  protectedBy: string | null;
   children: FolderTreeNode[];
 }
 
@@ -207,6 +238,33 @@ export interface CreateFolderRequest {
   parentPath: string;
   name: string;
   ensure?: boolean;
+}
+
+export interface SetFolderPasswordRequest {
+  path: string;
+  password: string;
+}
+
+export interface VerifyFolderPasswordRequest {
+  path: string;
+  password: string;
+}
+
+export interface VerifyFolderPasswordResponse {
+  success: true;
+  protectedPath: string;
+  unlockToken: string;
+}
+
+export interface RemoveFolderPasswordRequest {
+  path: string;
+}
+
+export interface FolderLockedErrorResponse {
+  success: false;
+  error: string;
+  code: "folder_locked";
+  protectedPath: string;
 }
 
 export interface RenameRequest {

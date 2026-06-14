@@ -1,12 +1,15 @@
 import MdiFolder from "~icons/mdi/folder";
+import MdiLock from "~icons/mdi/lock";
 import type { BatchOperationTarget, FileEntry, FolderEntry } from "../../../../types";
 import { getFileIcon } from "../../../constants/fileIcons";
+import { useAppStore } from "../../../store";
 import { cn } from "../../../utils/cn";
 import { formatBytes, formatDate, formatDetailedDate } from "../../../utils/fileFormatters";
-import { openFilePreview } from "../actions";
+import { openFilePreview, openFolderPasswordModal } from "../actions";
 import { useDashboardEntrySelection } from "../hooks/useDashboardEntrySelection";
 import { useDashboardLocatedFileHighlight } from "../hooks/useDashboardLocatedFileHighlight";
 import { useDashboardPath } from "../hooks/useDashboardPath";
+import { getDashboardFolderOpenAction } from "../utils/dashboardFolderNavigation";
 import type { SearchMatchRange } from "../utils/searchMatch";
 import { FileActionsMenu, FolderActionsMenu } from "./FileEntryActions";
 import { FileEntryName } from "./FileEntryName";
@@ -64,6 +67,19 @@ type DashboardFile = FileEntry & {
   searchMatchRanges?: SearchMatchRange[];
 };
 
+function FolderTableIcon({ passwordProtected }: { passwordProtected: boolean }) {
+  return (
+    <span className="relative inline-flex h-5 w-5 shrink-0 items-center justify-center">
+      <MdiFolder className="h-5 w-5 text-warning" />
+      {passwordProtected ? (
+        <span className="absolute -right-1 -top-1 grid h-3.5 w-3.5 place-items-center rounded-full bg-base-100 text-base-content shadow-sm ring-1 ring-base-300/70">
+          <MdiLock className="h-2.5 w-2.5" />
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
 export function FolderRow({
   folder,
   visibleTargets,
@@ -72,12 +88,15 @@ export function FolderRow({
   visibleTargets: BatchOperationTarget[];
 }) {
   const { setPath } = useDashboardPath();
+  const { folderUnlockTokens } = useAppStore();
   const rowKey = `folder:${folder.path}`;
   const selection = useDashboardEntrySelection(
     {
       type: "folder",
       path: folder.path,
       name: folder.name,
+      passwordProtected: folder.passwordProtected,
+      protectedBy: folder.protectedBy,
     },
     visibleTargets,
   );
@@ -105,11 +124,13 @@ export function FolderRow({
                 checked={selection.isSelected}
                 onClick={selection.handleSelectionClick}
               />
-              <MdiFolder className="h-5 w-5 shrink-0 text-warning" />
+              <FolderTableIcon passwordProtected={folder.passwordProtected} />
             </>
           ) : (
             <span className="relative h-5 w-5 shrink-0">
-              <MdiFolder className="absolute inset-0 h-5 w-5 text-warning transition-opacity group-hover:opacity-0" />
+              <span className="absolute inset-0 transition-opacity group-hover:opacity-0">
+                <FolderTableIcon passwordProtected={folder.passwordProtected} />
+              </span>
               <TableEntryCheckbox
                 ariaLabel={`选择文件夹 ${folder.name}`}
                 checked={selection.isSelected}
@@ -131,7 +152,13 @@ export function FolderRow({
               if (selection.shouldIgnoreEntryOpen()) {
                 return;
               }
-              setPath(folder.path);
+              const action = getDashboardFolderOpenAction(folder, folderUnlockTokens);
+              if (action.type === "navigate") {
+                setPath(action.path);
+                return;
+              }
+
+              openFolderPasswordModal(action.target);
             }}
           >
             <FileEntryName name={folder.name} ranges={folder.searchMatchRanges} entryKey={rowKey} />
@@ -167,6 +194,7 @@ export function FileRow({
       type: "file",
       path: file.path,
       name: file.name,
+      protectedBy: file.protectedBy,
     },
     visibleTargets,
   );

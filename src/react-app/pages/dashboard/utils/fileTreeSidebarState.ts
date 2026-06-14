@@ -1,3 +1,11 @@
+import { getFolderUnlockTokenFromTokens } from "../../../utils/folderUnlockTokens";
+
+type TreeFolderProtectionState = {
+  path: string;
+  passwordProtected: boolean;
+  protectedBy: string | null;
+};
+
 export function getDashboardTreeAutoOpenPaths(currentPath: string): string[] {
   if (!currentPath) {
     return [];
@@ -28,4 +36,15 @@ export function toggleDashboardTreeOpenPath(openPaths: string[], path: string): 
   return openPaths.includes(path)
     ? openPaths.filter((openPath) => openPath !== path)
     : [...openPaths, path];
+}
+
+export function shouldLoadDashboardTreeFolderChildren(
+  folder: TreeFolderProtectionState,
+  folderUnlockTokens: Record<string, string>,
+): boolean {
+  if (!folder.passwordProtected && !folder.protectedBy) {
+    return true;
+  }
+
+  return Boolean(getFolderUnlockTokenFromTokens(folderUnlockTokens, folder.path));
 }

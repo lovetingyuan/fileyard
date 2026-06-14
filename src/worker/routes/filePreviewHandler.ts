@@ -2,6 +2,7 @@ import type { Context } from "hono";
 import type { AppContext } from "../context";
 import { getValidatedQuery, type PathQuery } from "../validation";
 import { getFileContext } from "../utils/appHelpers";
+import { assertPathAccess, handleFolderPasswordError } from "../utils/folderPasswords";
 import { getFileKey, normalizeRelativePath } from "../utils/fileManager";
 import { handlePathValidationError, jsonError } from "../utils/response";
 import { assertPathNotReserved } from "./filesShared";
@@ -145,6 +146,7 @@ export async function previewFile(c: Context<AppContext>) {
     const path = normalizeRelativePath(query.path, { allowEmpty: false, label: "Path" });
     assertPathNotReserved(path);
     const { rootDirId } = await getFileContext(c);
+    await assertPathAccess(c, rootDirId, path);
     const previewRange = parsePreviewByteRange(c.req.header("range"));
 
     const object = await c.env.FILES_BUCKET.get(getFileKey(rootDirId, path), {
@@ -184,6 +186,10 @@ export async function previewFile(c: Context<AppContext>) {
     headers.set("Content-Length", String(object.size));
     return new Response(object.body, { headers, status: 200 });
   } catch (error) {
+    const folderPasswordError = handleFolderPasswordError(error);
+    if (folderPasswordError) {
+      return folderPasswordError;
+    }
     const validationError = handlePathValidationError(c, error);
     if (validationError) {
       return validationError;

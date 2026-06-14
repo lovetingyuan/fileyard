@@ -9,6 +9,8 @@ export const FILE_BATCH_DELETE_ENDPOINT = "/api/files/batch-delete";
 export const FILE_BATCH_MOVE_ENDPOINT = "/api/files/batch-move";
 export const FILE_SHARE_LINKS_ENDPOINT = "/api/files/share-links";
 export const FILE_STATS_ENDPOINT = "/api/files/stats";
+export const FILE_FOLDER_PASSWORD_ENDPOINT = "/api/files/folders/password";
+export const FILE_FOLDER_PASSWORD_VERIFY_ENDPOINT = "/api/files/folders/password/verify";
 
 export type FileListKey = [string, string, SortKey, SortOrder];
 
@@ -41,12 +43,18 @@ export function buildStatsUrl(path: string): string {
   return query ? `${FILE_STATS_ENDPOINT}?${query}` : FILE_STATS_ENDPOINT;
 }
 
-export function buildDownloadUrl(path: string): string {
+export function buildDownloadUrl(path: string, folderUnlockToken?: string | null): string {
   const params = new URLSearchParams({ path });
+  if (folderUnlockToken) {
+    params.set("folderUnlockToken", folderUnlockToken);
+  }
   return `${FILE_OBJECT_ENDPOINT}?${params.toString()}`;
 }
 
-export function buildPreviewUrl(path: string): string {
+export function buildPreviewUrl(path: string, folderUnlockToken?: string | null): string {
   const params = new URLSearchParams({ path });
+  if (folderUnlockToken) {
+    params.set("folderUnlockToken", folderUnlockToken);
+  }
   return `/api/files/preview?${params.toString()}`;
 }

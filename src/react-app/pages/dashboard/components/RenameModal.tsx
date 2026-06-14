@@ -161,7 +161,7 @@ export function RenameModal() {
           <p className="text-sm leading-6 text-base-content/70">
             将 “{pendingRenameTarget.name}” {targetTypeLabel}重命名为
           </p>
-          <label className="form-control gap-1.5">
+          <label className="flex flex-col gap-1.5">
             <input
               ref={setInputRef}
               type="text"

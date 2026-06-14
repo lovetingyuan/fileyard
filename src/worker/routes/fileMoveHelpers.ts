@@ -10,6 +10,10 @@ import {
   joinRelativePath,
 } from "../utils/fileManager";
 import {
+  getProtectedPathsFromObjects,
+  getProtectionStateFromSet,
+} from "../utils/folderPasswords";
+import {
   cleanupCopiedKeys,
   deleteKeysInBatches,
   getNoOverwriteHeaders,
@@ -21,7 +25,7 @@ import {
 
 export const MOVE_CONFLICT_MESSAGE = "目标文件夹已存在重名文件或文件夹";
 
-type FolderTreeSourceObject = Pick<R2Object, "key">;
+type FolderTreeSourceObject = Pick<R2Object, "key" | "customMetadata">;
 
 function addFolderPath(paths: Set<string>, folderPath: string) {
   if (!folderPath) {
@@ -46,14 +50,32 @@ function isSystemRelativePath(relativeKey: string): boolean {
   );
 }
 
-function buildFolderNode(path: string, childNamesByParent: Map<string, string[]>): FolderTreeNode {
+function isUnderProtectedFolder(folderPath: string, protectedPaths: Set<string>): boolean {
+  for (const protectedPath of protectedPaths) {
+    if (folderPath.startsWith(`${protectedPath}/`)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function buildFolderNode(
+  path: string,
+  childNamesByParent: Map<string, string[]>,
+  protectedPaths: Set<string>,
+): FolderTreeNode {
   const childNames = childNamesByParent.get(path) ?? [];
+  const protectionState = path
+    ? getProtectionStateFromSet(path, protectedPaths)
+    : { passwordProtected: false, protectedBy: null };
   return {
     name: path ? getBaseName(path) : "",
     path,
+    ...protectionState,
     children: childNames.map((childName) => {
       const childPath = joinRelativePath(path, childName);
-      return buildFolderNode(childPath, childNamesByParent);
+      return buildFolderNode(childPath, childNamesByParent, protectedPaths);
     }),
   };
 }
@@ -64,6 +86,7 @@ export function buildFolderTreeFromObjects(
 ): FolderTreeNode {
   const rootPrefix = `${rootDirId}/`;
   const folderPaths = new Set<string>([""]);
+  const protectedPaths = getProtectedPathsFromObjects(rootDirId, objects);
 
   for (const object of objects) {
     if (!object.key.startsWith(rootPrefix)) {
@@ -75,7 +98,12 @@ export function buildFolderTreeFromObjects(
       continue;
     }
 
-    addFolderPath(folderPaths, getObjectFolderPath(relativeKey));
+    const folderPath = getObjectFolderPath(relativeKey);
+    if (isUnderProtectedFolder(folderPath, protectedPaths)) {
+      continue;
+    }
+
+    addFolderPath(folderPaths, folderPath);
   }
 
   const childNamesByParent = new Map<string, string[]>();
@@ -94,7 +122,7 @@ export function buildFolderTreeFromObjects(
     childNames.sort((a, b) => a.localeCompare(b));
   }
 
-  return buildFolderNode("", childNamesByParent);
+  return buildFolderNode("", childNamesByParent, protectedPaths);
 }
 
 export function getParentPath(path: string): string {
