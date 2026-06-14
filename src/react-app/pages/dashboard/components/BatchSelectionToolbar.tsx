@@ -23,9 +23,7 @@ export function BatchSelectionToolbar() {
   const canMoveSelection =
     selectedDashboardTargets.length > 0 &&
     selectedDashboardTargets.every((target) => !target.passwordProtected && !target.protectedBy);
-  const moveDisabledReason = canMoveSelection
-    ? "移动选中项"
-    : "加密目录及其内容不支持移动";
+  const moveDisabledReason = canMoveSelection ? "移动选中项" : "加密目录及其内容不支持移动";
 
   return (
     <div className="ml-auto flex w-max max-w-full min-w-0 flex-wrap items-center justify-end gap-2 sm:gap-3">

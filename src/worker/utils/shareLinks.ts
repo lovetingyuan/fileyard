@@ -217,7 +217,11 @@ export async function verifySharePassword(
     return false;
   }
 
-  const expectedVerifier = await createPasswordVerifier(env, verifier.passwordSalt, password.trim());
+  const expectedVerifier = await createPasswordVerifier(
+    env,
+    verifier.passwordSalt,
+    password.trim(),
+  );
   return timingSafeEqualString(expectedVerifier, verifier.passwordVerifier);
 }
 

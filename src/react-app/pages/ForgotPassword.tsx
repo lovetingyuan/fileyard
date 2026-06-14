@@ -72,11 +72,7 @@ export function ForgotPassword() {
             )}
 
             <div className="mt-6 flex">
-              <button
-                type="submit"
-                className="btn btn-primary gap-2"
-                disabled={isMutating}
-              >
+              <button type="submit" className="btn btn-primary gap-2" disabled={isMutating}>
                 {isMutating ? (
                   <span className="loading loading-spinner" aria-hidden="true" />
                 ) : (

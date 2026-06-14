@@ -22,9 +22,7 @@ export function DetailsList({ items, labelWidthClassName = "w-12" }: DetailsList
           >
             {item.label}：
           </span>
-          <div
-            className={cn("min-w-0 flex-1 font-medium text-base-content", item.valueClassName)}
-          >
+          <div className={cn("min-w-0 flex-1 font-medium text-base-content", item.valueClassName)}>
             {item.value}
           </div>
         </li>

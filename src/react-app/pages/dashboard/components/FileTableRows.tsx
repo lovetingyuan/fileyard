@@ -143,7 +143,7 @@ export function FolderRow({
             type="button"
             className={cn(
               "block min-w-0 truncate text-left font-bold",
-              selection.isSelectionActive ? "cursor-pointer text-base-content" : "link link-hover"
+              selection.isSelectionActive ? "cursor-pointer text-base-content" : "link link-hover",
             )}
             onClick={(event) => {
               if (selection.handleActiveSelectionClick(event)) {
@@ -247,7 +247,7 @@ export function FileRow({
             type="button"
             className={cn(
               "min-w-0 truncate text-left",
-              selection.isSelectionActive ? "cursor-pointer text-base-content" : "link link-hover"
+              selection.isSelectionActive ? "cursor-pointer text-base-content" : "link link-hover",
             )}
             onClick={(event) => {
               if (selection.handleActiveSelectionClick(event)) {

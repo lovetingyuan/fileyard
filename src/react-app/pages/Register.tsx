@@ -108,9 +108,7 @@ export function Register() {
                 </div>
               )}
               <div>
-                <span className="text-xs text-base-content/80">
-                  {PASSWORD_REQUIREMENTS_HINT}
-                </span>
+                <span className="text-xs text-base-content/80">{PASSWORD_REQUIREMENTS_HINT}</span>
               </div>
             </div>
 
@@ -141,11 +139,7 @@ export function Register() {
             </div>
 
             <div className="mt-6 flex">
-              <button
-                type="submit"
-                className="btn btn-primary gap-2"
-                disabled={loading}
-              >
+              <button type="submit" className="btn btn-primary gap-2" disabled={loading}>
                 {loading ? (
                   <span className="loading loading-spinner" aria-hidden="true" />
                 ) : (

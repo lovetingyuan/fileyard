@@ -158,7 +158,9 @@ export function Dashboard() {
       {pendingMoveTarget ? <MoveModal key={pendingMoveTarget.path} /> : null}
       {pendingBatchMoveTargets ? <BatchMoveModal /> : null}
       {pendingFolderPasswordTarget ? (
-        <FolderPasswordModal key={`${pendingFolderPasswordTarget.mode}:${pendingFolderPasswordTarget.path}`} />
+        <FolderPasswordModal
+          key={`${pendingFolderPasswordTarget.mode}:${pendingFolderPasswordTarget.path}`}
+        />
       ) : null}
       {sharing && shareTargets.length > 0 ? (
         <ShareFileModal key={shareTargets.map((target) => target.path).join("\n")} />

@@ -18,10 +18,7 @@ import {
   type FileShareRecordFile,
 } from "../shares/shareRecords";
 import { getFileContext } from "../utils/appHelpers";
-import {
-  assertPathNotPasswordProtected,
-  findProtectedPath,
-} from "../utils/folderPasswords";
+import { assertPathNotPasswordProtected, findProtectedPath } from "../utils/folderPasswords";
 import {
   FilePathValidationError,
   getBaseName,
@@ -126,9 +123,7 @@ function getShareDisplayName(files: FileShareRecordFile[]): string {
   return files.length === 1 ? (files[0]?.fileName ?? "未知文件") : `${files.length} 个文件`;
 }
 
-function getExpiredShareFiles(
-  share: FileShareRecord,
-): ResolvedSharedFileMetadataResponse["files"] {
+function getExpiredShareFiles(share: FileShareRecord): ResolvedSharedFileMetadataResponse["files"] {
   return share.files.map((file) => ({
     fileName: file.fileName,
     size: file.size,
@@ -208,8 +203,7 @@ async function resolveSharedFileMetadata(
     ? await createShareDownloadTicket(c.env, share.id, share.expiresAt.getTime())
     : undefined;
   const files = await resolveShareFiles(c, share, share.id, ticket);
-  const status =
-    share.files.length === 1 && files[0]?.status === "missing" ? "missing" : "active";
+  const status = share.files.length === 1 && files[0]?.status === "missing" ? "missing" : "active";
 
   return getResolvedShareResponse(share, status, files);
 }

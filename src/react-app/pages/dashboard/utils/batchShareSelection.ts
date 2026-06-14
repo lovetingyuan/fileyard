@@ -2,8 +2,7 @@ import type { BatchOperationTarget } from "../../../../types";
 
 export function canShareDashboardSelection(targets: BatchOperationTarget[]): boolean {
   return (
-    targets.length > 0 &&
-    targets.every((target) => target.type === "file" && !target.protectedBy)
+    targets.length > 0 && targets.every((target) => target.type === "file" && !target.protectedBy)
   );
 }
 

@@ -176,9 +176,7 @@ export function BatchMoveModal() {
                 getDisabledReason={(path) =>
                   getBatchMoveDestinationDisabledReason(path, pendingBatchMoveTargets)
                 }
-                isNodeHidden={(path) =>
-                  isBatchMoveDestinationHidden(path, pendingBatchMoveTargets)
-                }
+                isNodeHidden={(path) => isBatchMoveDestinationHidden(path, pendingBatchMoveTargets)}
                 isInteractionDisabled={isInteractionDisabled}
                 onSelect={handleSelect}
                 selectedPath={selectedPath}

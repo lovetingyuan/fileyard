@@ -84,7 +84,11 @@ export function FolderPasswordModal() {
   const visiblePasswordError = hasEditedPassword ? passwordError : null;
   const visibleInputError = visiblePasswordError ?? passwordVerifyError;
   const title =
-    target.mode === "set" ? "设置访问密码" : target.mode === "remove" ? "取消访问密码" : "验证访问密码";
+    target.mode === "set"
+      ? "设置访问密码"
+      : target.mode === "remove"
+        ? "取消访问密码"
+        : "验证访问密码";
   const confirmText =
     target.mode === "set"
       ? "设置密码"
@@ -98,7 +102,8 @@ export function FolderPasswordModal() {
         ? "取消中..."
         : "验证中...";
   const confirmDisabled =
-    isBusy || (target.mode === "remove" && hasVerifiedRemovePassword ? false : Boolean(passwordError));
+    isBusy ||
+    (target.mode === "remove" && hasVerifiedRemovePassword ? false : Boolean(passwordError));
 
   const resetState = () => {
     setFormState(createInitialFormState());

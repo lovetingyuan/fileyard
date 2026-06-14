@@ -108,10 +108,7 @@ export function Dropdown({
   }
 
   return (
-    <div
-      {...containerProps}
-      className={cn("dropdown", placementClassName, containerClassName)}
-    >
+    <div {...containerProps} className={cn("dropdown", placementClassName, containerClassName)}>
       <div
         tabIndex={disabled ? -1 : 0}
         role="button"

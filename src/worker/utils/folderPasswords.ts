@@ -225,9 +225,7 @@ async function verifySignedUnlockToken(
 function isFolderPasswordMetadata(
   metadata: R2Object["customMetadata"] | undefined,
 ): metadata is Record<string, string> {
-  return Boolean(
-    metadata?.[FOLDER_PASSWORD_SALT_KEY] && metadata?.[FOLDER_PASSWORD_VERIFIER_KEY],
-  );
+  return Boolean(metadata?.[FOLDER_PASSWORD_SALT_KEY] && metadata?.[FOLDER_PASSWORD_VERIFIER_KEY]);
 }
 
 function getPathSegments(path: string): string[] {
@@ -364,7 +362,10 @@ async function hasProtectedDescendant(
       if (currentMarkerKeys.has(object.key)) {
         continue;
       }
-      if (toMarkerFolderPath(rootDirId, object.key) && isFolderPasswordMetadata(object.customMetadata)) {
+      if (
+        toMarkerFolderPath(rootDirId, object.key) &&
+        isFolderPasswordMetadata(object.customMetadata)
+      ) {
         return true;
       }
     }
@@ -399,10 +400,10 @@ export async function getFolderProtectionStates(
   folderPaths: string[],
 ): Promise<Map<string, FolderProtectionState>> {
   const entries = await Promise.all(
-    folderPaths.map(async (folderPath) => [
-      folderPath,
-      await getFolderProtectionState(env, rootDirId, folderPath),
-    ] as const),
+    folderPaths.map(
+      async (folderPath) =>
+        [folderPath, await getFolderProtectionState(env, rootDirId, folderPath)] as const,
+    ),
   );
 
   return new Map(entries);
@@ -634,9 +635,9 @@ export async function isFolderUnlockTokenValid(
   const payload = await verifySignedUnlockToken(env, token);
   return Boolean(
     payload &&
-      payload.rootDirId === rootDirId &&
-      payload.protectedPath === protectedPath &&
-      now < payload.exp,
+    payload.rootDirId === rootDirId &&
+    payload.protectedPath === protectedPath &&
+    now < payload.exp,
   );
 }
 

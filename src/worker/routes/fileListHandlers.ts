@@ -146,18 +146,18 @@ export async function listFiles(c: Context<AppContext>) {
       allObjects
         .filter((object) => !isFolderMarkerKey(object.key, prefix))
         .map(async (object) => {
-        const name = object.key.slice(prefix.length);
-        return {
-          name,
-          path: joinRelativePath(path, name),
-          size: object.size,
-          createdAt: resolveFileCreatedAt(object),
-          uploadedAt: object.uploaded.toISOString(),
-          contentType: object.httpMetadata?.contentType ?? null,
-          checksums: getFileChecksumMetadata(object.checksums),
-          protectedBy: await getFileProtectedBy(c.env, rootDirId, joinRelativePath(path, name)),
-        };
-      }),
+          const name = object.key.slice(prefix.length);
+          return {
+            name,
+            path: joinRelativePath(path, name),
+            size: object.size,
+            createdAt: resolveFileCreatedAt(object),
+            uploadedAt: object.uploaded.toISOString(),
+            contentType: object.httpMetadata?.contentType ?? null,
+            checksums: getFileChecksumMetadata(object.checksums),
+            protectedBy: await getFileProtectedBy(c.env, rootDirId, joinRelativePath(path, name)),
+          };
+        }),
     );
 
     const response: FileListResponse = {

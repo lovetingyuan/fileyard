@@ -4,7 +4,10 @@ export function normalizeFolderPassword(password: string): string {
   return password.trim();
 }
 
-export function getFolderPasswordConfirmError(password: string, confirmPassword: string): string | null {
+export function getFolderPasswordConfirmError(
+  password: string,
+  confirmPassword: string,
+): string | null {
   const normalizedPassword = normalizeFolderPassword(password);
   if (normalizedPassword.length < SHARE_PASSWORD_MIN_LENGTH) {
     return `密码至少需要 ${SHARE_PASSWORD_MIN_LENGTH} 位`;

@@ -161,11 +161,7 @@ export function Login() {
             </div>
 
             <div className="mt-6 flex items-center justify-between">
-              <button
-                type="submit"
-                className="btn btn-primary gap-2"
-                disabled={loading}
-              >
+              <button type="submit" className="btn btn-primary gap-2" disabled={loading}>
                 {loading ? (
                   <>
                     <span className="loading loading-spinner" aria-hidden="true" />

@@ -150,9 +150,7 @@ function DashboardTableEmptyRows({ searchInputValue }: { searchInputValue: strin
           <DashboardEmptyState searchInputValue={searchInputValue} />
         </td>
       </tr>
-      <tr
-        className={cn("hidden @min-[40rem]:table-row", !searchInputValue && "bg-base-100")}
-      >
+      <tr className={cn("hidden @min-[40rem]:table-row", !searchInputValue && "bg-base-100")}>
         <td colSpan={4}>
           <DashboardEmptyState searchInputValue={searchInputValue} />
         </td>

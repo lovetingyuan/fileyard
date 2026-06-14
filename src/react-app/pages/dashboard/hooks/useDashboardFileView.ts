@@ -80,7 +80,12 @@ export function useDashboardFileView() {
     }
 
     openFolderPasswordModal(action.target);
-  }, [currentPath, dismissedFolderPasswordTarget, lockedProtectedPath, pendingFolderPasswordTarget]);
+  }, [
+    currentPath,
+    dismissedFolderPasswordTarget,
+    lockedProtectedPath,
+    pendingFolderPasswordTarget,
+  ]);
 
   useEffect(() => {
     if (!dismissedFolderPasswordTarget || dismissedFolderPasswordTarget.path === currentPath) {

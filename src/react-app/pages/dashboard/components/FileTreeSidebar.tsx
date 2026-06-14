@@ -259,10 +259,7 @@ function FileTreeLevel({
   return (
     <ul className={getFileTreeLevelClassName(isRootLevel)} aria-busy="false">
       {data.folders.map((folder) => {
-        const canLoadChildren = shouldLoadDashboardTreeFolderChildren(
-          folder,
-          folderUnlockTokens,
-        );
+        const canLoadChildren = shouldLoadDashboardTreeFolderChildren(folder, folderUnlockTokens);
         const isOpen = canLoadChildren && openPaths.includes(folder.path);
         return (
           <FileTreeFolderRow

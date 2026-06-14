@@ -1,86 +1,88 @@
-import { useState } from 'react'
-import MdiAlertCircleOutline from '~icons/mdi/alert-circle-outline'
-import MdiFolderOpenOutline from '~icons/mdi/folder-open-outline'
-import toast from 'react-hot-toast'
-import { Dialog } from '../../../components/Dialog'
-import { useFolderTree, useMoveEntryMutation } from '../../../hooks/useFilesApi'
-import { useAppStore } from '../../../store'
-import { ApiError } from '../../../utils/apiRequest'
-import { cn } from '../../../utils/cn'
+import { useState } from "react";
+import MdiAlertCircleOutline from "~icons/mdi/alert-circle-outline";
+import MdiFolderOpenOutline from "~icons/mdi/folder-open-outline";
+import toast from "react-hot-toast";
+import { Dialog } from "../../../components/Dialog";
+import { useFolderTree, useMoveEntryMutation } from "../../../hooks/useFilesApi";
+import { useAppStore } from "../../../store";
+import { ApiError } from "../../../utils/apiRequest";
+import { cn } from "../../../utils/cn";
 import {
   getMoveDestinationDisabledReason,
   isMoveDestinationHidden,
-} from '../../../utils/moveValidation'
-import { closeMoveTarget, setMovingPath } from '../actions'
-import { useDashboardFileView } from '../hooks/useDashboardFileView'
+} from "../../../utils/moveValidation";
+import { closeMoveTarget, setMovingPath } from "../actions";
+import { useDashboardFileView } from "../hooks/useDashboardFileView";
 import {
   FILE_OPERATION_UPLOAD_BLOCKED_MESSAGE,
   isFolderOperationBlockedByActiveUpload,
-} from '../hooks/useUploadQueue'
-import { FolderTreePicker } from './FolderTreePicker'
+} from "../hooks/useUploadQueue";
+import { FolderTreePicker } from "./FolderTreePicker";
 
-const MOVE_CONFLICT_MESSAGE = '目标文件夹已存在重名文件或文件夹'
+const MOVE_CONFLICT_MESSAGE = "目标文件夹已存在重名文件或文件夹";
 
 export function MoveModal() {
-  const { movingPath, pendingMoveTarget, uploadQueue } = useAppStore()
-  const { tree, error, isLoading } = useFolderTree(Boolean(pendingMoveTarget))
-  const { moveEntry } = useMoveEntryMutation()
-  const { refresh } = useDashboardFileView()
-  const [selectedPath, setSelectedPath] = useState<string | null>(null)
-  const [conflictMessage, setConflictMessage] = useState<string | null>(null)
+  const { movingPath, pendingMoveTarget, uploadQueue } = useAppStore();
+  const { tree, error, isLoading } = useFolderTree(Boolean(pendingMoveTarget));
+  const { moveEntry } = useMoveEntryMutation();
+  const { refresh } = useDashboardFileView();
+  const [selectedPath, setSelectedPath] = useState<string | null>(null);
+  const [conflictMessage, setConflictMessage] = useState<string | null>(null);
 
   if (!pendingMoveTarget) {
-    return null
+    return null;
   }
 
-  const isMoving = movingPath === pendingMoveTarget.path
+  const isMoving = movingPath === pendingMoveTarget.path;
   const selectedDisabledReason =
-    selectedPath === null ? null : getMoveDestinationDisabledReason(selectedPath, pendingMoveTarget)
+    selectedPath === null
+      ? null
+      : getMoveDestinationDisabledReason(selectedPath, pendingMoveTarget);
   const confirmDisabled =
-    selectedPath === null || Boolean(selectedDisabledReason) || isMoving || isLoading || !tree
+    selectedPath === null || Boolean(selectedDisabledReason) || isMoving || isLoading || !tree;
 
   const handleClose = () => {
     if (!isMoving) {
-      closeMoveTarget()
+      closeMoveTarget();
     }
-  }
+  };
 
   const handleSelect = (path: string) => {
-    setSelectedPath(path)
-    setConflictMessage(null)
-  }
+    setSelectedPath(path);
+    setConflictMessage(null);
+  };
 
   const handleMove = async () => {
     if (confirmDisabled || selectedPath === null) {
-      return
+      return;
     }
 
     if (
-      pendingMoveTarget.type === 'folder' &&
+      pendingMoveTarget.type === "folder" &&
       isFolderOperationBlockedByActiveUpload(uploadQueue, pendingMoveTarget.path)
     ) {
-      toast.error(FILE_OPERATION_UPLOAD_BLOCKED_MESSAGE)
-      return
+      toast.error(FILE_OPERATION_UPLOAD_BLOCKED_MESSAGE);
+      return;
     }
 
-    setMovingPath(pendingMoveTarget.path)
-    setConflictMessage(null)
+    setMovingPath(pendingMoveTarget.path);
+    setConflictMessage(null);
     try {
-      await moveEntry(pendingMoveTarget.type, pendingMoveTarget.path, selectedPath)
-      await refresh()
-      toast.success(`"${pendingMoveTarget.name}" moved`)
-      closeMoveTarget()
+      await moveEntry(pendingMoveTarget.type, pendingMoveTarget.path, selectedPath);
+      await refresh();
+      toast.success(`"${pendingMoveTarget.name}" moved`);
+      closeMoveTarget();
     } catch (moveError) {
-      await refresh()
+      await refresh();
       if (moveError instanceof ApiError && moveError.status === 409) {
-        setConflictMessage(MOVE_CONFLICT_MESSAGE)
+        setConflictMessage(MOVE_CONFLICT_MESSAGE);
       } else {
-        toast.error(moveError instanceof Error ? moveError.message : 'Failed to move')
+        toast.error(moveError instanceof Error ? moveError.message : "Failed to move");
       }
     } finally {
-      setMovingPath(null)
+      setMovingPath(null);
     }
-  }
+  };
 
   return (
     <Dialog
@@ -106,8 +108,8 @@ export function MoveModal() {
 
           <div
             className={cn(
-              'overflow-auto rounded-box border border-base-300 bg-base-200/40 ',
-              isFullscreen ? 'flex-1 min-h-0' : 'max-h-80',
+              "overflow-auto rounded-box border border-base-300 bg-base-200/40 ",
+              isFullscreen ? "flex-1 min-h-0" : "max-h-80",
             )}
           >
             {isLoading && !tree ? (
@@ -122,10 +124,10 @@ export function MoveModal() {
             ) : tree ? (
               <FolderTreePicker
                 Icon={MdiFolderOpenOutline}
-                getDisabledReason={path =>
+                getDisabledReason={(path) =>
                   getMoveDestinationDisabledReason(path, pendingMoveTarget)
                 }
-                isNodeHidden={path => isMoveDestinationHidden(path, pendingMoveTarget)}
+                isNodeHidden={(path) => isMoveDestinationHidden(path, pendingMoveTarget)}
                 isInteractionDisabled={isInteractionDisabled}
                 onSelect={handleSelect}
                 selectedPath={selectedPath}
@@ -143,5 +145,5 @@ export function MoveModal() {
         </div>
       )}
     </Dialog>
-  )
+  );
 }

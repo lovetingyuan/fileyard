@@ -1,159 +1,159 @@
-import { useState, type FormEvent } from 'react'
-import useSWR from 'swr'
-import { useParams } from 'react-router-dom'
-import type { ResolvedSharedFileMetadataResponse, SharedFileMetadataResponse } from '../../types'
-import { ApiError, apiRequest } from '../utils/apiRequest'
-import { cn } from '../utils/cn'
-import { formatBytes } from '../utils/fileFormatters'
-import { getSharePasswordError, normalizeSharePassword } from '../utils/sharePassword'
-import { formatShareDuration } from '../utils/shareDurations'
+import { useState, type FormEvent } from "react";
+import useSWR from "swr";
+import { useParams } from "react-router-dom";
+import type { ResolvedSharedFileMetadataResponse, SharedFileMetadataResponse } from "../../types";
+import { ApiError, apiRequest } from "../utils/apiRequest";
+import { cn } from "../utils/cn";
+import { formatBytes } from "../utils/fileFormatters";
+import { getSharePasswordError, normalizeSharePassword } from "../utils/sharePassword";
+import { formatShareDuration } from "../utils/shareDurations";
 
-type SharePageStatus = 'active' | 'expired' | 'missing' | 'locked' | 'invalid' | 'error'
+type SharePageStatus = "active" | "expired" | "missing" | "locked" | "invalid" | "error";
 
 type UnlockResult = {
-  shareId: string
-  data: SharedFileMetadataResponse
-}
+  shareId: string;
+  data: SharedFileMetadataResponse;
+};
 
 function getSharePageStatus(
   data: SharedFileMetadataResponse | undefined,
   error: ApiError | undefined,
 ): SharePageStatus {
   if (error?.status === 403) {
-    return 'invalid'
+    return "invalid";
   }
 
   if (error) {
-    return 'error'
+    return "error";
   }
 
-  return data?.status ?? 'active'
+  return data?.status ?? "active";
 }
 
 function getUnavailableReason(status: SharePageStatus, error?: ApiError): string {
-  if (status === 'expired') {
-    return '链接已过期'
+  if (status === "expired") {
+    return "链接已过期";
   }
 
-  if (status === 'missing') {
-    return '文件不存在或已不可用'
+  if (status === "missing") {
+    return "文件不存在或已不可用";
   }
 
-  if (status === 'invalid') {
-    return '分享链接无效'
+  if (status === "invalid") {
+    return "分享链接无效";
   }
 
-  if (status === 'active') {
-    return '文件暂时不可下载'
+  if (status === "active") {
+    return "文件暂时不可下载";
   }
 
-  return error?.message ?? '暂时无法读取文件信息'
+  return error?.message ?? "暂时无法读取文件信息";
 }
 
 function getUnlockErrorMessage(error: unknown): string {
   if (error instanceof ApiError) {
     if (error.status === 403) {
-      return '密码不正确'
+      return "密码不正确";
     }
 
     if (error.status === 429) {
-      return '尝试次数过多，请稍后再试'
+      return "尝试次数过多，请稍后再试";
     }
 
-    return error.message
+    return error.message;
   }
 
-  return error instanceof Error ? error.message : '无法验证分享密码'
+  return error instanceof Error ? error.message : "无法验证分享密码";
 }
 
 function getResolvedData(
   data: SharedFileMetadataResponse | undefined,
 ): ResolvedSharedFileMetadataResponse | undefined {
-  return data && data.status !== 'locked' ? data : undefined
+  return data && data.status !== "locked" ? data : undefined;
 }
 
 function triggerDownload(downloadUrl: string, fileName: string): void {
-  const link = document.createElement('a')
-  link.href = downloadUrl
-  link.download = fileName
-  document.body.append(link)
-  link.click()
-  link.remove()
+  const link = document.createElement("a");
+  link.href = downloadUrl;
+  link.download = fileName;
+  document.body.append(link);
+  link.click();
+  link.remove();
 }
 
 export function ShareDownload() {
-  const { id: shareId } = useParams<{ id: string }>()
-  const [password, setPassword] = useState('')
-  const [unlockError, setUnlockError] = useState<string | null>(null)
-  const [unlockLoading, setUnlockLoading] = useState(false)
-  const [unlockResult, setUnlockResult] = useState<UnlockResult | null>(null)
+  const { id: shareId } = useParams<{ id: string }>();
+  const [password, setPassword] = useState("");
+  const [unlockError, setUnlockError] = useState<string | null>(null);
+  const [unlockLoading, setUnlockLoading] = useState(false);
+  const [unlockResult, setUnlockResult] = useState<UnlockResult | null>(null);
   const { data, error, isLoading } = useSWR<SharedFileMetadataResponse, ApiError>(
     shareId ? `/api/share-links/${encodeURIComponent(shareId)}` : null,
-    (url: string) => apiRequest<SharedFileMetadataResponse>(url, { credentials: 'same-origin' }),
-  )
+    (url: string) => apiRequest<SharedFileMetadataResponse>(url, { credentials: "same-origin" }),
+  );
 
-  const unlockedData = unlockResult && unlockResult.shareId === shareId ? unlockResult.data : null
-  const pageData = unlockedData ?? data
-  const status = getSharePageStatus(pageData, error)
-  const resolvedData = getResolvedData(pageData)
-  const fileName = resolvedData?.fileName ?? '未知文件'
-  const isMultiFileShare = Boolean(resolvedData && resolvedData.fileCount > 1)
+  const unlockedData = unlockResult && unlockResult.shareId === shareId ? unlockResult.data : null;
+  const pageData = unlockedData ?? data;
+  const status = getSharePageStatus(pageData, error);
+  const resolvedData = getResolvedData(pageData);
+  const fileName = resolvedData?.fileName ?? "未知文件";
+  const isMultiFileShare = Boolean(resolvedData && resolvedData.fileCount > 1);
   const downloadableFileCount =
-    resolvedData?.files.filter(file => file.status === 'active' && file.downloadUrl).length ?? 0
-  const normalizedPassword = normalizeSharePassword(password)
-  const passwordError = getSharePasswordError(password)
-  const visibleUnlockError = unlockError ?? passwordError
+    resolvedData?.files.filter((file) => file.status === "active" && file.downloadUrl).length ?? 0;
+  const normalizedPassword = normalizeSharePassword(password);
+  const passwordError = getSharePasswordError(password);
+  const visibleUnlockError = unlockError ?? passwordError;
 
   const handleUnlock = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
+    event.preventDefault();
     if (!shareId || unlockLoading) {
-      return
+      return;
     }
 
     if (!normalizedPassword) {
-      setUnlockError('请输入分享密码')
-      return
+      setUnlockError("请输入分享密码");
+      return;
     }
 
     if (passwordError) {
-      setUnlockError(passwordError)
-      return
+      setUnlockError(passwordError);
+      return;
     }
 
-    setUnlockLoading(true)
-    setUnlockError(null)
+    setUnlockLoading(true);
+    setUnlockError(null);
     try {
       const response = await apiRequest<SharedFileMetadataResponse>(
         `/api/share-links/${encodeURIComponent(shareId)}/unlock`,
         {
-          method: 'POST',
-          credentials: 'same-origin',
+          method: "POST",
+          credentials: "same-origin",
           body: JSON.stringify({ password: normalizedPassword }),
         },
-      )
-      setUnlockResult({ shareId, data: response })
-      setPassword('')
+      );
+      setUnlockResult({ shareId, data: response });
+      setPassword("");
     } catch (unlockRequestError) {
-      setPassword('')
-      setUnlockError(getUnlockErrorMessage(unlockRequestError))
+      setPassword("");
+      setUnlockError(getUnlockErrorMessage(unlockRequestError));
     } finally {
-      setUnlockLoading(false)
+      setUnlockLoading(false);
     }
-  }
+  };
 
   const handleDownloadAll = () => {
     if (!resolvedData) {
-      return
+      return;
     }
 
     for (const file of resolvedData.files) {
-      if (file.status !== 'active' || !file.downloadUrl) {
-        continue
+      if (file.status !== "active" || !file.downloadUrl) {
+        continue;
       }
 
-      triggerDownload(file.downloadUrl, file.fileName)
+      triggerDownload(file.downloadUrl, file.fileName);
     }
-  }
+  };
 
   return (
     <main className="mx-auto flex min-h-0 w-[94%] max-w-2xl flex-1 items-start overflow-hidden py-5 sm:py-8">
@@ -161,13 +161,13 @@ export function ShareDownload() {
         <div className="flex min-h-0 flex-1 flex-col gap-6">
           <div className="flex min-w-0 items-center justify-between gap-4">
             <h1 className="text-lg font-semibold text-base-content sm:text-xl">
-              {status === 'active'
-                ? '文件下载'
-                : status === 'locked'
-                  ? '输入分享密码'
-                  : '文件无法下载'}
+              {status === "active"
+                ? "文件下载"
+                : status === "locked"
+                  ? "输入分享密码"
+                  : "文件无法下载"}
             </h1>
-            {status === 'active' && isMultiFileShare && resolvedData ? (
+            {status === "active" && isMultiFileShare && resolvedData ? (
               <div className="shrink-0 text-right text-sm text-base-content/65">
                 <p>
                   共 {resolvedData.fileCount} 个文件&nbsp;
@@ -181,22 +181,22 @@ export function ShareDownload() {
             <div className="flex justify-center py-6">
               <span className="loading loading-spinner loading-md text-primary" />
             </div>
-          ) : status === 'locked' ? (
-            <form className="space-y-4" onSubmit={event => void handleUnlock(event)}>
+          ) : status === "locked" ? (
+            <form className="space-y-4" onSubmit={(event) => void handleUnlock(event)}>
               <label className="flex flex-col gap-1.5">
                 <span className="text-sm text-base-content/70">输入分享密码</span>
                 <div className="flex gap-3">
                   <input
                     type="password"
                     className={cn(
-                      'input input-bordered min-w-0 flex-1',
-                      visibleUnlockError && 'input-error',
+                      "input input-bordered min-w-0 flex-1",
+                      visibleUnlockError && "input-error",
                     )}
                     value={password}
                     autoComplete="current-password"
-                    onChange={event => {
-                      setPassword(event.target.value)
-                      setUnlockError(null)
+                    onChange={(event) => {
+                      setPassword(event.target.value);
+                      setUnlockError(null);
                     }}
                   />
                   <button
@@ -215,7 +215,7 @@ export function ShareDownload() {
                 <p className="text-sm text-error">{visibleUnlockError}</p>
               ) : null}
             </form>
-          ) : status === 'active' && resolvedData ? (
+          ) : status === "active" && resolvedData ? (
             <>
               {isMultiFileShare ? (
                 <div className="flex min-h-0 flex-1 flex-col gap-3 text-base-content">
@@ -234,7 +234,7 @@ export function ShareDownload() {
                         <span className="shrink-0 text-xs text-base-content/60">
                           {formatBytes(file.size)}
                         </span>
-                        {file.status === 'active' && file.downloadUrl ? (
+                        {file.status === "active" && file.downloadUrl ? (
                           <a
                             href={file.downloadUrl}
                             download={file.fileName}
@@ -295,5 +295,5 @@ export function ShareDownload() {
         </div>
       </section>
     </main>
-  )
+  );
 }

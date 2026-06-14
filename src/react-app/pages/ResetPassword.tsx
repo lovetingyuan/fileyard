@@ -117,9 +117,7 @@ export function ResetPassword() {
                 </div>
               )}
               <div>
-                <span className="text-xs text-base-content/80">
-                  {PASSWORD_REQUIREMENTS_HINT}
-                </span>
+                <span className="text-xs text-base-content/80">{PASSWORD_REQUIREMENTS_HINT}</span>
               </div>
             </div>
 
@@ -150,11 +148,7 @@ export function ResetPassword() {
             </div>
 
             <div className="mt-6 flex">
-              <button
-                type="submit"
-                className="btn btn-primary gap-2"
-                disabled={isMutating}
-              >
+              <button type="submit" className="btn btn-primary gap-2" disabled={isMutating}>
                 {isMutating ? (
                   <span className="loading loading-spinner" aria-hidden="true" />
                 ) : (

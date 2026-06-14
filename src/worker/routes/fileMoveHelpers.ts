@@ -9,10 +9,7 @@ import {
   getFolderPrefix,
   joinRelativePath,
 } from "../utils/fileManager";
-import {
-  getProtectedPathsFromObjects,
-  getProtectionStateFromSet,
-} from "../utils/folderPasswords";
+import { getProtectedPathsFromObjects, getProtectionStateFromSet } from "../utils/folderPasswords";
 import {
   cleanupCopiedKeys,
   deleteKeysInBatches,

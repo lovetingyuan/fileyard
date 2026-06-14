@@ -38,9 +38,9 @@ function isValidFileShareRecordFile(value: unknown): value is FileShareRecordFil
 function hasValidFiles(record: FileShareRecord | undefined): record is FileShareRecord {
   return Boolean(
     record &&
-      Array.isArray(record.files) &&
-      record.files.length > 0 &&
-      record.files.every(isValidFileShareRecordFile),
+    Array.isArray(record.files) &&
+    record.files.length > 0 &&
+    record.files.every(isValidFileShareRecordFile),
   );
 }
 
@@ -89,10 +89,7 @@ export async function findFileShareById(
   return hasValidFiles(record) ? record : undefined;
 }
 
-export async function cleanupExpiredFileShares(
-  db: AppDatabase,
-  now = Date.now(),
-): Promise<number> {
+export async function cleanupExpiredFileShares(db: AppDatabase, now = Date.now()): Promise<number> {
   const deleted = await db
     .delete(fileShare)
     .where(lte(fileShare.expiresAt, new Date(now)))

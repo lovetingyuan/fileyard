@@ -7,10 +7,7 @@ import {
   getFileContext,
   getUploadLimitBytes,
 } from "../utils/appHelpers";
-import {
-  assertPathAccess,
-  handleFolderPasswordError,
-} from "../utils/folderPasswords";
+import { assertPathAccess, handleFolderPasswordError } from "../utils/folderPasswords";
 import {
   getBaseName,
   getFileKey,

@@ -42,8 +42,8 @@ export function useCreateFolderMutation() {
     FileMutationResponse,
     ApiError,
     string,
-  CreateFolderRequest
->(
+    CreateFolderRequest
+  >(
     FILE_FOLDERS_ENDPOINT,
     (url, { arg }) =>
       apiRequest<FileMutationResponse>(url, {
@@ -241,9 +241,7 @@ export function useBatchDeleteEntriesMutation() {
     (url, { arg }) =>
       apiRequest<BatchFileMutationResponse>(url, {
         method: "DELETE",
-        headers: arg.targets[0]
-          ? getFolderUnlockHeadersForPath(arg.targets[0].path)
-          : undefined,
+        headers: arg.targets[0] ? getFolderUnlockHeadersForPath(arg.targets[0].path) : undefined,
         body: JSON.stringify(arg),
       }),
     {
