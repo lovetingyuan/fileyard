@@ -253,8 +253,48 @@ export function closeMoveTarget() {
   setPendingMoveTarget(null);
 }
 
+function isSameFileOperationTarget(
+  current: DeleteTarget | RenameTarget | null | undefined,
+  next: DeleteTarget | RenameTarget | null | undefined,
+) {
+  if (!current || !next) {
+    return current === next;
+  }
+
+  return current.type === next.type && current.name === next.name && current.path === next.path;
+}
+
+function isSameAfterUnlockAction(
+  current: FolderPasswordModalTarget["afterUnlock"],
+  next: FolderPasswordModalTarget["afterUnlock"],
+) {
+  if (!current || !next) {
+    return current === next;
+  }
+
+  return current.type === next.type && isSameFileOperationTarget(current.target, next.target);
+}
+
+function isSameFolderPasswordTarget(
+  current: FolderPasswordModalTarget | null,
+  next: FolderPasswordModalTarget,
+) {
+  return (
+    current?.mode === next.mode &&
+    current.path === next.path &&
+    current.name === next.name &&
+    current.protectedPath === next.protectedPath &&
+    current.returnPath === next.returnPath &&
+    isSameAfterUnlockAction(current.afterUnlock, next.afterUnlock)
+  );
+}
+
 export function openFolderPasswordModal(target: FolderPasswordModalTarget) {
-  const { setPendingFolderPasswordTarget } = getStoreMethods();
+  const { getPendingFolderPasswordTarget, setPendingFolderPasswordTarget } = getStoreMethods();
+
+  if (isSameFolderPasswordTarget(getPendingFolderPasswordTarget(), target)) {
+    return;
+  }
 
   setPendingFolderPasswordTarget(target);
 }

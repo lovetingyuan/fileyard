@@ -28,6 +28,7 @@ import {
   FILE_OPERATION_UPLOAD_BLOCKED_MESSAGE,
   isFolderOperationBlockedByActiveUpload,
 } from '../hooks/useUploadQueue'
+import { getProtectedFolderOperationAction } from '../utils/protectedFolderActions'
 
 type IconComponent = ComponentType<SVGProps<SVGSVGElement>>
 type RowActionsMenuVariant = 'table' | 'grid'
@@ -79,10 +80,24 @@ export function RowActionsMenu({
           <li key={item.label}>
             <button
               type="button"
-              className={cn('gap-2', item.tone === 'danger' && 'text-error')}
-              disabled={item.disabled}
+              className={cn(
+                'gap-2',
+                item.tone === 'danger' && 'text-error',
+                item.disabled && 'cursor-not-allowed opacity-50',
+              )}
+              disabled={item.disabled && !item.disabledReason}
+              aria-disabled={item.disabled}
               title={item.disabledReason}
-              onClick={item.onClick}
+              onClick={() => {
+                if (item.disabled) {
+                  if (item.disabledReason) {
+                    toast.error(item.disabledReason)
+                  }
+                  return
+                }
+
+                item.onClick()
+              }}
             >
               <item.Icon className="h-4 w-4" />
               {item.label}
@@ -101,7 +116,8 @@ export function FolderActionsMenu({
   folder: FolderEntry
   variant?: RowActionsMenuVariant
 }) {
-  const { deletingFolderPath, movingPath, renamingPath, uploadQueue } = useAppStore()
+  const { deletingFolderPath, folderUnlockTokens, movingPath, renamingPath, uploadQueue } =
+    useAppStore()
   const isLoading =
     deletingFolderPath === folder.path || renamingPath === folder.path || movingPath === folder.path
   const isActionDisabled = Boolean(renamingPath || movingPath) || isLoading
@@ -114,6 +130,24 @@ export function FolderActionsMenu({
 
     toast.error(FILE_OPERATION_UPLOAD_BLOCKED_MESSAGE)
     return true
+  }
+  const requestProtectedFolderOperation = (operation: 'delete' | 'rename') => {
+    const action = getProtectedFolderOperationAction({
+      folder,
+      folderUnlockTokens,
+      operation,
+    })
+    if (action.type === 'unlock') {
+      openFolderPasswordModal(action.target)
+      return
+    }
+
+    if (operation === 'rename') {
+      requestRenameTarget(action.target)
+      return
+    }
+
+    requestDeleteTarget(action.target)
   }
 
   return (
@@ -130,21 +164,7 @@ export function FolderActionsMenu({
               return
             }
 
-            if (folder.passwordProtected) {
-              openFolderPasswordModal({
-                mode: 'unlock',
-                path: folder.path,
-                name: folder.name,
-                protectedPath: folder.path,
-                afterUnlock: {
-                  type: 'rename',
-                  target: { type: 'folder', path: folder.path, name: folder.name },
-                },
-              })
-              return
-            }
-
-            requestRenameTarget({ type: 'folder', path: folder.path, name: folder.name })
+            requestProtectedFolderOperation('rename')
           },
         },
         {
@@ -197,21 +217,7 @@ export function FolderActionsMenu({
               return
             }
 
-            if (folder.passwordProtected) {
-              openFolderPasswordModal({
-                mode: 'unlock',
-                path: folder.path,
-                name: folder.name,
-                protectedPath: folder.path,
-                afterUnlock: {
-                  type: 'delete',
-                  target: { type: 'folder', path: folder.path, name: folder.name },
-                },
-              })
-              return
-            }
-
-            requestDeleteTarget({ type: 'folder', path: folder.path, name: folder.name })
+            requestProtectedFolderOperation('delete')
           },
         },
         {
@@ -238,7 +244,8 @@ export function FileActionsMenu({
     renamingPath === file.path ||
     movingPath === file.path
   const isActionDisabled = Boolean(renamingPath || movingPath) || isLoading
-  const protectedActionReason = file.protectedBy ? '加密目录下的文件不支持此操作' : undefined
+  const shareDisabledReason = file.protectedBy ? '加密目录下的文件不支持分享' : undefined
+  const moveDisabledReason = file.protectedBy ? '加密目录下的文件不支持移动' : undefined
 
   return (
     <RowActionsMenu
@@ -255,7 +262,7 @@ export function FileActionsMenu({
           label: '分享',
           Icon: MdiShareVariantOutline,
           disabled: Boolean(file.protectedBy),
-          disabledReason: '加密目录下的文件不支持分享',
+          disabledReason: shareDisabledReason,
           onClick: () => openFileShare(file),
         },
         {
@@ -267,7 +274,7 @@ export function FileActionsMenu({
           label: '移动',
           Icon: MdiFolderMoveOutline,
           disabled: Boolean(file.protectedBy),
-          disabledReason: protectedActionReason,
+          disabledReason: moveDisabledReason,
           onClick: () => requestMoveTarget({ type: 'file', path: file.path, name: file.name }),
         },
         {

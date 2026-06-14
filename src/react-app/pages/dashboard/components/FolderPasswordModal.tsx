@@ -28,6 +28,24 @@ function getPasswordLengthError(password: string): string | null {
   return normalizeFolderPassword(password).length < 6 ? "密码至少需要 6 位" : null;
 }
 
+type FolderPasswordFormState = {
+  password: string;
+  confirmPassword: string;
+  hasEditedPassword: boolean;
+  hasVerifiedRemovePassword: boolean;
+  passwordVerifyError: string | null;
+};
+
+function createInitialFormState(): FolderPasswordFormState {
+  return {
+    password: "",
+    confirmPassword: "",
+    hasEditedPassword: false,
+    hasVerifiedRemovePassword: false,
+    passwordVerifyError: null,
+  };
+}
+
 export function FolderPasswordModal() {
   const { pendingFolderPasswordTarget } = useAppStore();
   const { mutate } = useSWRConfig();
@@ -38,10 +56,7 @@ export function FolderPasswordModal() {
   const { removeFolderPassword, isMutating: isRemovingPassword } =
     useRemoveFolderPasswordMutation();
   const passwordInputRef = useRef<HTMLInputElement | null>(null);
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [hasEditedPassword, setHasEditedPassword] = useState(false);
-  const [hasVerifiedRemovePassword, setHasVerifiedRemovePassword] = useState(false);
+  const [formState, setFormState] = useState(createInitialFormState);
 
   const focusInputAfterOpen = () => {
     passwordInputRef.current?.focus();
@@ -53,6 +68,13 @@ export function FolderPasswordModal() {
   }
 
   const target = pendingFolderPasswordTarget;
+  const {
+    confirmPassword,
+    hasEditedPassword,
+    hasVerifiedRemovePassword,
+    password,
+    passwordVerifyError,
+  } = formState;
   const isBusy = isSettingPassword || isVerifyingPassword || isRemovingPassword;
   const normalizedPassword = normalizeFolderPassword(password);
   const passwordError =
@@ -60,6 +82,7 @@ export function FolderPasswordModal() {
       ? getFolderPasswordConfirmError(password, confirmPassword)
       : getPasswordLengthError(password);
   const visiblePasswordError = hasEditedPassword ? passwordError : null;
+  const visibleInputError = visiblePasswordError ?? passwordVerifyError;
   const title =
     target.mode === "set" ? "设置访问密码" : target.mode === "remove" ? "取消访问密码" : "验证访问密码";
   const confirmText =
@@ -78,10 +101,7 @@ export function FolderPasswordModal() {
     isBusy || (target.mode === "remove" && hasVerifiedRemovePassword ? false : Boolean(passwordError));
 
   const resetState = () => {
-    setPassword("");
-    setConfirmPassword("");
-    setHasEditedPassword(false);
-    setHasVerifiedRemovePassword(false);
+    setFormState(createInitialFormState());
   };
 
   const refreshFileData = async () => {
@@ -136,7 +156,11 @@ export function FolderPasswordModal() {
     if (!hasVerifiedRemovePassword) {
       const response = await verifyFolderPassword(target.path, normalizedPassword);
       await handleVerified(response.protectedPath, response.unlockToken);
-      setHasVerifiedRemovePassword(true);
+      setFormState((state) => ({
+        ...state,
+        hasVerifiedRemovePassword: true,
+        passwordVerifyError: null,
+      }));
       toast.success("密码验证通过");
       return;
     }
@@ -153,6 +177,7 @@ export function FolderPasswordModal() {
       return;
     }
 
+    setFormState((state) => ({ ...state, passwordVerifyError: null }));
     try {
       if (target.mode === "set") {
         await handleSetPassword();
@@ -162,6 +187,14 @@ export function FolderPasswordModal() {
         await handleUnlock();
       }
     } catch (error) {
+      if (target.mode === "unlock" || (target.mode === "remove" && !hasVerifiedRemovePassword)) {
+        setFormState((state) => ({
+          ...state,
+          passwordVerifyError: error instanceof Error ? error.message : "密码验证失败",
+        }));
+        return;
+      }
+
       toast.error(error instanceof Error ? error.message : "密码操作失败");
     }
   };
@@ -218,18 +251,22 @@ export function FolderPasswordModal() {
               <input
                 ref={passwordInputRef}
                 type="password"
-                className={cn("input input-bordered w-full", visiblePasswordError && "input-error")}
+                className={cn("input input-bordered w-full", visibleInputError && "input-error")}
                 value={password}
                 autoComplete={target.mode === "set" ? "new-password" : "current-password"}
                 onChange={(event) => {
-                  setHasEditedPassword(true);
-                  setPassword(event.target.value);
+                  setFormState((state) => ({
+                    ...state,
+                    hasEditedPassword: true,
+                    password: event.target.value,
+                    passwordVerifyError: null,
+                  }));
                 }}
                 onKeyDown={handlePasswordKeyDown}
                 disabled={isInteractionDisabled}
               />
-              {visiblePasswordError ? (
-                <span className="text-xs text-error">{visiblePasswordError}</span>
+              {visibleInputError ? (
+                <span className="text-xs text-error">{visibleInputError}</span>
               ) : null}
             </label>
           ) : null}
@@ -243,8 +280,12 @@ export function FolderPasswordModal() {
                 value={confirmPassword}
                 autoComplete="new-password"
                 onChange={(event) => {
-                  setHasEditedPassword(true);
-                  setConfirmPassword(event.target.value);
+                  setFormState((state) => ({
+                    ...state,
+                    confirmPassword: event.target.value,
+                    hasEditedPassword: true,
+                    passwordVerifyError: null,
+                  }));
                 }}
                 onKeyDown={handlePasswordKeyDown}
                 disabled={isInteractionDisabled}

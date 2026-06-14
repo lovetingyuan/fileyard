@@ -8,6 +8,7 @@ import type { SearchMatchRange } from "../utils/searchMatch";
 import { isMissingCurrentPathError } from "../utils/fileListError";
 import { useDashboardPath } from "./useDashboardPath";
 import { openFolderPasswordModal } from "../actions";
+import { getDashboardLockedPathAction } from "../utils/dashboardFolderNavigation";
 
 export type SearchMatchedEntry<T> = T & {
   searchMatchRanges: SearchMatchRange[];
@@ -26,16 +27,6 @@ function getUniqueFolderName(folders: Array<FolderEntry>, baseName: string): str
     counter++;
   }
   return `${baseName} (${counter})`;
-}
-
-function getParentPath(path: string): string {
-  const separatorIndex = path.lastIndexOf("/");
-  return separatorIndex === -1 ? "" : path.slice(0, separatorIndex);
-}
-
-function getBaseName(path: string): string {
-  const segments = path.split("/");
-  return segments[segments.length - 1] ?? path;
 }
 
 function getLockedProtectedPath(error: unknown): string | null {
@@ -77,20 +68,16 @@ export function useDashboardFileView() {
       return;
     }
 
-    if (
-      pendingFolderPasswordTarget?.mode === "unlock" &&
-      pendingFolderPasswordTarget.protectedPath === lockedProtectedPath
-    ) {
+    const action = getDashboardLockedPathAction({
+      currentPath,
+      lockedProtectedPath,
+      pendingTarget: pendingFolderPasswordTarget,
+    });
+    if (action.type === "ignore") {
       return;
     }
 
-    openFolderPasswordModal({
-      mode: "unlock",
-      path: currentPath,
-      name: getBaseName(lockedProtectedPath),
-      protectedPath: lockedProtectedPath,
-      returnPath: getParentPath(lockedProtectedPath),
-    });
+    openFolderPasswordModal(action.target);
   }, [currentPath, lockedProtectedPath, pendingFolderPasswordTarget]);
   const filteredFolders = fileList.data.folders.reduce<
     Array<SearchMatchedEntry<DashboardFolderEntry>>
