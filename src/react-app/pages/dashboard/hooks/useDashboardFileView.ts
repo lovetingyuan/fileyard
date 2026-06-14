@@ -7,7 +7,7 @@ import { findFuzzyMatchRanges } from "../utils/searchMatch";
 import type { SearchMatchRange } from "../utils/searchMatch";
 import { isMissingCurrentPathError } from "../utils/fileListError";
 import { useDashboardPath } from "./useDashboardPath";
-import { openFolderPasswordModal } from "../actions";
+import { clearDismissedFolderPasswordTarget, openFolderPasswordModal } from "../actions";
 import { getDashboardLockedPathAction } from "../utils/dashboardFolderNavigation";
 
 export type SearchMatchedEntry<T> = T & {
@@ -54,6 +54,7 @@ export function useDashboardFileView() {
   const {
     dashboardSortKey,
     dashboardSortOrder,
+    dismissedFolderPasswordTarget,
     pendingFolderPasswordTarget,
     searchInputValue,
     searchKeyword,
@@ -70,6 +71,7 @@ export function useDashboardFileView() {
 
     const action = getDashboardLockedPathAction({
       currentPath,
+      dismissedTarget: dismissedFolderPasswordTarget,
       lockedProtectedPath,
       pendingTarget: pendingFolderPasswordTarget,
     });
@@ -78,7 +80,16 @@ export function useDashboardFileView() {
     }
 
     openFolderPasswordModal(action.target);
-  }, [currentPath, lockedProtectedPath, pendingFolderPasswordTarget]);
+  }, [currentPath, dismissedFolderPasswordTarget, lockedProtectedPath, pendingFolderPasswordTarget]);
+
+  useEffect(() => {
+    if (!dismissedFolderPasswordTarget || dismissedFolderPasswordTarget.path === currentPath) {
+      return;
+    }
+
+    clearDismissedFolderPasswordTarget();
+  }, [currentPath, dismissedFolderPasswordTarget]);
+
   const filteredFolders = fileList.data.folders.reduce<
     Array<SearchMatchedEntry<DashboardFolderEntry>>
   >((folders, folder) => {

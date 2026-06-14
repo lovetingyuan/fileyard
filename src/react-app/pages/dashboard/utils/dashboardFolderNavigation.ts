@@ -35,6 +35,24 @@ function getBaseName(path: string): string {
   return segments[segments.length - 1] ?? path;
 }
 
+function isPathWithinFolder(path: string, folderPath: string): boolean {
+  return path === folderPath || path.startsWith(`${folderPath}/`);
+}
+
+function isSameDirectUnlockTarget(
+  current: FolderPasswordModalTarget | null | undefined,
+  next: FolderPasswordModalTarget,
+): boolean {
+  return (
+    current?.mode === next.mode &&
+    current.path === next.path &&
+    current.protectedPath === next.protectedPath &&
+    current.returnPath === next.returnPath &&
+    !current.afterUnlock &&
+    !next.afterUnlock
+  );
+}
+
 export function getDashboardFolderOpenAction(
   folder: DashboardFolderNavigationState,
   folderUnlockTokens: Record<string, string>,
@@ -59,13 +77,19 @@ export function getDashboardFolderOpenAction(
 
 export function getDashboardLockedPathAction({
   currentPath,
+  dismissedTarget,
   lockedProtectedPath,
   pendingTarget,
 }: {
   currentPath: string;
+  dismissedTarget?: FolderPasswordModalTarget | null;
   lockedProtectedPath: string;
   pendingTarget: FolderPasswordModalTarget | null;
 }): DashboardLockedPathAction {
+  if (!isPathWithinFolder(currentPath, lockedProtectedPath)) {
+    return { type: "ignore" };
+  }
+
   const target: FolderPasswordModalTarget = {
     mode: "unlock",
     path: currentPath,
@@ -74,13 +98,11 @@ export function getDashboardLockedPathAction({
     returnPath: getParentPath(lockedProtectedPath),
   };
 
-  if (
-    pendingTarget?.mode === target.mode &&
-    pendingTarget.path === target.path &&
-    pendingTarget.protectedPath === target.protectedPath &&
-    pendingTarget.returnPath === target.returnPath &&
-    !pendingTarget.afterUnlock
-  ) {
+  if (isSameDirectUnlockTarget(pendingTarget, target)) {
+    return { type: "ignore" };
+  }
+
+  if (isSameDirectUnlockTarget(dismissedTarget, target)) {
     return { type: "ignore" };
   }
 

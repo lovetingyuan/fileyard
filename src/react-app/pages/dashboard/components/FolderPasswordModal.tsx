@@ -117,7 +117,7 @@ export function FolderPasswordModal() {
       target.mode === "unlock" && !target.afterUnlock && target.returnPath !== undefined;
     const returnPath = target.returnPath ?? "";
     resetState();
-    closeFolderPasswordModal();
+    closeFolderPasswordModal(shouldReturnToParent ? target : null);
     if (shouldReturnToParent) {
       setPath(returnPath);
     }

@@ -290,8 +290,13 @@ function isSameFolderPasswordTarget(
 }
 
 export function openFolderPasswordModal(target: FolderPasswordModalTarget) {
-  const { getPendingFolderPasswordTarget, setPendingFolderPasswordTarget } = getStoreMethods();
+  const {
+    getPendingFolderPasswordTarget,
+    setDismissedFolderPasswordTarget,
+    setPendingFolderPasswordTarget,
+  } = getStoreMethods();
 
+  setDismissedFolderPasswordTarget(null);
   if (isSameFolderPasswordTarget(getPendingFolderPasswordTarget(), target)) {
     return;
   }
@@ -299,10 +304,17 @@ export function openFolderPasswordModal(target: FolderPasswordModalTarget) {
   setPendingFolderPasswordTarget(target);
 }
 
-export function closeFolderPasswordModal() {
-  const { setPendingFolderPasswordTarget } = getStoreMethods();
+export function closeFolderPasswordModal(dismissedTarget: FolderPasswordModalTarget | null = null) {
+  const { setDismissedFolderPasswordTarget, setPendingFolderPasswordTarget } = getStoreMethods();
 
   setPendingFolderPasswordTarget(null);
+  setDismissedFolderPasswordTarget(dismissedTarget);
+}
+
+export function clearDismissedFolderPasswordTarget() {
+  const { setDismissedFolderPasswordTarget } = getStoreMethods();
+
+  setDismissedFolderPasswordTarget(null);
 }
 
 export function saveFolderUnlockToken(protectedPath: string, unlockToken: string) {

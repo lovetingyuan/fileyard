@@ -99,6 +99,8 @@ export const { useStore, getStoreMethods, getStoreState, getStateSnapshot, subsc
     pendingBatchMoveTargets: null as BatchOperationTarget[] | null,
     /** 当前正在处理的文件夹访问密码弹窗目标。 */
     pendingFolderPasswordTarget: null as FolderPasswordModalTarget | null,
+    /** 最近一次被用户取消的直达加密路径访问目标，用于避免旧请求错误重新打开弹窗。 */
+    dismissedFolderPasswordTarget: null as FolderPasswordModalTarget | null,
     /** 当前标签页内已经验证通过的文件夹访问 token，key 为加密文件夹路径。 */
     folderUnlockTokens: {} as Record<string, string>,
     /** 是否正在执行批量删除。 */
