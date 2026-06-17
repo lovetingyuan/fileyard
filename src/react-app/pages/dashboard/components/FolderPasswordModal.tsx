@@ -13,6 +13,7 @@ import { useAppStore } from "../../../store";
 import { cn } from "../../../utils/cn";
 import {
   getFolderPasswordConfirmError,
+  getFolderPasswordLengthError,
   normalizeFolderPassword,
 } from "../../../utils/folderPassword";
 import {
@@ -23,10 +24,6 @@ import {
 } from "../actions";
 import { useDashboardPath } from "../hooks/useDashboardPath";
 import { shouldConfirmFromInputKey } from "../utils/modalKeyboard";
-
-function getPasswordLengthError(password: string): string | null {
-  return normalizeFolderPassword(password).length < 6 ? "密码至少需要 6 位" : null;
-}
 
 type FolderPasswordFormState = {
   password: string;
@@ -80,7 +77,7 @@ export function FolderPasswordModal() {
   const passwordError =
     target.mode === "set"
       ? getFolderPasswordConfirmError(password, confirmPassword)
-      : getPasswordLengthError(password);
+      : getFolderPasswordLengthError(password);
   const visiblePasswordError = hasEditedPassword ? passwordError : null;
   const visibleInputError = visiblePasswordError ?? passwordVerifyError;
   const title =

@@ -1,10 +1,55 @@
 import { getFolderUnlockTokenFromTokens } from "../../../utils/folderUnlockTokens";
 
+const DASHBOARD_TREE_SIDEBAR_OPEN_STORAGE_KEY = "dashboard-tree-sidebar-open";
+
+type DashboardTreeSidebarStorage = Pick<Storage, "getItem" | "setItem">;
+
 type TreeFolderProtectionState = {
   path: string;
   passwordProtected: boolean;
   protectedBy: string | null;
 };
+
+function getDashboardTreeSidebarStorage(): DashboardTreeSidebarStorage | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+export function getInitialDashboardTreeSidebarOpen(
+  storage: DashboardTreeSidebarStorage | null = getDashboardTreeSidebarStorage(),
+): boolean {
+  if (!storage) {
+    return false;
+  }
+
+  try {
+    return storage.getItem(DASHBOARD_TREE_SIDEBAR_OPEN_STORAGE_KEY) === "open";
+  } catch {
+    return false;
+  }
+}
+
+export function persistDashboardTreeSidebarOpen(
+  isOpen: boolean,
+  storage: DashboardTreeSidebarStorage | null = getDashboardTreeSidebarStorage(),
+) {
+  if (!storage) {
+    return;
+  }
+
+  try {
+    storage.setItem(DASHBOARD_TREE_SIDEBAR_OPEN_STORAGE_KEY, isOpen ? "open" : "closed");
+  } catch {
+    return;
+  }
+}
 
 export function getDashboardTreeAutoOpenPaths(currentPath: string): string[] {
   if (!currentPath) {

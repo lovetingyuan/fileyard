@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect } from "react";
+import { useDeferredValue } from "react";
 import type { FileEntry, FolderEntry } from "../../../../types";
 import { useFileList } from "../../../hooks/useFilesApi";
 import { useAppStore } from "../../../store";
@@ -7,8 +7,7 @@ import { findFuzzyMatchRanges } from "../utils/searchMatch";
 import type { SearchMatchRange } from "../utils/searchMatch";
 import { isMissingCurrentPathError } from "../utils/fileListError";
 import { useDashboardPath } from "./useDashboardPath";
-import { clearDismissedFolderPasswordTarget, openFolderPasswordModal } from "../actions";
-import { getDashboardLockedPathAction } from "../utils/dashboardFolderNavigation";
+import { getDashboardLockedPathTarget } from "../utils/dashboardFolderNavigation";
 
 export type SearchMatchedEntry<T> = T & {
   searchMatchRanges: SearchMatchRange[];
@@ -54,8 +53,6 @@ export function useDashboardFileView() {
   const {
     dashboardSortKey,
     dashboardSortOrder,
-    dismissedFolderPasswordTarget,
-    pendingFolderPasswordTarget,
     searchInputValue,
     searchKeyword,
   } = useAppStore();
@@ -63,37 +60,9 @@ export function useDashboardFileView() {
   const fileList = useFileList(currentPath, dashboardSortKey, dashboardSortOrder);
   const isCurrentPathMissing = isMissingCurrentPathError(currentPath, fileList.error);
   const lockedProtectedPath = getLockedProtectedPath(fileList.error);
-
-  useEffect(() => {
-    if (!lockedProtectedPath) {
-      return;
-    }
-
-    const action = getDashboardLockedPathAction({
-      currentPath,
-      dismissedTarget: dismissedFolderPasswordTarget,
-      lockedProtectedPath,
-      pendingTarget: pendingFolderPasswordTarget,
-    });
-    if (action.type === "ignore") {
-      return;
-    }
-
-    openFolderPasswordModal(action.target);
-  }, [
-    currentPath,
-    dismissedFolderPasswordTarget,
-    lockedProtectedPath,
-    pendingFolderPasswordTarget,
-  ]);
-
-  useEffect(() => {
-    if (!dismissedFolderPasswordTarget || dismissedFolderPasswordTarget.path === currentPath) {
-      return;
-    }
-
-    clearDismissedFolderPasswordTarget();
-  }, [currentPath, dismissedFolderPasswordTarget]);
+  const lockedFolderPasswordTarget = lockedProtectedPath
+    ? getDashboardLockedPathTarget({ currentPath, lockedProtectedPath })
+    : null;
 
   const filteredFolders = fileList.data.folders.reduce<
     Array<SearchMatchedEntry<DashboardFolderEntry>>
@@ -127,6 +96,7 @@ export function useDashboardFileView() {
     hasItems: filteredFiles.length > 0 || filteredFolders.length > 0,
     isCurrentPathMissing,
     isSearchPending: searchInputValue !== deferredSearchQuery,
+    lockedFolderPasswordTarget,
     searchInputValue,
     totalBytes,
     getUniqueFolderName: (baseName: string) => getUniqueFolderName(fileList.data.folders, baseName),

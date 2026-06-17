@@ -17,6 +17,7 @@ import {
   getNextDashboardLayoutMode,
   persistDashboardLayoutMode,
 } from "./utils/dashboardLayoutMode";
+import { persistDashboardTreeSidebarOpen } from "./utils/fileTreeSidebarState";
 import {
   getDashboardSelectionKey,
   getNextDashboardSelection,
@@ -69,19 +70,19 @@ export function setDashboardTreeSidebarOpen(isOpen: boolean) {
   const { setIsDashboardTreeSidebarOpen } = getStoreMethods();
 
   setIsDashboardTreeSidebarOpen(isOpen);
+  persistDashboardTreeSidebarOpen(isOpen);
 }
 
 export function toggleDashboardTreeSidebar() {
-  const { getIsDashboardTreeSidebarOpen, setIsDashboardTreeSidebarOpen } = getStoreMethods();
+  const { getIsDashboardTreeSidebarOpen } = getStoreMethods();
 
-  setIsDashboardTreeSidebarOpen(!getIsDashboardTreeSidebarOpen());
+  setDashboardTreeSidebarOpen(!getIsDashboardTreeSidebarOpen());
 }
 
 export function requestDashboardFileLocation(filePath: string) {
   const {
     setCurrentFile,
     setDashboardLocatedFilePath,
-    setIsDashboardTreeSidebarOpen,
     setPreviewing,
     setShareTargets,
     setSharing,
@@ -89,7 +90,7 @@ export function requestDashboardFileLocation(filePath: string) {
   } = getStoreMethods();
 
   setDashboardLocatedFilePath(filePath);
-  setIsDashboardTreeSidebarOpen(false);
+  setDashboardTreeSidebarOpen(false);
   setCurrentFile(null);
   setPreviewing(false);
   setShareTargets([]);

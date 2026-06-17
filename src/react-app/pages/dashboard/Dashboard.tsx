@@ -13,6 +13,7 @@ import { DirectoryStatsModal } from "./components/DirectoryStatsModal";
 import { FileDetailsModal } from "./components/FileDetailsModal";
 import { FileTreeSidebar } from "./components/FileTreeSidebar";
 import { FileToolbar, type FileToolbarHandle } from "./components/FileToolbar";
+import { FolderPasswordGate } from "./components/FolderPasswordGate";
 import { FolderPasswordModal } from "./components/FolderPasswordModal";
 import { MoveModal } from "./components/MoveModal";
 import { NewFolderModal } from "./components/NewFolderModal";
@@ -31,6 +32,7 @@ import {
 } from "./utils/searchShortcut";
 
 const MISSING_PATH_DISABLED_MESSAGE = "当前文件路径不存在，无法在此位置上传或新建文件";
+const LOCKED_PATH_DISABLED_MESSAGE = "当前目录需要先验证访问密码";
 
 export function Dashboard() {
   const {
@@ -55,6 +57,7 @@ export function Dashboard() {
     filteredFolders,
     isCurrentPathMissing,
     isLoading,
+    lockedFolderPasswordTarget,
     refresh,
     searchInputValue,
   } = useDashboardFileView();
@@ -68,8 +71,9 @@ export function Dashboard() {
   const isFileUploadInProgress = savingTextFile || uploadQueue.isUploading;
   const isFileMutationDisabled = Boolean(renamingPath || movingPath);
   const isBatchSelectionActive = selectedDashboardTargets.length > 0;
+  const isCurrentPathLocked = Boolean(lockedFolderPasswordTarget);
   const isCurrentPathMutationDisabled =
-    isFileMutationDisabled || isCurrentPathMissing || isBatchSelectionActive;
+    isFileMutationDisabled || isCurrentPathMissing || isCurrentPathLocked || isBatchSelectionActive;
 
   useUploadUnloadProtection(isFileUploadInProgress);
 
@@ -131,7 +135,9 @@ export function Dashboard() {
           toast.error(
             isCurrentPathMissing
               ? MISSING_PATH_DISABLED_MESSAGE
-              : "File operation in progress, please wait",
+              : isCurrentPathLocked
+                ? LOCKED_PATH_DISABLED_MESSAGE
+                : "File operation in progress, please wait",
           );
           return;
         }
@@ -186,7 +192,11 @@ export function Dashboard() {
                     onDragOver={handleDragOver}
                     onDrop={handleDrop}
                   >
-                    <FileToolbar ref={fileToolbarRef} isCurrentPathMissing={isCurrentPathMissing} />
+                    <FileToolbar
+                      ref={fileToolbarRef}
+                      isCurrentPathLocked={isCurrentPathLocked}
+                      isCurrentPathMissing={isCurrentPathMissing}
+                    />
 
                     {isCurrentPathMissing ? (
                       <div className="rounded-box border border-warning/30 bg-warning/10 p-10">
@@ -203,6 +213,8 @@ export function Dashboard() {
                           </div>
                         </div>
                       </div>
+                    ) : lockedFolderPasswordTarget ? (
+                      <FolderPasswordGate target={lockedFolderPasswordTarget} />
                     ) : error ? (
                       <div className="rounded-box border border-base-300 bg-base-200 p-10">
                         <div className="flex flex-col items-center gap-3 text-center text-base-content/60">

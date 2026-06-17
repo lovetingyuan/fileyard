@@ -16,15 +16,6 @@ export type DashboardFolderOpenAction =
       target: FolderPasswordModalTarget;
     };
 
-export type DashboardLockedPathAction =
-  | {
-      type: "ignore";
-    }
-  | {
-      type: "unlock";
-      target: FolderPasswordModalTarget;
-    };
-
 function getParentPath(path: string): string {
   const separatorIndex = path.lastIndexOf("/");
   return separatorIndex === -1 ? "" : path.slice(0, separatorIndex);
@@ -37,20 +28,6 @@ function getBaseName(path: string): string {
 
 function isPathWithinFolder(path: string, folderPath: string): boolean {
   return path === folderPath || path.startsWith(`${folderPath}/`);
-}
-
-function isSameDirectUnlockTarget(
-  current: FolderPasswordModalTarget | null | undefined,
-  next: FolderPasswordModalTarget,
-): boolean {
-  return (
-    current?.mode === next.mode &&
-    current.path === next.path &&
-    current.protectedPath === next.protectedPath &&
-    current.returnPath === next.returnPath &&
-    !current.afterUnlock &&
-    !next.afterUnlock
-  );
 }
 
 export function getDashboardFolderOpenAction(
@@ -75,36 +52,22 @@ export function getDashboardFolderOpenAction(
   };
 }
 
-export function getDashboardLockedPathAction({
+export function getDashboardLockedPathTarget({
   currentPath,
-  dismissedTarget,
   lockedProtectedPath,
-  pendingTarget,
 }: {
   currentPath: string;
-  dismissedTarget?: FolderPasswordModalTarget | null;
   lockedProtectedPath: string;
-  pendingTarget: FolderPasswordModalTarget | null;
-}): DashboardLockedPathAction {
+}): FolderPasswordModalTarget | null {
   if (!isPathWithinFolder(currentPath, lockedProtectedPath)) {
-    return { type: "ignore" };
+    return null;
   }
 
-  const target: FolderPasswordModalTarget = {
+  return {
     mode: "unlock",
     path: currentPath,
     name: getBaseName(lockedProtectedPath),
     protectedPath: lockedProtectedPath,
     returnPath: getParentPath(lockedProtectedPath),
   };
-
-  if (isSameDirectUnlockTarget(pendingTarget, target)) {
-    return { type: "ignore" };
-  }
-
-  if (isSameDirectUnlockTarget(dismissedTarget, target)) {
-    return { type: "ignore" };
-  }
-
-  return { type: "unlock", target };
 }

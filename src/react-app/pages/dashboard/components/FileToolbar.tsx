@@ -50,6 +50,7 @@ function LayoutToggleButton() {
 }
 
 type FileToolbarProps = {
+  isCurrentPathLocked?: boolean;
   isCurrentPathMissing?: boolean;
 };
 
@@ -58,7 +59,7 @@ export type FileToolbarHandle = {
 };
 
 export const FileToolbar = forwardRef<FileToolbarHandle, FileToolbarProps>(function FileToolbar(
-  { isCurrentPathMissing = false },
+  { isCurrentPathLocked = false, isCurrentPathMissing = false },
   ref,
 ) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -74,6 +75,7 @@ export const FileToolbar = forwardRef<FileToolbarHandle, FileToolbarProps>(funct
     selectedDashboardTargets,
   } = useAppStore();
   const isBatchSelectionActive = selectedDashboardTargets.length > 0;
+  const isCurrentPathUnavailable = isCurrentPathMissing || isCurrentPathLocked;
   const isSearchExpanded = searchInputValue.length > 0;
   const isFileMutationDisabled = Boolean(renamingPath || movingPath);
   const { clipboardUploadDialog, openClipboardUploadDialog } = useClipboardUploadDialog({
@@ -126,13 +128,14 @@ export const FileToolbar = forwardRef<FileToolbarHandle, FileToolbarProps>(funct
       />
 
       <FileBreadcrumbs
+        isCurrentPathLocked={isCurrentPathLocked}
         isCurrentPathMissing={isCurrentPathMissing}
         isNavigationDisabled={isBatchSelectionActive}
       />
 
-      {!isCurrentPathMissing && isBatchSelectionActive ? <BatchSelectionToolbar /> : null}
+      {!isCurrentPathUnavailable && isBatchSelectionActive ? <BatchSelectionToolbar /> : null}
 
-      {!isCurrentPathMissing && !isBatchSelectionActive ? (
+      {!isCurrentPathUnavailable && !isBatchSelectionActive ? (
         <div className="ml-auto flex w-max max-w-full min-w-0 flex-wrap items-center justify-end gap-3 sm:gap-4">
           <Dropdown
             containerClassName="shrink-0"

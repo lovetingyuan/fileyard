@@ -7,16 +7,18 @@ import { useDashboardPath } from "../hooks/useDashboardPath";
 import { getBreadcrumbButtonClassName } from "./fileBreadcrumbsClasses";
 
 type FileBreadcrumbsProps = {
+  isCurrentPathLocked?: boolean;
   isCurrentPathMissing?: boolean;
   isNavigationDisabled?: boolean;
 };
 
 export function FileBreadcrumbs({
+  isCurrentPathLocked = false,
   isCurrentPathMissing = false,
   isNavigationDisabled = false,
 }: FileBreadcrumbsProps) {
   const { breadcrumbs, currentPath, setPath } = useDashboardPath();
-  const isActionDisabled = isCurrentPathMissing || isNavigationDisabled;
+  const isActionDisabled = isCurrentPathLocked || isCurrentPathMissing || isNavigationDisabled;
   const isRootPath = breadcrumbs.length === 0;
 
   return (

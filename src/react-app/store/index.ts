@@ -15,6 +15,7 @@ import type {
   User,
 } from "../../types";
 import { getInitialDashboardLayoutMode } from "../pages/dashboard/utils/dashboardLayoutMode";
+import { getInitialDashboardTreeSidebarOpen } from "../pages/dashboard/utils/fileTreeSidebarState";
 
 function getInitialThemePreference(): ThemePreference {
   if (typeof window === "undefined") {
@@ -52,7 +53,7 @@ export const { useStore, getStoreMethods, getStoreState, getStateSnapshot, subsc
     /** Dashboard 文件列表展示布局。 */
     dashboardLayoutMode: getInitialDashboardLayoutMode(),
     /** Dashboard 左侧文件树侧栏是否展开。 */
-    isDashboardTreeSidebarOpen: false,
+    isDashboardTreeSidebarOpen: getInitialDashboardTreeSidebarOpen(),
     /** Dashboard 右侧文件列表需要滚动定位并短暂高亮的文件路径。 */
     dashboardLocatedFilePath: null as string | null,
     /** 搜索输入框当前正在编辑的内容。 */
