@@ -1,8 +1,13 @@
 import useSWR from "swr";
 import type { TopBannerResponse } from "../../types";
 import { ApiError, apiRequest } from "../utils/apiRequest";
+import { stableResourceSWROptions } from "./stableResourceSWR";
 
 const TOP_BANNER_KEY = "/api/top-banner";
+const TOP_BANNER_SWR_OPTIONS = {
+  ...stableResourceSWROptions,
+  shouldRetryOnError: false,
+};
 
 async function fetchTopBanner() {
   return apiRequest<TopBannerResponse>(TOP_BANNER_KEY);
@@ -12,9 +17,7 @@ export function useTopBanner() {
   const { data, error, isLoading } = useSWR<TopBannerResponse, ApiError>(
     TOP_BANNER_KEY,
     fetchTopBanner,
-    {
-      shouldRetryOnError: false,
-    },
+    TOP_BANNER_SWR_OPTIONS,
   );
 
   return {

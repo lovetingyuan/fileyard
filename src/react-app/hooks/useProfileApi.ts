@@ -3,6 +3,7 @@ import { useSWRConfig } from "swr";
 import useSWRMutation from "swr/mutation";
 import type { FileMutationResponse, ProfileResponse } from "../../types";
 import { ApiError, apiRequest } from "../utils/apiRequest";
+import { stableResourceSWROptions } from "./stableResourceSWR";
 
 const PROFILE_KEY = "/api/profile";
 const AVATAR_ENDPOINT = "/api/profile/avatar";
@@ -13,7 +14,11 @@ async function fetchProfile() {
 }
 
 export function useProfile() {
-  const { data, error, isLoading, mutate } = useSWR(PROFILE_KEY, fetchProfile);
+  const { data, error, isLoading, mutate } = useSWR(
+    PROFILE_KEY,
+    fetchProfile,
+    stableResourceSWROptions,
+  );
 
   return {
     profile: data ?? null,
