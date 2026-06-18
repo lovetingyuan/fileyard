@@ -134,6 +134,14 @@ function FileTreeFolderRow({
 
     openFolderPasswordModal(action.target)
   }
+  const handleFolderClick = () => {
+    if (isCurrent && canLoadChildren) {
+      onToggleFolder(folder.path)
+      return
+    }
+
+    openFolder()
+  }
 
   useEffect(() => {
     scrollCurrentFileTreeRowIntoView(rowRef.current, isCurrent)
@@ -176,7 +184,7 @@ function FileTreeFolderRow({
           disabled={isNavigationDisabled}
           aria-current={isCurrent ? 'page' : undefined}
           title={folder.name}
-          onClick={openFolder}
+          onClick={handleFolderClick}
         >
           <span className="relative inline-flex h-4 w-4 shrink-0 items-center justify-center">
             <FolderIcon className="h-4 w-4 text-warning" />
