@@ -2,7 +2,8 @@ import MdiCloseCircleOutline from "~icons/mdi/close-circle-outline";
 import MdiClose from "~icons/mdi/close";
 import MdiChevronDown from "~icons/mdi/chevron-down";
 import MdiChevronUp from "~icons/mdi/chevron-up";
-import { Fragment } from "react";
+import { Fragment, useEffect, useRef } from "react";
+import toast from "react-hot-toast";
 import { useAppStore } from "../../../store";
 import { cn } from "../../../utils/cn";
 import type { UploadQueuePanelState } from "../hooks/useUploadQueue";
@@ -20,6 +21,7 @@ import { getUploadProgressDisplayRows } from "./uploadProgressDisplay";
 const PANEL_SURFACE_CLASS =
   "rounded-box border border-[color-mix(in_oklab,var(--color-info)_38%,var(--color-base-300))] bg-[color-mix(in_oklab,var(--color-info)_14%,var(--color-base-100))] p-3 text-base-content shadow-2xl shadow-base-content/20";
 const PANEL_SUBTITLE_CLASS_NAME = "min-w-0 truncate text-xs";
+const UPLOAD_RESULT_TOAST_ID = "dashboard-upload-result";
 
 function getPanelTitle(panelState: UploadQueuePanelState): string {
   if (panelState.isComplete) {
@@ -40,6 +42,18 @@ function getPanelSubtitle(panelState: UploadQueuePanelState): string {
     segments.push(`${panelState.canceled} 个已取消`);
   }
   return segments.join(" · ");
+}
+
+function getUploadResultToastMessage(panelState: UploadQueuePanelState): string {
+  if (!panelState.hasTerminalIssues) {
+    return panelState.completed === 1 ? "文件上传完成" : `${panelState.completed} 个文件上传完成`;
+  }
+
+  if (panelState.completed > 0) {
+    return `上传已结束：${panelState.completed} 个成功，${panelState.failed} 个失败`;
+  }
+
+  return panelState.failed === 1 ? "文件上传失败" : `${panelState.failed} 个文件上传失败`;
 }
 
 function renderPanelSubtitle(panelState: UploadQueuePanelState) {
@@ -80,6 +94,26 @@ export function UploadProgressPanel() {
   const { isUploadPanelMinimized, uploadQueue: items } = useAppStore();
   const panelState = getUploadQueuePanelState(items);
   const isMinimized = isUploadPanelMinimized;
+  const wasCompleteRef = useRef(panelState.isComplete);
+
+  useEffect(() => {
+    if (panelState.isComplete && !wasCompleteRef.current) {
+      minimizeDashboardUploadPanel();
+      const message = getUploadResultToastMessage(panelState);
+
+      if (panelState.hasTerminalIssues) {
+        toast.error(message, { id: UPLOAD_RESULT_TOAST_ID });
+      } else {
+        toast.success(message, { id: UPLOAD_RESULT_TOAST_ID });
+      }
+    }
+    wasCompleteRef.current = panelState.isComplete;
+  }, [
+    panelState.completed,
+    panelState.failed,
+    panelState.hasTerminalIssues,
+    panelState.isComplete,
+  ]);
 
   if (!panelState.shouldShowPanel) {
     return null;

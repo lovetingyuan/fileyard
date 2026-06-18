@@ -19,6 +19,7 @@ import {
 import {
   closeFolderPasswordModal,
   requestDeleteTarget,
+  requestMoveTarget,
   requestRenameTarget,
   saveFolderUnlockToken,
 } from "../actions";
@@ -139,6 +140,8 @@ export function FolderPasswordModal() {
 
     if (target.afterUnlock?.type === "rename") {
       requestRenameTarget(target.afterUnlock.target);
+    } else if (target.afterUnlock?.type === "move") {
+      requestMoveTarget(target.afterUnlock.target);
     } else if (target.afterUnlock?.type === "delete") {
       requestDeleteTarget(target.afterUnlock.target);
     } else if (nextPath !== null) {

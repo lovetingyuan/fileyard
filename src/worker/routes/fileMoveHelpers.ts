@@ -47,9 +47,13 @@ function isSystemRelativePath(relativeKey: string): boolean {
   );
 }
 
-function isUnderProtectedFolder(folderPath: string, protectedPaths: Set<string>): boolean {
+function isUnderLockedProtectedFolder(
+  folderPath: string,
+  protectedPaths: Set<string>,
+  unlockedProtectedPaths: Set<string>,
+): boolean {
   for (const protectedPath of protectedPaths) {
-    if (folderPath.startsWith(`${protectedPath}/`)) {
+    if (folderPath.startsWith(`${protectedPath}/`) && !unlockedProtectedPaths.has(protectedPath)) {
       return true;
     }
   }
@@ -80,6 +84,7 @@ function buildFolderNode(
 export function buildFolderTreeFromObjects(
   rootDirId: string,
   objects: FolderTreeSourceObject[],
+  unlockedProtectedPaths = new Set<string>(),
 ): FolderTreeNode {
   const rootPrefix = `${rootDirId}/`;
   const folderPaths = new Set<string>([""]);
@@ -96,7 +101,7 @@ export function buildFolderTreeFromObjects(
     }
 
     const folderPath = getObjectFolderPath(relativeKey);
-    if (isUnderProtectedFolder(folderPath, protectedPaths)) {
+    if (isUnderLockedProtectedFolder(folderPath, protectedPaths, unlockedProtectedPaths)) {
       continue;
     }
 

@@ -5,7 +5,7 @@ import type {
 } from "../../../../types";
 import { getFolderUnlockTokenFromTokens } from "../../../utils/folderUnlockTokens";
 
-type ProtectedFolderOperation = "delete" | "rename";
+type ProtectedFolderOperation = "delete" | "move" | "rename";
 type FolderMutationTarget = {
   type: "folder";
   path: string;
@@ -30,6 +30,10 @@ function getAfterUnlockAction(
     return { type: "rename", target };
   }
 
+  if (operation === "move") {
+    return { type: "move", target };
+  }
+
   return { type: "delete", target };
 }
 
@@ -38,7 +42,7 @@ export function getProtectedFolderOperationAction({
   folderUnlockTokens,
   operation,
 }: {
-  folder: Pick<FolderEntry, "name" | "passwordProtected" | "path">;
+  folder: Pick<FolderEntry, "name" | "passwordProtected" | "path" | "protectedBy">;
   folderUnlockTokens: Record<string, string>;
   operation: ProtectedFolderOperation;
 }): ProtectedFolderOperationAction {
@@ -49,7 +53,7 @@ export function getProtectedFolderOperationAction({
   };
 
   if (
-    !folder.passwordProtected ||
+    (!folder.passwordProtected && !folder.protectedBy) ||
     getFolderUnlockTokenFromTokens(folderUnlockTokens, folder.path)
   ) {
     return { type: "request", target };
@@ -61,7 +65,7 @@ export function getProtectedFolderOperationAction({
       mode: "unlock",
       path: folder.path,
       name: folder.name,
-      protectedPath: folder.path,
+      protectedPath: folder.protectedBy ?? folder.path,
       afterUnlock: getAfterUnlockAction(operation, target),
     },
   };

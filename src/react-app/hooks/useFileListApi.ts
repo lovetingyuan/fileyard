@@ -7,7 +7,10 @@ import type {
   SortOrder,
 } from "../../types";
 import { ApiError, apiRequest } from "../utils/apiRequest";
-import { getFolderUnlockHeadersForPath } from "../utils/folderUnlockTokens";
+import {
+  getAllFolderUnlockHeaders,
+  getFolderUnlockHeadersForPath,
+} from "../utils/folderUnlockTokens";
 import {
   FILES_ENDPOINT,
   FILE_FOLDER_TREE_ENDPOINT,
@@ -45,7 +48,10 @@ export function useDirectoryStats(path: string, enabled: boolean) {
 export function useFolderTree(enabled: boolean) {
   const { data, error, isLoading, isValidating, mutate } = useSWR<FolderTreeResponse, ApiError>(
     enabled ? FILE_FOLDER_TREE_ENDPOINT : null,
-    (url: string) => apiRequest<FolderTreeResponse>(url),
+    (url: string) =>
+      apiRequest<FolderTreeResponse>(url, {
+        headers: getAllFolderUnlockHeaders(),
+      }),
   );
 
   return {

@@ -106,6 +106,10 @@ export type FolderPasswordAfterUnlockAction =
       target: RenameTarget;
     }
   | {
+      type: "move";
+      target: MoveTarget;
+    }
+  | {
       type: "delete";
       target: DeleteTarget;
     };

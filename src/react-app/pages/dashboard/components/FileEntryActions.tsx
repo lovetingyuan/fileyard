@@ -124,7 +124,6 @@ export function FolderActionsMenu({
     movingPath === folder.path;
   const isActionDisabled = Boolean(renamingPath || movingPath) || isLoading;
   const isProtectedContent = folder.passwordProtected || Boolean(folder.protectedBy);
-  const moveDisabledReason = isProtectedContent ? "加密目录及其内容不支持移动" : undefined;
   const blockIfUploading = () => {
     if (!isFolderOperationBlockedByActiveUpload(uploadQueue, folder.path)) {
       return false;
@@ -133,7 +132,7 @@ export function FolderActionsMenu({
     toast.error(FILE_OPERATION_UPLOAD_BLOCKED_MESSAGE);
     return true;
   };
-  const requestProtectedFolderOperation = (operation: "delete" | "rename") => {
+  const requestProtectedFolderOperation = (operation: "delete" | "move" | "rename") => {
     const action = getProtectedFolderOperationAction({
       folder,
       folderUnlockTokens,
@@ -146,6 +145,11 @@ export function FolderActionsMenu({
 
     if (operation === "rename") {
       requestRenameTarget(action.target);
+      return;
+    }
+
+    if (operation === "move") {
+      requestMoveTarget(action.target);
       return;
     }
 
@@ -172,14 +176,12 @@ export function FolderActionsMenu({
         {
           label: "移动",
           Icon: MdiFolderMoveOutline,
-          disabled: isProtectedContent,
-          disabledReason: moveDisabledReason,
           onClick: () => {
             if (blockIfUploading()) {
               return;
             }
 
-            requestMoveTarget({ type: "folder", path: folder.path, name: folder.name });
+            requestProtectedFolderOperation("move");
           },
         },
         ...(folder.passwordProtected
@@ -247,7 +249,6 @@ export function FileActionsMenu({
     movingPath === file.path;
   const isActionDisabled = Boolean(renamingPath || movingPath) || isLoading;
   const shareDisabledReason = file.protectedBy ? "加密目录下的文件不支持分享" : undefined;
-  const moveDisabledReason = file.protectedBy ? "加密目录下的文件不支持移动" : undefined;
 
   return (
     <RowActionsMenu
@@ -275,8 +276,6 @@ export function FileActionsMenu({
         {
           label: "移动",
           Icon: MdiFolderMoveOutline,
-          disabled: Boolean(file.protectedBy),
-          disabledReason: moveDisabledReason,
           onClick: () => requestMoveTarget({ type: "file", path: file.path, name: file.name }),
         },
         {

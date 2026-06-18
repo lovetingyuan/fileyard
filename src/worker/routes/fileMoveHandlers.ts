@@ -3,9 +3,13 @@ import type { FileMutationResponse, FolderTreeResponse, MoveRequest } from "../.
 import type { AppContext } from "../context";
 import { folderExists, getFileContext } from "../utils/appHelpers";
 import {
+  assertFolderSubtreeAccess,
   assertPathAccess,
-  assertPathNotPasswordProtected,
+  findProtectedPath,
+  getProtectedPathsFromObjects,
+  getUnlockedProtectedPathsFromRequest,
   handleFolderPasswordError,
+  hasProtectedFolderInSubtree,
 } from "../utils/folderPasswords";
 import { FilePathValidationError, getFileKey, normalizeRelativePath } from "../utils/fileManager";
 import { handlePathValidationError, jsonError } from "../utils/response";
@@ -36,9 +40,15 @@ export async function listFolderTree(c: Context<AppContext>) {
   try {
     const { rootDirId } = await getFileContext(c);
     const objects = await listAllObjects(c.env.FILES_BUCKET, `${rootDirId}/`);
+    const protectedPaths = getProtectedPathsFromObjects(rootDirId, objects);
+    const unlockedProtectedPaths = await getUnlockedProtectedPathsFromRequest(
+      c,
+      rootDirId,
+      protectedPaths,
+    );
     const response: FolderTreeResponse = {
       success: true,
-      root: buildFolderTreeFromObjects(rootDirId, objects),
+      root: buildFolderTreeFromObjects(rootDirId, objects, unlockedProtectedPaths),
     };
 
     return c.json(response);
@@ -65,12 +75,11 @@ export async function moveEntry(c: Context<AppContext>) {
     assertPathNotReserved(targetParentPath);
 
     const { rootDirId } = await getFileContext(c);
-    await assertPathNotPasswordProtected(
-      c.env,
-      rootDirId,
-      path,
-      "Password protected entries cannot be moved",
-    );
+    if (type === "folder") {
+      await assertFolderSubtreeAccess(c, rootDirId, path);
+    } else {
+      await assertPathAccess(c, rootDirId, path);
+    }
     await assertPathAccess(c, rootDirId, targetParentPath);
 
     if (!(await folderExists(c.env, rootDirId, targetParentPath))) {
@@ -96,6 +105,15 @@ export async function moveEntry(c: Context<AppContext>) {
         return jsonError(c, "Folder not found", 404);
       }
       assertFolderMoveDestinationAllowed(path, targetParentPath);
+      if (
+        (await hasProtectedFolderInSubtree(c.env, rootDirId, path)) &&
+        (await findProtectedPath(c.env, rootDirId, targetParentPath))
+      ) {
+        throw new FilePathValidationError(
+          "Cannot move password protected folders into another password protected folder",
+          409,
+        );
+      }
       await assertMoveTargetAvailable(c.env, rootDirId, targetPath);
       await moveFolderEntry(c.env.FILES_BUCKET, rootDirId, path, targetParentPath);
     }

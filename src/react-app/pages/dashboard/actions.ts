@@ -255,8 +255,8 @@ export function closeMoveTarget() {
 }
 
 function isSameFileOperationTarget(
-  current: DeleteTarget | RenameTarget | null | undefined,
-  next: DeleteTarget | RenameTarget | null | undefined,
+  current: NonNullable<FolderPasswordModalTarget["afterUnlock"]>["target"] | null | undefined,
+  next: NonNullable<FolderPasswordModalTarget["afterUnlock"]>["target"] | null | undefined,
 ) {
   if (!current || !next) {
     return current === next;

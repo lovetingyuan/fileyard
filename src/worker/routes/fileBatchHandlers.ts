@@ -3,11 +3,11 @@ import type { BatchDeleteRequest, BatchMoveRequest } from "../../types";
 import type { AppContext } from "../context";
 import { folderExists, getFileContext } from "../utils/appHelpers";
 import {
-  ENCRYPTED_FOLDER_BATCH_DELETE_MESSAGE,
+  assertFolderSubtreeAccess,
   assertPathAccess,
-  assertPathNotPasswordProtected,
-  getFolderProtectionState,
+  findProtectedPath,
   handleFolderPasswordError,
+  hasProtectedFolderInSubtree,
 } from "../utils/folderPasswords";
 import {
   FilePathValidationError,
@@ -54,15 +54,11 @@ export async function batchDeleteEntries(c: Context<AppContext>) {
 
     for (const target of targets) {
       try {
-        if (
-          target.type === "folder" &&
-          (await getFolderProtectionState(c.env, rootDirId, target.path)).passwordProtected
-        ) {
-          results.push(createBatchFailureResult(target, ENCRYPTED_FOLDER_BATCH_DELETE_MESSAGE));
-          continue;
+        if (target.type === "folder") {
+          await assertFolderSubtreeAccess(c, rootDirId, target.path);
+        } else {
+          await assertPathAccess(c, rootDirId, target.path);
         }
-
-        await assertPathAccess(c, rootDirId, target.path);
 
         if (target.type === "file") {
           const fileKey = getFileKey(rootDirId, target.path);
@@ -145,12 +141,11 @@ export async function batchMoveEntries(c: Context<AppContext>) {
     const results = [];
     for (const target of targets) {
       try {
-        await assertPathNotPasswordProtected(
-          c.env,
-          rootDirId,
-          target.path,
-          "Password protected entries cannot be moved",
-        );
+        if (target.type === "folder") {
+          await assertFolderSubtreeAccess(c, rootDirId, target.path);
+        } else {
+          await assertPathAccess(c, rootDirId, target.path);
+        }
 
         const validationMessage = getBatchMoveValidationMessage(target, targetParentPath);
         if (validationMessage) {
@@ -177,6 +172,16 @@ export async function batchMoveEntries(c: Context<AppContext>) {
         if (!(await folderExists(c.env, rootDirId, target.path))) {
           results.push(createBatchFailureResult(target, "Folder not found"));
           continue;
+        }
+
+        if (
+          (await hasProtectedFolderInSubtree(c.env, rootDirId, target.path)) &&
+          (await findProtectedPath(c.env, rootDirId, targetParentPath))
+        ) {
+          throw new FilePathValidationError(
+            "Cannot move password protected folders into another password protected folder",
+            409,
+          );
         }
 
         await assertMoveTargetAvailable(c.env, rootDirId, targetPath);

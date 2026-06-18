@@ -52,6 +52,7 @@ function LayoutToggleButton() {
 type FileToolbarProps = {
   isCurrentPathLocked?: boolean;
   isCurrentPathMissing?: boolean;
+  lockedProtectedPath?: string | null;
 };
 
 export type FileToolbarHandle = {
@@ -59,7 +60,7 @@ export type FileToolbarHandle = {
 };
 
 export const FileToolbar = forwardRef<FileToolbarHandle, FileToolbarProps>(function FileToolbar(
-  { isCurrentPathLocked = false, isCurrentPathMissing = false },
+  { isCurrentPathLocked = false, isCurrentPathMissing = false, lockedProtectedPath = null },
   ref,
 ) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -131,6 +132,7 @@ export const FileToolbar = forwardRef<FileToolbarHandle, FileToolbarProps>(funct
         isCurrentPathLocked={isCurrentPathLocked}
         isCurrentPathMissing={isCurrentPathMissing}
         isNavigationDisabled={isBatchSelectionActive}
+        lockedProtectedPath={lockedProtectedPath}
       />
 
       {!isCurrentPathUnavailable && isBatchSelectionActive ? <BatchSelectionToolbar /> : null}

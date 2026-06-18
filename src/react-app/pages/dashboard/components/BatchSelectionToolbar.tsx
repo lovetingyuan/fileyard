@@ -20,10 +20,7 @@ export function BatchSelectionToolbar() {
   const isEmpty = selectedDashboardTargets.length === 0;
   const canShareSelection = canShareDashboardSelection(selectedDashboardTargets);
   const shareDisabledReason = getDashboardSelectionShareDisabledReason(selectedDashboardTargets);
-  const canMoveSelection =
-    selectedDashboardTargets.length > 0 &&
-    selectedDashboardTargets.every((target) => !target.passwordProtected && !target.protectedBy);
-  const moveDisabledReason = canMoveSelection ? "移动选中项" : "加密目录及其内容不支持移动";
+  const canMoveSelection = selectedDashboardTargets.length > 0;
 
   return (
     <div className="ml-auto flex w-max max-w-full min-w-0 flex-wrap items-center justify-end gap-2 sm:gap-3">
@@ -52,7 +49,7 @@ export function BatchSelectionToolbar() {
           <MdiDeleteOutline className="h-5 w-5" />
         </button>
       </div>
-      <div className="tooltip" data-tip={moveDisabledReason}>
+      <div className="tooltip" data-tip="移动选中项">
         <button
           type="button"
           className="btn btn-primary btn-square btn-sm"

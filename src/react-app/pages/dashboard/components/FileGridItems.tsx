@@ -4,6 +4,7 @@ import type { BatchOperationTarget, FileEntry, FolderEntry } from "../../../../t
 import { getFileIcon } from "../../../constants/fileIcons";
 import { cn } from "../../../utils/cn";
 import { useAppStore } from "../../../store";
+import { getFolderUnlockTokenFromTokens } from "../../../utils/folderUnlockTokens";
 import { openFilePreview, openFolderPasswordModal } from "../actions";
 import { useDashboardEntrySelection } from "../hooks/useDashboardEntrySelection";
 import { useDashboardLocatedFileHighlight } from "../hooks/useDashboardLocatedFileHighlight";
@@ -73,6 +74,7 @@ export function FolderGridItem({
   const { setPath } = useDashboardPath();
   const { folderUnlockTokens } = useAppStore();
   const entryKey = `folder:${folder.path}`;
+  const isPasswordVerified = Boolean(getFolderUnlockTokenFromTokens(folderUnlockTokens, folder.path));
   const selection = useDashboardEntrySelection(
     {
       type: "folder",
@@ -132,7 +134,12 @@ export function FolderGridItem({
         <span className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center">
           <MdiFolder className="h-10 w-10 text-warning" />
           {folder.passwordProtected ? (
-            <span className="absolute right-0 top-0 grid h-4 w-4 place-items-center rounded-full bg-base-100 text-base-content shadow-sm ring-1 ring-base-300/70">
+            <span
+              className={cn(
+                "absolute right-0 top-0 grid h-4 w-4 place-items-center rounded-full bg-base-100 shadow-sm ring-1 ring-base-300/70",
+                isPasswordVerified ? "text-success" : "text-base-content",
+              )}
+            >
               <MdiLock className="h-2.5 w-2.5" />
             </span>
           ) : null}

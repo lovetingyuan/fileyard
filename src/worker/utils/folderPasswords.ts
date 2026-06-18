@@ -16,8 +16,8 @@ import {
 } from "./fileManager";
 
 export const FOLDER_UNLOCK_HEADER = "X-Fileyard-Folder-Unlock";
+export const FOLDER_UNLOCKS_HEADER = "X-Fileyard-Folder-Unlocks";
 export const FOLDER_UNLOCK_QUERY_PARAM = "folderUnlockToken";
-export const ENCRYPTED_FOLDER_BATCH_DELETE_MESSAGE = "暂不支持批量删除操作包含加密目录";
 
 const LEGACY_FOLDER_MARKER_NAME = ".fileshare-folder";
 const FOLDER_PASSWORD_PURPOSE = "fileyard:folder-password:v1";
@@ -375,6 +375,38 @@ async function hasProtectedDescendant(
   return false;
 }
 
+async function findProtectedDescendantPaths(
+  env: AppBindings,
+  rootDirId: string,
+  folderPath: string,
+): Promise<string[]> {
+  const currentMarkerKeys = new Set(getFolderMarkerKeys(rootDirId, folderPath));
+  const prefix = getFolderPrefix(rootDirId, folderPath);
+  const protectedPaths: string[] = [];
+  let cursor: string | undefined;
+
+  do {
+    const listing = await env.FILES_BUCKET.list({
+      cursor,
+      include: ["customMetadata"],
+      prefix,
+    });
+    for (const object of listing.objects) {
+      if (currentMarkerKeys.has(object.key)) {
+        continue;
+      }
+
+      const descendantPath = toMarkerFolderPath(rootDirId, object.key);
+      if (descendantPath && isFolderPasswordMetadata(object.customMetadata)) {
+        protectedPaths.push(descendantPath);
+      }
+    }
+    cursor = listing.truncated ? listing.cursor : undefined;
+  } while (cursor);
+
+  return protectedPaths;
+}
+
 export async function getFolderProtectionState(
   env: AppBindings,
   rootDirId: string,
@@ -415,6 +447,17 @@ export async function getFileProtectedBy(
   filePath: string,
 ): Promise<string | null> {
   return findProtectedPath(env, rootDirId, getParentPath(filePath));
+}
+
+export async function hasProtectedFolderInSubtree(
+  env: AppBindings,
+  rootDirId: string,
+  folderPath: string,
+): Promise<boolean> {
+  return (
+    Boolean(await getFolderPasswordRecord(env, rootDirId, folderPath)) ||
+    (await hasProtectedDescendant(env, rootDirId, folderPath))
+  );
 }
 
 export function getProtectedPathsFromObjects(
@@ -621,6 +664,30 @@ export function getFolderUnlockTokenFromRequest(c: Context<AppContext>): string 
   return c.req.header(FOLDER_UNLOCK_HEADER) ?? c.req.query(FOLDER_UNLOCK_QUERY_PARAM);
 }
 
+export function getFolderUnlockTokensFromRequest(c: Context<AppContext>): Record<string, string> {
+  const encodedTokens = c.req.header(FOLDER_UNLOCKS_HEADER);
+  if (!encodedTokens) {
+    return {};
+  }
+
+  try {
+    const value = JSON.parse(decodeURIComponent(encodedTokens));
+    if (typeof value !== "object" || value === null || Array.isArray(value)) {
+      return {};
+    }
+
+    const tokens: Record<string, string> = {};
+    for (const [protectedPath, token] of Object.entries(value)) {
+      if (typeof token === "string") {
+        tokens[protectedPath] = token;
+      }
+    }
+    return tokens;
+  } catch {
+    return {};
+  }
+}
+
 export async function isFolderUnlockTokenValid(
   env: AppBindings,
   rootDirId: string,
@@ -656,13 +723,47 @@ export async function assertPathAccess(
       c.env,
       rootDirId,
       protectedPath,
-      getFolderUnlockTokenFromRequest(c),
+      getFolderUnlockTokensFromRequest(c)[protectedPath] ?? getFolderUnlockTokenFromRequest(c),
     )
   ) {
     return protectedPath;
   }
 
   throw new FolderLockedError(protectedPath);
+}
+
+export async function getUnlockedProtectedPathsFromRequest(
+  c: Context<AppContext>,
+  rootDirId: string,
+  protectedPaths: Set<string>,
+): Promise<Set<string>> {
+  const unlockedPaths = new Set<string>();
+  const tokens = getFolderUnlockTokensFromRequest(c);
+  const fallbackToken = getFolderUnlockTokenFromRequest(c);
+
+  await Promise.all(
+    [...protectedPaths].map(async (protectedPath) => {
+      const token = tokens[protectedPath] ?? fallbackToken;
+      if (await isFolderUnlockTokenValid(c.env, rootDirId, protectedPath, token)) {
+        unlockedPaths.add(protectedPath);
+      }
+    }),
+  );
+
+  return unlockedPaths;
+}
+
+export async function assertFolderSubtreeAccess(
+  c: Context<AppContext>,
+  rootDirId: string,
+  folderPath: string,
+): Promise<void> {
+  await assertPathAccess(c, rootDirId, folderPath);
+
+  const protectedDescendantPaths = await findProtectedDescendantPaths(c.env, rootDirId, folderPath);
+  for (const protectedDescendantPath of protectedDescendantPaths) {
+    await assertPathAccess(c, rootDirId, protectedDescendantPath);
+  }
 }
 
 export async function assertPathNotPasswordProtected(

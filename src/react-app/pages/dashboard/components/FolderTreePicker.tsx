@@ -1,5 +1,6 @@
 import { type ComponentType, type SVGProps } from "react";
 import MdiFolder from "~icons/mdi/folder";
+import MdiLock from "~icons/mdi/lock";
 import type { FolderTreeNode } from "../../../../types";
 import { cn } from "../../../utils/cn";
 
@@ -46,18 +47,30 @@ function FolderTreeItem({
         aria-pressed={isSelected}
         onClick={() => onSelect(node.path)}
       >
-        <Icon
-          className={cn(
-            "h-4 w-4 shrink-0",
-            isDisabled
-              ? "text-base-content/35"
-              : isSelectionVisible
-                ? "text-current"
-                : node.path
-                  ? "text-warning"
-                  : "text-primary",
-          )}
-        />
+        <span className="relative inline-flex h-4 w-4 shrink-0 items-center justify-center">
+          <Icon
+            className={cn(
+              "h-4 w-4 shrink-0",
+              isDisabled
+                ? "text-base-content/35"
+                : isSelectionVisible
+                  ? "text-current"
+                  : node.path
+                    ? "text-warning"
+                    : "text-primary",
+            )}
+          />
+          {node.passwordProtected ? (
+            <span
+              className={cn(
+                "absolute -right-1 -top-1 grid h-3 w-3 place-items-center rounded-full bg-base-100 shadow-sm ring-1 ring-base-300/70",
+                isDisabled ? "text-base-content/45" : "text-base-content",
+              )}
+            >
+              <MdiLock className="h-2 w-2" />
+            </span>
+          ) : null}
+        </span>
         <span className="min-w-0 flex-1 truncate text-left">
           {getFolderLabel(node.path, node.name)}
         </span>

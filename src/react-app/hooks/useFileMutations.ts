@@ -15,7 +15,10 @@ import type {
   VerifyFolderPasswordResponse,
 } from "../../types";
 import { ApiError, apiRequest } from "../utils/apiRequest";
-import { getFolderUnlockHeadersForPath } from "../utils/folderUnlockTokens";
+import {
+  getFolderUnlockHeadersForPath,
+  getFolderUnlockHeadersForPaths,
+} from "../utils/folderUnlockTokens";
 import {
   FILE_BATCH_DELETE_ENDPOINT,
   FILE_BATCH_MOVE_ENDPOINT,
@@ -109,7 +112,7 @@ export function useDeleteFileMutation() {
       const params = new URLSearchParams({ path: arg });
       return apiRequest<FileMutationResponse>(`${url}?${params.toString()}`, {
         method: "DELETE",
-        headers: getFolderUnlockHeadersForPath(arg),
+        headers: getFolderUnlockHeadersForPaths([arg]),
       });
     },
     {
@@ -159,7 +162,7 @@ export function useDeleteFolderMutation() {
       const params = new URLSearchParams({ path: arg });
       return apiRequest<FileMutationResponse>(`${url}?${params.toString()}`, {
         method: "DELETE",
-        headers: getFolderUnlockHeadersForPath(arg),
+        headers: getFolderUnlockHeadersForPaths([arg]),
       });
     },
     {
@@ -186,7 +189,7 @@ export function useRenameFolderMutation() {
     (url, { arg }) =>
       apiRequest<FileMutationResponse>(url, {
         method: "PATCH",
-        headers: getFolderUnlockHeadersForPath(arg.path),
+        headers: getFolderUnlockHeadersForPaths([arg.path]),
         body: JSON.stringify(arg),
       }),
     {
@@ -213,7 +216,7 @@ export function useMoveEntryMutation() {
     (url, { arg }) =>
       apiRequest<FileMutationResponse>(url, {
         method: "PATCH",
-        headers: getFolderUnlockHeadersForPath(arg.targetParentPath),
+        headers: getFolderUnlockHeadersForPaths([arg.path, arg.targetParentPath]),
         body: JSON.stringify(arg),
       }),
     {
@@ -241,7 +244,7 @@ export function useBatchDeleteEntriesMutation() {
     (url, { arg }) =>
       apiRequest<BatchFileMutationResponse>(url, {
         method: "DELETE",
-        headers: arg.targets[0] ? getFolderUnlockHeadersForPath(arg.targets[0].path) : undefined,
+        headers: getFolderUnlockHeadersForPaths(arg.targets.map((target) => target.path)),
         body: JSON.stringify(arg),
       }),
     {
@@ -268,7 +271,10 @@ export function useBatchMoveEntriesMutation() {
     (url, { arg }) =>
       apiRequest<BatchFileMutationResponse>(url, {
         method: "PATCH",
-        headers: getFolderUnlockHeadersForPath(arg.targetParentPath),
+        headers: getFolderUnlockHeadersForPaths([
+          arg.targetParentPath,
+          ...arg.targets.map((target) => target.path),
+        ]),
         body: JSON.stringify(arg),
       }),
     {

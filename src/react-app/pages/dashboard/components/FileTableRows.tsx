@@ -5,6 +5,7 @@ import { getFileIcon } from "../../../constants/fileIcons";
 import { useAppStore } from "../../../store";
 import { cn } from "../../../utils/cn";
 import { formatBytes, formatDate, formatDetailedDate } from "../../../utils/fileFormatters";
+import { getFolderUnlockTokenFromTokens } from "../../../utils/folderUnlockTokens";
 import { openFilePreview, openFolderPasswordModal } from "../actions";
 import { useDashboardEntrySelection } from "../hooks/useDashboardEntrySelection";
 import { useDashboardLocatedFileHighlight } from "../hooks/useDashboardLocatedFileHighlight";
@@ -67,12 +68,23 @@ type DashboardFile = FileEntry & {
   searchMatchRanges?: SearchMatchRange[];
 };
 
-function FolderTableIcon({ passwordProtected }: { passwordProtected: boolean }) {
+function FolderTableIcon({
+  isPasswordVerified,
+  passwordProtected,
+}: {
+  isPasswordVerified: boolean;
+  passwordProtected: boolean;
+}) {
   return (
     <span className="relative inline-flex h-5 w-5 shrink-0 items-center justify-center">
       <MdiFolder className="h-5 w-5 text-warning" />
       {passwordProtected ? (
-        <span className="absolute -right-1 -top-1 grid h-3.5 w-3.5 place-items-center rounded-full bg-base-100 text-base-content shadow-sm ring-1 ring-base-300/70">
+        <span
+          className={cn(
+            "absolute -right-1 -top-1 grid h-3.5 w-3.5 place-items-center rounded-full bg-base-100 shadow-sm ring-1 ring-base-300/70",
+            isPasswordVerified ? "text-success" : "text-base-content",
+          )}
+        >
           <MdiLock className="h-2.5 w-2.5" />
         </span>
       ) : null}
@@ -90,6 +102,7 @@ export function FolderRow({
   const { setPath } = useDashboardPath();
   const { folderUnlockTokens } = useAppStore();
   const rowKey = `folder:${folder.path}`;
+  const isPasswordVerified = Boolean(getFolderUnlockTokenFromTokens(folderUnlockTokens, folder.path));
   const selection = useDashboardEntrySelection(
     {
       type: "folder",
@@ -124,12 +137,18 @@ export function FolderRow({
                 checked={selection.isSelected}
                 onClick={selection.handleSelectionClick}
               />
-              <FolderTableIcon passwordProtected={folder.passwordProtected} />
+              <FolderTableIcon
+                isPasswordVerified={isPasswordVerified}
+                passwordProtected={folder.passwordProtected}
+              />
             </>
           ) : (
             <span className="relative h-5 w-5 shrink-0">
               <span className="absolute inset-0 transition-opacity group-hover:opacity-0">
-                <FolderTableIcon passwordProtected={folder.passwordProtected} />
+                <FolderTableIcon
+                  isPasswordVerified={isPasswordVerified}
+                  passwordProtected={folder.passwordProtected}
+                />
               </span>
               <TableEntryCheckbox
                 ariaLabel={`选择文件夹 ${folder.name}`}

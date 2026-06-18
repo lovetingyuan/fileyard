@@ -1,6 +1,8 @@
 import MdiChevronRight from "~icons/mdi/chevron-right";
 import MdiHomeOutline from "~icons/mdi/home-outline";
 import MdiInformationOutline from "~icons/mdi/information-outline";
+import MdiLock from "~icons/mdi/lock";
+import { useAppStore } from "../../../store";
 import { cn } from "../../../utils/cn";
 import { openDirectoryStats } from "../actions";
 import { useDashboardPath } from "../hooks/useDashboardPath";
@@ -10,14 +12,30 @@ type FileBreadcrumbsProps = {
   isCurrentPathLocked?: boolean;
   isCurrentPathMissing?: boolean;
   isNavigationDisabled?: boolean;
+  lockedProtectedPath?: string | null;
 };
+
+function hasExactUnlockToken(folderUnlockTokens: Record<string, string>, path: string) {
+  return Object.prototype.hasOwnProperty.call(folderUnlockTokens, path);
+}
+
+function BreadcrumbLockIcon({ isPasswordVerified }: { isPasswordVerified: boolean }) {
+  return (
+    <MdiLock
+      className={cn("h-3 w-3 shrink-0", isPasswordVerified ? "text-success" : "text-base-content/60")}
+      aria-hidden="true"
+    />
+  );
+}
 
 export function FileBreadcrumbs({
   isCurrentPathLocked = false,
   isCurrentPathMissing = false,
   isNavigationDisabled = false,
+  lockedProtectedPath = null,
 }: FileBreadcrumbsProps) {
   const { breadcrumbs, currentPath, setPath } = useDashboardPath();
+  const { folderUnlockTokens } = useAppStore();
   const isActionDisabled = isCurrentPathLocked || isCurrentPathMissing || isNavigationDisabled;
   const isRootPath = breadcrumbs.length === 0;
 
@@ -41,25 +59,29 @@ export function FileBreadcrumbs({
         {breadcrumbs.map((segment, index) => {
           const path = breadcrumbs.slice(0, index + 1).join("/");
           const isCurrentSegment = index === breadcrumbs.length - 1;
+          const isPasswordVerified = hasExactUnlockToken(folderUnlockTokens, path);
+          const showLock = isPasswordVerified || lockedProtectedPath === path;
 
           return (
             <li key={path} className="flex min-w-0 items-center gap-2">
               <MdiChevronRight className="h-4 w-4 shrink-0 text-base-content/35" />
               {isCurrentSegment ? (
-                <span inert className="min-w-0 break-all text-base-content/60">
-                  {segment}
+                <span inert className="inline-flex min-w-0 items-center gap-1 text-base-content/60">
+                  <span className="min-w-0 break-all">{segment}</span>
+                  {showLock ? <BreadcrumbLockIcon isPasswordVerified={isPasswordVerified} /> : null}
                 </span>
               ) : (
                 <button
                   type="button"
                   className={cn(
                     getBreadcrumbButtonClassName(isNavigationDisabled),
-                    "min-w-0 break-all text-left",
+                    "inline-flex min-w-0 items-center gap-1 text-left",
                   )}
                   disabled={isNavigationDisabled}
                   onClick={() => setPath(path)}
                 >
-                  {segment}
+                  <span className="min-w-0 break-all">{segment}</span>
+                  {showLock ? <BreadcrumbLockIcon isPasswordVerified={isPasswordVerified} /> : null}
                 </button>
               )}
             </li>

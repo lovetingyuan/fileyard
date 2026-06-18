@@ -10,6 +10,7 @@ import type {
 import type { AppContext } from "../context";
 import { folderExists, getFileContext } from "../utils/appHelpers";
 import {
+  assertFolderSubtreeAccess,
   assertPathAccess,
   handleFolderPasswordError,
   removeFolderPassword,
@@ -118,7 +119,7 @@ export async function deleteFolder(c: Context<AppContext>) {
     const path = normalizeRelativePath(query.path, { allowEmpty: false, label: "Path" });
     assertPathNotReserved(path);
     const { rootDirId } = await getFileContext(c);
-    await assertPathAccess(c, rootDirId, path);
+    await assertFolderSubtreeAccess(c, rootDirId, path);
 
     if (!(await folderExists(c.env, rootDirId, path))) {
       return jsonError(c, "Folder not found", 404);
@@ -170,7 +171,7 @@ export async function renameFolder(c: Context<AppContext>) {
     const targetPath = joinRelativePath(parentPath, name);
     assertPathNotReserved(targetPath);
     const { rootDirId } = await getFileContext(c);
-    await assertPathAccess(c, rootDirId, path);
+    await assertFolderSubtreeAccess(c, rootDirId, path);
 
     if (!(await folderExists(c.env, rootDirId, path))) {
       return jsonError(c, "Folder not found", 404);
