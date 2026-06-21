@@ -80,7 +80,6 @@ export function FolderPasswordGate({ target }: { target: FolderPasswordModalTarg
               )}
               value={password}
               autoComplete="current-password"
-              autoFocus
               onChange={event => {
                 setPassword(event.target.value)
                 setHasEditedPassword(true)

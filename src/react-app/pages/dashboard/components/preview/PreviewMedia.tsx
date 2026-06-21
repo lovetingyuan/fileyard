@@ -12,6 +12,8 @@ import {
 } from "./previewImageDimensions";
 import { PREVIEW_MEDIA_VOLUME_STORAGE_KEY } from "./previewLimits";
 
+const EMPTY_CAPTIONS_TRACK_SRC = "data:text/vtt;charset=utf-8,WEBVTT%0A";
+
 type ImagePreviewLoadState = {
   dimensions?: ImageOriginalDimensions;
   previewUrl: string;
@@ -165,10 +167,13 @@ export function VideoPreview({
     <video
       ref={restoreStoredPreviewMediaVolume}
       src={previewUrl}
+      aria-label="Video preview"
       controls
       onVolumeChange={handlePreviewMediaVolumeChange}
       className={cn(isFullscreen ? "max-h-full max-w-full rounded" : STANDARD_VIDEO_CLASS_NAME)}
-    />
+    >
+      <track kind="captions" src={EMPTY_CAPTIONS_TRACK_SRC} label="Captions" />
+    </video>
   );
 }
 
@@ -188,10 +193,13 @@ export function AudioPreview({
       <audio
         ref={restoreStoredPreviewMediaVolume}
         src={previewUrl}
+        aria-label="Audio preview"
         controls
         onVolumeChange={handlePreviewMediaVolumeChange}
         className={STANDARD_AUDIO_CLASS_NAME}
-      />
+      >
+        <track kind="captions" src={EMPTY_CAPTIONS_TRACK_SRC} label="Captions" />
+      </audio>
     </div>
   );
 }

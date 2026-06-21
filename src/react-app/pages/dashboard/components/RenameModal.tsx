@@ -1,16 +1,16 @@
-import { type KeyboardEvent, useCallback, useRef, useState } from "react";
-import toast from "react-hot-toast";
-import { Dialog } from "../../../components/Dialog";
-import { useRenameFileMutation, useRenameFolderMutation } from "../../../hooks/useFilesApi";
-import { useAppStore } from "../../../store";
-import { getRenameValidationMessage } from "../../../utils/renameValidation";
-import { closeRenameTarget, setRenamingPath } from "../actions";
-import { useDashboardFileView } from "../hooks/useDashboardFileView";
+import { type KeyboardEvent, useCallback, useRef, useState } from 'react'
+import toast from 'react-hot-toast'
+import { Dialog } from '../../../components/Dialog'
+import { useRenameFileMutation, useRenameFolderMutation } from '../../../hooks/useFilesApi'
+import { useAppStore } from '../../../store'
+import { getRenameValidationMessage } from '../../../utils/renameValidation'
+import { closeRenameTarget, setRenamingPath } from '../actions'
+import { useDashboardFileView } from '../hooks/useDashboardFileView'
 import {
   FILE_OPERATION_UPLOAD_BLOCKED_MESSAGE,
   isFolderOperationBlockedByActiveUpload,
-} from "../hooks/useUploadQueue";
-import { shouldConfirmFromInputKey } from "../utils/modalKeyboard";
+} from '../hooks/useUploadQueue'
+import { shouldConfirmFromInputKey } from '../utils/modalKeyboard'
 import {
   focusRenameInput,
   getRenameConfirmButtonClassName,
@@ -21,81 +21,81 @@ import {
   getVisibleRenameValidationMessage,
   isRenameConfirmDisabled,
   shouldCloseRenameWithoutSaving,
-} from "../utils/renameModalInput";
+} from '../utils/renameModalInput'
 
 export function RenameModal() {
-  const { pendingRenameTarget, renamingPath, uploadQueue } = useAppStore();
-  const { data, refresh } = useDashboardFileView();
-  const { renameFile } = useRenameFileMutation();
-  const { renameFolder } = useRenameFolderMutation();
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const [name, setName] = useState(() => getRenameInputInitialValue(pendingRenameTarget?.name));
-  const [hasEditedName, setHasEditedName] = useState(false);
+  const { pendingRenameTarget, renamingPath, uploadQueue } = useAppStore()
+  const { data, refresh } = useDashboardFileView()
+  const { renameFile } = useRenameFileMutation()
+  const { renameFolder } = useRenameFolderMutation()
+  const inputRef = useRef<HTMLInputElement | null>(null)
+  const [name, setName] = useState(() => getRenameInputInitialValue(pendingRenameTarget?.name))
+  const [hasEditedName, setHasEditedName] = useState(false)
   const setInputRef = useCallback((node: HTMLInputElement | null) => {
-    inputRef.current = node;
-  }, []);
+    inputRef.current = node
+  }, [])
   const focusInputAfterOpen = useCallback(() => {
-    focusRenameInput(inputRef.current);
-  }, []);
+    focusRenameInput(inputRef.current)
+  }, [])
 
   if (!pendingRenameTarget) {
-    return null;
+    return null
   }
 
-  const trimmedName = name.trim();
-  const targetTypeLabel = pendingRenameTarget.type === "file" ? "文件" : "文件夹";
+  const trimmedName = name.trim()
+  const targetTypeLabel = pendingRenameTarget.type === 'file' ? '文件' : '文件夹'
   const rawValidationMessage = getRenameValidationMessage({
     currentName: pendingRenameTarget.name,
     files: data.files,
     folders: data.folders,
     name,
     type: pendingRenameTarget.type,
-  });
+  })
   const validationMessage = getRenameValidationMessageForInput({
     currentName: pendingRenameTarget.name,
     name,
     rawValidationMessage,
-  });
+  })
   const visibleValidationMessage = getVisibleRenameValidationMessage(
     validationMessage,
     hasEditedName,
-  );
-  const isRenaming = Boolean(renamingPath);
+  )
+  const isRenaming = Boolean(renamingPath)
   const confirmDisabled = isRenameConfirmDisabled({
     currentName: pendingRenameTarget.name,
     isRenaming,
     isUploadBlocked: false,
     name,
     validationMessage,
-  });
+  })
   const confirmText = getRenameConfirmText({
     currentName: pendingRenameTarget.name,
     name,
     type: pendingRenameTarget.type,
-  });
+  })
   const confirmButtonClassName = getRenameConfirmButtonClassName({
     currentName: pendingRenameTarget.name,
     name,
     type: pendingRenameTarget.type,
-  });
+  })
 
   const handleClose = () => {
     if (!isRenaming) {
-      closeRenameTarget();
+      closeRenameTarget()
     }
-  };
+  }
 
   const handleSave = async () => {
     if (confirmDisabled) {
-      return;
+      return
     }
 
     if (
-      pendingRenameTarget.type === "folder" &&
+      pendingRenameTarget.type === 'folder' &&
       isFolderOperationBlockedByActiveUpload(uploadQueue, pendingRenameTarget.path)
     ) {
-      toast.error(FILE_OPERATION_UPLOAD_BLOCKED_MESSAGE);
-      return;
+      toast.error(FILE_OPERATION_UPLOAD_BLOCKED_MESSAGE)
+      return
     }
 
     if (
@@ -104,27 +104,27 @@ export function RenameModal() {
         name,
       })
     ) {
-      closeRenameTarget();
-      return;
+      closeRenameTarget()
+      return
     }
 
-    setRenamingPath(pendingRenameTarget.path);
+    setRenamingPath(pendingRenameTarget.path)
     try {
-      if (pendingRenameTarget.type === "file") {
-        await renameFile(pendingRenameTarget.path, trimmedName);
+      if (pendingRenameTarget.type === 'file') {
+        await renameFile(pendingRenameTarget.path, trimmedName)
       } else {
-        await renameFolder(pendingRenameTarget.path, trimmedName);
+        await renameFolder(pendingRenameTarget.path, trimmedName)
       }
-      await refresh();
-      toast.success(`"${pendingRenameTarget.name}" renamed`);
-      closeRenameTarget();
+      await refresh()
+      toast.success(`"${pendingRenameTarget.name}" renamed`)
+      closeRenameTarget()
     } catch (error) {
-      await refresh();
-      toast.error(error instanceof Error ? error.message : "Failed to rename");
+      await refresh()
+      toast.error(error instanceof Error ? error.message : 'Failed to rename')
     } finally {
-      setRenamingPath(null);
+      setRenamingPath(null)
     }
-  };
+  }
 
   const handleNameKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (
@@ -133,12 +133,12 @@ export function RenameModal() {
         isComposing: event.nativeEvent.isComposing,
       })
     ) {
-      return;
+      return
     }
 
-    event.preventDefault();
-    void handleSave();
-  };
+    event.preventDefault()
+    void handleSave()
+  }
 
   return (
     <Dialog
@@ -170,13 +170,12 @@ export function RenameModal() {
                 visibleValidationMessage,
               })}
               value={name}
-              onChange={(event) => {
-                setHasEditedName(true);
-                setName(event.target.value);
+              onChange={event => {
+                setHasEditedName(true)
+                setName(event.target.value)
               }}
               onKeyDown={handleNameKeyDown}
               disabled={isInteractionDisabled}
-              autoFocus
             />
             {visibleValidationMessage ? (
               <span className="text-xs text-error">{visibleValidationMessage}</span>
@@ -185,5 +184,5 @@ export function RenameModal() {
         </div>
       )}
     </Dialog>
-  );
+  )
 }
