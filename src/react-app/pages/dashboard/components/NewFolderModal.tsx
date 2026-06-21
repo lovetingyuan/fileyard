@@ -1,4 +1,4 @@
-import { type KeyboardEvent, useCallback, useRef, useState } from "react";
+import { type KeyboardEvent, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { Dialog } from "../../../components/Dialog";
 import { useCreateFolderMutation } from "../../../hooks/useFilesApi";
@@ -23,12 +23,12 @@ export function NewFolderModal() {
   const [name, setName] = useState(addNewFolderName);
   const [createErrorMessage, setCreateErrorMessage] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const setInputRef = useCallback((node: HTMLInputElement | null) => {
+  const setInputRef = (node: HTMLInputElement | null) => {
     inputRef.current = node;
-  }, []);
-  const handleAfterOpen = useCallback(() => {
+  };
+  const handleAfterOpen = () => {
     focusFolderNameInput(inputRef.current);
-  }, []);
+  };
 
   if (!isCreatingNewFolder) {
     return null;
@@ -63,9 +63,8 @@ export function NewFolderModal() {
       toast.success("Folder created");
     } catch (error) {
       setCreateErrorMessage(getCreateFolderErrorMessage(error));
-    } finally {
-      setCreatingFolder(false);
     }
+    setCreatingFolder(false);
   };
 
   const handleNameKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {

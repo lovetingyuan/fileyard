@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from "react";
+import { useRef } from "react";
 import toast from "react-hot-toast";
 import type { UploadQueueItem } from "../../../../types";
 import { getStoreMethods, useAppStore } from "../../../store";
@@ -68,21 +68,18 @@ export function useUploadQueue({ currentPath, onUploadsComplete }: UseUploadQueu
   const ensureParentFoldersRef = useRef(createFolderEnsureer(createFolder));
   const uploadedSinceIdleRef = useRef(false);
 
-  const setItems = useCallback(
-    (updater: (items: UploadQueueItem[]) => UploadQueueItem[]) => {
-      const nextItems = updater(itemsRef.current);
-      itemsRef.current = nextItems;
-      setUploadQueue(nextItems);
-    },
-    [setUploadQueue],
-  );
+  const setItems = (updater: (items: UploadQueueItem[]) => UploadQueueItem[]) => {
+    const nextItems = updater(itemsRef.current);
+    itemsRef.current = nextItems;
+    setUploadQueue(nextItems);
+  };
 
-  const isItemCanceled = useCallback((id: string) => {
+  const isItemCanceled = (id: string) => {
     const item = itemsRef.current.find((currentItem) => currentItem.id === id);
     return !item || item.status === "canceled";
-  }, []);
+  };
 
-  const finishIdleBatch = useCallback(() => {
+  const finishIdleBatch = () => {
     if (activeIdsRef.current.size > 0) {
       return;
     }
@@ -94,7 +91,7 @@ export function useUploadQueue({ currentPath, onUploadsComplete }: UseUploadQueu
     }
     uploadedSinceIdleRef.current = false;
     void onUploadsComplete();
-  }, [onUploadsComplete]);
+  };
 
   const processQueueRef = useUploadQueueProcessor({
     activeIdsRef,
@@ -109,123 +106,108 @@ export function useUploadQueue({ currentPath, onUploadsComplete }: UseUploadQueu
     uploadedSinceIdleRef,
   });
 
-  const cancelUploadIds = useCallback(
-    (ids: Set<string>) => {
-      if (ids.size === 0) {
-        return;
-      }
+  const cancelUploadIds = (ids: Set<string>) => {
+    if (ids.size === 0) {
+      return;
+    }
 
-      for (const id of ids) {
-        uploadTasksRef.current.get(id)?.cancel();
-      }
-      const nextItems = itemsRef.current.map((item) =>
-        ids.has(item.id) && REMAINING_STATUSES.has(item.status)
-          ? { ...item, status: "canceled" as const, errorMessage: null }
-          : item,
-      );
-      itemsRef.current = nextItems;
-      setUploadQueue(nextItems);
-    },
-    [setUploadQueue],
-  );
+    for (const id of ids) {
+      uploadTasksRef.current.get(id)?.cancel();
+    }
+    const nextItems = itemsRef.current.map((item) =>
+      ids.has(item.id) && REMAINING_STATUSES.has(item.status)
+        ? { ...item, status: "canceled" as const, errorMessage: null }
+        : item,
+    );
+    itemsRef.current = nextItems;
+    setUploadQueue(nextItems);
+  };
 
-  const cancelUpload = useCallback(
-    (id: string) => {
-      cancelUploadIds(new Set([id]));
-      processQueueRef.current();
-      finishIdleBatch();
-    },
-    [cancelUploadIds, finishIdleBatch, processQueueRef],
-  );
+  const cancelUpload = (id: string) => {
+    cancelUploadIds(new Set([id]));
+    processQueueRef.current();
+    finishIdleBatch();
+  };
 
-  const enqueueUploadFiles = useCallback(
-    async (files: FileList | File[]) => {
-      const selectedFiles = Array.from(files);
-      if (selectedFiles.length === 0) {
-        return;
-      }
+  const enqueueUploadFiles = async (files: FileList | File[]) => {
+    const selectedFiles = Array.from(files);
+    if (selectedFiles.length === 0) {
+      return;
+    }
 
-      const { acceptedFiles, ignoredCount } = filterFilesAlreadyInUploadQueue({
-        files: selectedFiles,
-        currentPath,
-        uploadQueue: itemsRef.current,
+    const { acceptedFiles, ignoredCount } = filterFilesAlreadyInUploadQueue({
+      files: selectedFiles,
+      currentPath,
+      uploadQueue: itemsRef.current,
+    });
+
+    if (ignoredCount > 0) {
+      toast.error(getDuplicateUploadToastMessage(ignoredCount), {
+        id: DUPLICATE_UPLOAD_TOAST_ID,
       });
+    }
 
-      if (ignoredCount > 0) {
-        toast.error(getDuplicateUploadToastMessage(ignoredCount), {
-          id: DUPLICATE_UPLOAD_TOAST_ID,
-        });
-      }
+    if (acceptedFiles.length === 0) {
+      return;
+    }
 
-      if (acceptedFiles.length === 0) {
-        return;
-      }
+    const limits = await fetchUploadLimits().catch(() => ({
+      success: true as const,
+      maxFileBytes: FILE_UPLOAD_BATCH_LIMIT_BYTES,
+      maxBatchBytes: FILE_UPLOAD_BATCH_LIMIT_BYTES,
+    }));
+    const nextItems = createUploadQueueItems({
+      files: acceptedFiles,
+      currentPath,
+      maxFileBytes: limits.maxFileBytes,
+      maxBatchBytes: limits.maxBatchBytes,
+    });
 
-      const limits = await fetchUploadLimits().catch(() => ({
-        success: true as const,
-        maxFileBytes: FILE_UPLOAD_BATCH_LIMIT_BYTES,
-        maxBatchBytes: FILE_UPLOAD_BATCH_LIMIT_BYTES,
-      }));
-      const nextItems = createUploadQueueItems({
-        files: acceptedFiles,
-        currentPath,
-        maxFileBytes: limits.maxFileBytes,
-        maxBatchBytes: limits.maxBatchBytes,
-      });
+    setItems((currentItems) => appendUploadQueueItems(currentItems, nextItems));
+    setIsUploadPanelMinimized(false);
+    uploadedSinceIdleRef.current = false;
+    processQueueRef.current();
+  };
 
-      setItems((currentItems) => appendUploadQueueItems(currentItems, nextItems));
-      setIsUploadPanelMinimized(false);
-      uploadedSinceIdleRef.current = false;
-      processQueueRef.current();
-    },
-    [currentPath, processQueueRef, setIsUploadPanelMinimized, setItems],
-  );
-
-  const cancelRemainingUploads = useCallback(() => {
+  const cancelRemainingUploads = () => {
     const remainingIds = new Set(
       itemsRef.current.filter((item) => REMAINING_STATUSES.has(item.status)).map((item) => item.id),
     );
     cancelUploadIds(remainingIds);
     finishIdleBatch();
-  }, [cancelUploadIds, finishIdleBatch]);
+  };
 
-  const cancelUploadsInFolderAndWait = useCallback(
-    async (folderPath: string) => {
-      const activeItems = getActiveUploadItemsInFolder(itemsRef.current, folderPath);
-      const activeIds = new Set(activeItems.map((item) => item.id));
-      const promises = activeItems
-        .map((item) => activeItemPromisesRef.current.get(item.id))
-        .filter((promise): promise is Promise<void> => Boolean(promise));
+  const cancelUploadsInFolderAndWait = async (folderPath: string) => {
+    const activeItems = getActiveUploadItemsInFolder(itemsRef.current, folderPath);
+    const activeIds = new Set(activeItems.map((item) => item.id));
+    const promises = activeItems
+      .map((item) => activeItemPromisesRef.current.get(item.id))
+      .filter((promise): promise is Promise<void> => Boolean(promise));
 
-      cancelUploadIds(activeIds);
-      processQueueRef.current();
-      if (promises.length > 0) {
-        await Promise.allSettled(promises);
-      }
-      finishIdleBatch();
-    },
-    [cancelUploadIds, finishIdleBatch, processQueueRef],
-  );
+    cancelUploadIds(activeIds);
+    processQueueRef.current();
+    if (promises.length > 0) {
+      await Promise.allSettled(promises);
+    }
+    finishIdleBatch();
+  };
 
-  const retryUpload = useCallback(
-    (id: string) => {
-      setItems((currentItems) =>
-        currentItems.map((item) => (item.id === id ? resetFailedUploadItem(item) : item)),
-      );
-      processQueueRef.current();
-    },
-    [processQueueRef, setItems],
-  );
+  const retryUpload = (id: string) => {
+    setItems((currentItems) =>
+      currentItems.map((item) => (item.id === id ? resetFailedUploadItem(item) : item)),
+    );
+    processQueueRef.current();
+  };
 
-  const minimizePanel = useCallback(() => {
+  const minimizePanel = () => {
     setIsUploadPanelMinimized(true);
-  }, [setIsUploadPanelMinimized]);
+  };
 
-  const restorePanel = useCallback(() => {
+  const restorePanel = () => {
     setIsUploadPanelMinimized(false);
-  }, [setIsUploadPanelMinimized]);
+  };
 
-  const closePanel = useCallback(() => {
+  const closePanel = () => {
     clearUploadQueueTasks({
       activeIds: activeIdsRef.current,
       activeItemPromises: activeItemPromisesRef.current,
@@ -235,30 +217,18 @@ export function useUploadQueue({ currentPath, onUploadsComplete }: UseUploadQueu
     itemsRef.current = [];
     setUploadQueue([]);
     setIsUploadPanelMinimized(false);
-  }, [setIsUploadPanelMinimized, setUploadQueue]);
+  };
 
-  const controls = useMemo<UploadQueueControls>(
-    () => ({
-      enqueueUploadFiles,
-      cancelUpload,
-      cancelUploadsInFolderAndWait,
-      cancelRemainingUploads,
-      retryUpload,
-      minimizePanel,
-      restorePanel,
-      closePanel,
-    }),
-    [
-      enqueueUploadFiles,
-      cancelUpload,
-      cancelUploadsInFolderAndWait,
-      cancelRemainingUploads,
-      retryUpload,
-      minimizePanel,
-      restorePanel,
-      closePanel,
-    ],
-  );
+  const controls: UploadQueueControls = {
+    enqueueUploadFiles,
+    cancelUpload,
+    cancelUploadsInFolderAndWait,
+    cancelRemainingUploads,
+    retryUpload,
+    minimizePanel,
+    restorePanel,
+    closePanel,
+  };
   useUploadQueueControlsRegistration(controls);
 
   return {

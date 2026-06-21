@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useEffectEvent, useRef } from "react";
+import { useEffect, useEffectEvent, useRef } from "react";
 
 interface UseNativeDialogOptions {
   isOpen: boolean;
@@ -36,9 +36,9 @@ export function useNativeDialog({
     onAfterOpen?.();
   });
 
-  const setDialogRef = useCallback((node: HTMLDialogElement | null) => {
+  const setDialogRef = (node: HTMLDialogElement | null) => {
     dialogRef.current = node;
-  }, []);
+  };
 
   useEffect(() => {
     if (!isOpen) {

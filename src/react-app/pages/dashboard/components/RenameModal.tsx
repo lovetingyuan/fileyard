@@ -1,4 +1,4 @@
-import { type KeyboardEvent, useCallback, useRef, useState } from 'react'
+import { type KeyboardEvent, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 import { Dialog } from '../../../components/Dialog'
 import { useRenameFileMutation, useRenameFolderMutation } from '../../../hooks/useFilesApi'
@@ -31,12 +31,12 @@ export function RenameModal() {
   const inputRef = useRef<HTMLInputElement | null>(null)
   const [name, setName] = useState(() => getRenameInputInitialValue(pendingRenameTarget?.name))
   const [hasEditedName, setHasEditedName] = useState(false)
-  const setInputRef = useCallback((node: HTMLInputElement | null) => {
+  const setInputRef = (node: HTMLInputElement | null) => {
     inputRef.current = node
-  }, [])
-  const focusInputAfterOpen = useCallback(() => {
+  }
+  const focusInputAfterOpen = () => {
     focusRenameInput(inputRef.current)
-  }, [])
+  }
 
   if (!pendingRenameTarget) {
     return null
@@ -121,9 +121,8 @@ export function RenameModal() {
     } catch (error) {
       await refresh()
       toast.error(error instanceof Error ? error.message : 'Failed to rename')
-    } finally {
-      setRenamingPath(null)
     }
+    setRenamingPath(null)
   }
 
   const handleNameKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {

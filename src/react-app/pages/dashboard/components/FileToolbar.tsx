@@ -1,4 +1,4 @@
-import { useCallback, useImperativeHandle, useRef, type Ref } from "react";
+import { useImperativeHandle, useRef, type Ref } from "react";
 import MdiChevronDown from "~icons/mdi/chevron-down";
 import MdiClipboardFileOutline from "~icons/mdi/clipboard-file-outline";
 import MdiClose from "~icons/mdi/close";
@@ -86,13 +86,13 @@ export function FileToolbar({
     isFileMutationDisabled,
   });
 
-  const folderInputCallbackRef = useCallback((node: HTMLInputElement | null) => {
+  const folderInputCallbackRef = (node: HTMLInputElement | null) => {
     folderInputRef.current = node;
     if (node) {
       node.setAttribute("webkitdirectory", "");
       node.setAttribute("directory", "");
     }
-  }, []);
+  };
 
   const handleUploadSelection = (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -102,13 +102,23 @@ export function FileToolbar({
     void uploadDashboardFiles({ files, source, isFileMutationDisabled });
   };
 
-  const focusSearchInput = useCallback(() => {
+  const focusSearchInput = () => {
     requestAnimationFrame(() => {
       searchInputRef.current?.focus();
     });
-  }, []);
+  };
 
-  useImperativeHandle(ref, () => ({ focusSearchInput }), [focusSearchInput]);
+  useImperativeHandle(
+    ref,
+    () => ({
+      focusSearchInput: () => {
+        requestAnimationFrame(() => {
+          searchInputRef.current?.focus();
+        });
+      },
+    }),
+    [],
+  );
 
   const clearSearchInput = () => {
     setDashboardSearchInput("");
@@ -122,12 +132,14 @@ export function FileToolbar({
         type="file"
         className="hidden"
         multiple
+        aria-label="选择上传文件"
         onChange={(event) => handleUploadSelection(event, "file")}
       />
       <input
         ref={folderInputCallbackRef}
         type="file"
         className="hidden"
+        aria-label="选择上传文件夹"
         onChange={(event) => handleUploadSelection(event, "folder")}
       />
 
@@ -266,6 +278,7 @@ export function FileToolbar({
                 )}
                 placeholder="Search current folder"
                 value={searchInputValue}
+                aria-label="搜索当前文件夹"
                 onChange={(event) => setDashboardSearchInput(event.target.value)}
                 onKeyDown={(event) => {
                   if (event.key === "Escape") {

@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useRef } from "react";
 import PQueue from "p-queue";
 import type { UploadQueueItem } from "../../../../types";
 import { UploadCanceledError, uploadFileWithProgress } from "../../../utils/fileUpload";
@@ -46,103 +46,91 @@ export function useUploadQueueProcessor({
   const scheduledIdsRef = useRef(new Set<string>());
   const uploadQueueRef = useRef(new PQueue({ concurrency: maxConcurrentUploads }));
 
-  const startItem = useCallback(
-    async (item: UploadQueueItem) => {
+  const startItem = async (item: UploadQueueItem) => {
+    if (isItemCanceled(item.id)) {
+      return;
+    }
+
+    activeIdsRef.current.add(item.id);
+    setItems((currentItems) =>
+      updateUploadQueueItem(currentItems, item.id, {
+        status: "preparing",
+        errorMessage: null,
+      }),
+    );
+
+    try {
+      await ensureParentFoldersRef.current(item.parentPath, () => isItemCanceled(item.id));
       if (isItemCanceled(item.id)) {
         return;
       }
 
-      activeIdsRef.current.add(item.id);
       setItems((currentItems) =>
         updateUploadQueueItem(currentItems, item.id, {
-          status: "preparing",
-          errorMessage: null,
+          status: "uploading",
         }),
       );
 
-      try {
-        await ensureParentFoldersRef.current(item.parentPath, () => isItemCanceled(item.id));
-        if (isItemCanceled(item.id)) {
-          return;
-        }
-
+      const task = uploadFileWithProgress({
+        file: item.file,
+        parentPath: item.parentPath,
+        onProgress: (progress) => {
+          setItems((currentItems) =>
+            currentItems.map((currentItem) =>
+              currentItem.id === item.id
+                ? {
+                    ...currentItem,
+                    progress: getNextUploadQueueProgress(currentItem.progress, progress),
+                  }
+                : currentItem,
+            ),
+          );
+        },
+      });
+      uploadTasksRef.current.set(item.id, task);
+      await task.promise;
+      uploadedSinceIdleRef.current = true;
+      setItems((currentItems) =>
+        updateUploadQueueItem(currentItems, item.id, {
+          status: "success",
+          progress: 100,
+          errorMessage: null,
+        }),
+      );
+    } catch (error) {
+      if (error instanceof UploadCanceledError || isItemCanceled(item.id)) {
         setItems((currentItems) =>
           updateUploadQueueItem(currentItems, item.id, {
-            status: "uploading",
-          }),
-        );
-
-        const task = uploadFileWithProgress({
-          file: item.file,
-          parentPath: item.parentPath,
-          onProgress: (progress) => {
-            setItems((currentItems) =>
-              currentItems.map((currentItem) =>
-                currentItem.id === item.id
-                  ? {
-                      ...currentItem,
-                      progress: getNextUploadQueueProgress(currentItem.progress, progress),
-                    }
-                  : currentItem,
-              ),
-            );
-          },
-        });
-        uploadTasksRef.current.set(item.id, task);
-        await task.promise;
-        uploadedSinceIdleRef.current = true;
-        setItems((currentItems) =>
-          updateUploadQueueItem(currentItems, item.id, {
-            status: "success",
-            progress: 100,
+            status: "canceled",
             errorMessage: null,
           }),
         );
-      } catch (error) {
-        if (error instanceof UploadCanceledError || isItemCanceled(item.id)) {
-          setItems((currentItems) =>
-            updateUploadQueueItem(currentItems, item.id, {
-              status: "canceled",
-              errorMessage: null,
-            }),
-          );
-        } else if (isDuplicateUploadError(error)) {
-          setItems((currentItems) =>
-            updateUploadQueueItem(currentItems, item.id, {
-              status: "duplicate",
-              progress: 0,
-              errorMessage: "名称重复",
-            }),
-          );
-        } else {
-          const message = toErrorMessage(error);
-          setItems((currentItems) =>
-            updateUploadQueueItem(currentItems, item.id, {
-              status: "failed",
-              errorMessage: message,
-            }),
-          );
-        }
-      } finally {
-        uploadTasksRef.current.delete(item.id);
-        activeIdsRef.current.delete(item.id);
-        processQueueRef.current();
-        finishIdleBatch();
+      } else if (isDuplicateUploadError(error)) {
+        setItems((currentItems) =>
+          updateUploadQueueItem(currentItems, item.id, {
+            status: "duplicate",
+            progress: 0,
+            errorMessage: "名称重复",
+          }),
+        );
+      } else {
+        const message = toErrorMessage(error);
+        setItems((currentItems) =>
+          updateUploadQueueItem(currentItems, item.id, {
+            status: "failed",
+            errorMessage: message,
+          }),
+        );
       }
-    },
-    [
-      activeIdsRef,
-      ensureParentFoldersRef,
-      finishIdleBatch,
-      isItemCanceled,
-      processQueueRef,
-      setItems,
-      uploadTasksRef,
-      uploadedSinceIdleRef,
-    ],
-  );
+    } finally {
+      uploadTasksRef.current.delete(item.id);
+      activeIdsRef.current.delete(item.id);
+      processQueueRef.current();
+      finishIdleBatch();
+    }
+  };
 
-  const processQueue = useCallback(() => {
+  const processQueue = () => {
     uploadQueueRef.current.concurrency = maxConcurrentUploads;
 
     for (const nextItem of itemsRef.current) {
@@ -160,7 +148,7 @@ export function useUploadQueueProcessor({
         activeItemPromisesRef.current.delete(nextItem.id);
       });
     }
-  }, [activeItemPromisesRef, itemsRef, maxConcurrentUploads, startItem]);
+  };
 
   processQueueRef.current = processQueue;
 
