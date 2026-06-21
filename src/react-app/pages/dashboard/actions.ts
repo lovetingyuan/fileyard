@@ -10,7 +10,6 @@ import type {
   NewTextFileDraft,
   RenameTarget,
   SortKey,
-  UploadQueueItem,
 } from "../../../types";
 import { getStoreMethods } from "../../store";
 import {
@@ -31,7 +30,7 @@ export function setDashboardSearchInput(value: string) {
   setSearchKeyword(value);
 }
 
-export function clearDashboardSearch() {
+function clearDashboardSearch() {
   setDashboardSearchInput("");
 }
 
@@ -53,7 +52,7 @@ export function toggleDashboardSort(key: SortKey) {
   setDashboardSortOrder(key === "name" ? "asc" : "desc");
 }
 
-export function setDashboardLayoutMode(mode: DashboardLayoutMode) {
+function setDashboardLayoutMode(mode: DashboardLayoutMode) {
   const { setDashboardLayoutMode } = getStoreMethods();
 
   setDashboardLayoutMode(mode);
@@ -66,7 +65,7 @@ export function toggleDashboardLayoutMode() {
   setDashboardLayoutMode(getNextDashboardLayoutMode(getDashboardLayoutMode()));
 }
 
-export function setDashboardTreeSidebarOpen(isOpen: boolean) {
+function setDashboardTreeSidebarOpen(isOpen: boolean) {
   const { setIsDashboardTreeSidebarOpen } = getStoreMethods();
 
   setIsDashboardTreeSidebarOpen(isOpen);
@@ -312,12 +311,6 @@ export function closeFolderPasswordModal(dismissedTarget: FolderPasswordModalTar
   setDismissedFolderPasswordTarget(dismissedTarget);
 }
 
-export function clearDismissedFolderPasswordTarget() {
-  const { setDismissedFolderPasswordTarget } = getStoreMethods();
-
-  setDismissedFolderPasswordTarget(null);
-}
-
 export function saveFolderUnlockToken(protectedPath: string, unlockToken: string) {
   const { setFolderUnlockTokens } = getStoreMethods();
 
@@ -534,29 +527,4 @@ export function setUploadType(type: "file" | "folder" | "") {
   const { setUploadType } = getStoreMethods();
 
   setUploadType(type);
-}
-
-export function setUploadQueueItems(items: UploadQueueItem[]) {
-  const { setUploadQueue } = getStoreMethods();
-
-  setUploadQueue(items);
-}
-
-export function clearUploadQueueItems() {
-  const { setIsUploadPanelMinimized, setUploadQueue } = getStoreMethods();
-
-  setUploadQueue([]);
-  setIsUploadPanelMinimized(false);
-}
-
-export function minimizeUploadPanel() {
-  const { setIsUploadPanelMinimized } = getStoreMethods();
-
-  setIsUploadPanelMinimized(true);
-}
-
-export function restoreUploadPanel() {
-  const { setIsUploadPanelMinimized } = getStoreMethods();
-
-  setIsUploadPanelMinimized(false);
 }

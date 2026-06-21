@@ -15,7 +15,7 @@ type DialogShortcutTarget = EventTarget & {
   tagName?: string;
 };
 
-export function isEditableShortcutTarget(target: EventTarget | null) {
+function isEditableShortcutTarget(target: EventTarget | null) {
   if (!target) {
     return false;
   }

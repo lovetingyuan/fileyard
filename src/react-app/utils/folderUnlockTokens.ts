@@ -1,9 +1,7 @@
 import { getStoreState } from "../store";
 
-export const FOLDER_UNLOCK_HEADER = "X-Fileyard-Folder-Unlock";
-export const FOLDER_UNLOCKS_HEADER = "X-Fileyard-Folder-Unlocks";
-export const FOLDER_UNLOCK_QUERY_PARAM = "folderUnlockToken";
-
+const FOLDER_UNLOCK_HEADER = "X-Fileyard-Folder-Unlock";
+const FOLDER_UNLOCKS_HEADER = "X-Fileyard-Folder-Unlocks";
 function isPathWithinFolder(path: string, folderPath: string): boolean {
   return path === folderPath || path.startsWith(`${folderPath}/`);
 }
@@ -71,14 +69,4 @@ export function getAllFolderUnlockHeaders(): Record<string, string> | undefined 
   return Object.keys(tokens).length > 0
     ? { [FOLDER_UNLOCKS_HEADER]: encodeFolderUnlocksHeader(tokens) }
     : undefined;
-}
-
-export function appendFolderUnlockToken(url: string, path: string): string {
-  const token = getFolderUnlockTokenForPath(path);
-  if (!token) {
-    return url;
-  }
-
-  const separator = url.includes("?") ? "&" : "?";
-  return `${url}${separator}${FOLDER_UNLOCK_QUERY_PARAM}=${encodeURIComponent(token)}`;
 }

@@ -21,12 +21,6 @@ import {
   isFileListKey,
 } from "./filesApiUrls";
 
-export function getDirectoryStats(path: string) {
-  return apiRequest<DirectoryStatsResponse>(buildStatsUrl(path), {
-    headers: getFolderUnlockHeadersForPath(path),
-  });
-}
-
 export function useDirectoryStats(path: string, enabled: boolean) {
   const { data, error, isLoading } = useSWR<DirectoryStatsResponse, ApiError>(
     enabled ? [FILE_STATS_ENDPOINT, path] : null,

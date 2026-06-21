@@ -6,7 +6,7 @@ type UploadUnloadProtectionOptions = {
   target?: BeforeUnloadTarget;
 };
 
-export function createUploadUnloadProtection({
+function createUploadUnloadProtection({
   target = window,
 }: UploadUnloadProtectionOptions = {}) {
   let isActive = false;

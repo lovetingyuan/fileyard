@@ -175,17 +175,6 @@ export function isFolderOperationBlockedByActiveUpload(
   return getActiveUploadItemsInFolder(items, folderPath).length > 0;
 }
 
-export function getUploadQueueSummary(items: UploadQueueItem[]): string | null {
-  const stats = countUploadQueueStats(items);
-  if (stats.active > 0) {
-    return "上传中，点击查看详情";
-  }
-  if (stats.failed > 0) {
-    return `${stats.failed} 文件上传失败`;
-  }
-  return null;
-}
-
 export function getUploadQueueItemProgress(item: UploadQueueItem): number {
   if (item.status === "success") {
     return 100;

@@ -17,7 +17,7 @@ function getActiveUploadQueueControls(): UploadQueueControls | null {
   return activeUploadQueueControls;
 }
 
-export function registerUploadQueueControls(controls: UploadQueueControls): () => void {
+function registerUploadQueueControls(controls: UploadQueueControls): () => void {
   activeUploadQueueControls = controls;
   return () => {
     if (activeUploadQueueControls === controls) {

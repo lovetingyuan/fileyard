@@ -22,7 +22,7 @@ function AppContent() {
   );
 }
 
-export function AppShell() {
+function AppShell() {
   return (
     <div className="flex h-dvh min-h-0 flex-col overflow-hidden">
       <Toaster position="top-center" toastOptions={{ duration: 5000 }} />

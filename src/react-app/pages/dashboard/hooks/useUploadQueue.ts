@@ -40,7 +40,6 @@ export {
   getActiveUploadItemsInFolder,
   getUploadQueueItemProgress,
   getUploadQueuePanelState,
-  getUploadQueueSummary,
   isFolderOperationBlockedByActiveUpload,
 } from "./uploadQueueUtils";
 export type { UploadQueuePanelState } from "./uploadQueueUtils";

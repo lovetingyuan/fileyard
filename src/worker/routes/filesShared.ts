@@ -2,12 +2,10 @@ import type { AppContext } from "../context";
 import { folderExists } from "../utils/appHelpers";
 import {
   FilePathValidationError,
-  SYSTEM_PROFILE_FOLDER_NAME,
   getBaseName,
   getFileKey,
   getFolderMarkerKeys,
   getFolderPrefix,
-  isFolderMarkerKey,
   isReservedSystemPath,
 } from "../utils/fileManager";
 
@@ -149,12 +147,4 @@ export function assertPathNotReserved(path: string): void {
   if (isReservedSystemPath(path)) {
     throw new FilePathValidationError("Path uses a reserved system directory", 403);
   }
-}
-
-export function isVisibleUserObject(object: R2Object, prefix: string): boolean {
-  return !isFolderMarkerKey(object.key, prefix);
-}
-
-export function shouldHideRootSystemPrefix(path: string): string | null {
-  return path ? null : SYSTEM_PROFILE_FOLDER_NAME;
 }

@@ -1,15 +1,15 @@
 import type { BatchOperationTarget, MoveTarget } from "../../types";
 
-export function getMoveParentPath(path: string): string {
+function getMoveParentPath(path: string): string {
   const separatorIndex = path.lastIndexOf("/");
   return separatorIndex === -1 ? "" : path.slice(0, separatorIndex);
 }
 
-export function isFolderSelfOrDescendant(folderPath: string, targetParentPath: string): boolean {
+function isFolderSelfOrDescendant(folderPath: string, targetParentPath: string): boolean {
   return targetParentPath === folderPath || targetParentPath.startsWith(`${folderPath}/`);
 }
 
-export function isFolderStrictDescendant(folderPath: string, candidatePath: string): boolean {
+function isFolderStrictDescendant(folderPath: string, candidatePath: string): boolean {
   return candidatePath.startsWith(`${folderPath}/`);
 }
 

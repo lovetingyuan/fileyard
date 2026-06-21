@@ -42,7 +42,7 @@ type RowActionItem = {
   onClick: () => void;
 };
 
-export function RowActionsMenu({
+function RowActionsMenu({
   isActionDisabled,
   isLoading,
   items,
@@ -123,7 +123,6 @@ export function FolderActionsMenu({
     renamingPath === folder.path ||
     movingPath === folder.path;
   const isActionDisabled = Boolean(renamingPath || movingPath) || isLoading;
-  const isProtectedContent = folder.passwordProtected || Boolean(folder.protectedBy);
   const blockIfUploading = () => {
     if (!isFolderOperationBlockedByActiveUpload(uploadQueue, folder.path)) {
       return false;

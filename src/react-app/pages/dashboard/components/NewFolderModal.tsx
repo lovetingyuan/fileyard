@@ -11,7 +11,7 @@ import { useDashboardPath } from "../hooks/useDashboardPath";
 import { shouldConfirmFromInputKey } from "../utils/modalKeyboard";
 import { focusFolderNameInput, getNewFolderFieldErrorMessage } from "./newFolderModalState";
 
-export function getCreateFolderErrorMessage(error: unknown): string {
+function getCreateFolderErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Failed to create folder";
 }
 

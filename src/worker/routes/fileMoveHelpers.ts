@@ -20,7 +20,7 @@ import {
   listAllObjects,
 } from "./filesShared";
 
-export const MOVE_CONFLICT_MESSAGE = "目标文件夹已存在重名文件或文件夹";
+const MOVE_CONFLICT_MESSAGE = "目标文件夹已存在重名文件或文件夹";
 
 type FolderTreeSourceObject = Pick<R2Object, "key" | "customMetadata">;
 

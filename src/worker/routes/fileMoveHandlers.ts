@@ -16,7 +16,6 @@ import { handlePathValidationError, jsonError } from "../utils/response";
 import { assertPathNotReserved, listAllObjects } from "./filesShared";
 import { getValidatedJson } from "../validation";
 import {
-  MOVE_CONFLICT_MESSAGE,
   assertFolderMoveDestinationAllowed,
   assertMoveTargetAvailable,
   buildFolderTreeFromObjects,
@@ -26,7 +25,6 @@ import {
   moveFolderEntry,
 } from "./fileMoveHelpers";
 
-export { MOVE_CONFLICT_MESSAGE };
 
 function normalizeMoveType(type: MoveRequest["type"] | undefined): MoveRequest["type"] {
   if (type !== "file" && type !== "folder") {

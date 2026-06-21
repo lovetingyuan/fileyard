@@ -15,9 +15,9 @@ import {
   getFolderPrefix,
 } from "./fileManager";
 
-export const FOLDER_UNLOCK_HEADER = "X-Fileyard-Folder-Unlock";
-export const FOLDER_UNLOCKS_HEADER = "X-Fileyard-Folder-Unlocks";
-export const FOLDER_UNLOCK_QUERY_PARAM = "folderUnlockToken";
+const FOLDER_UNLOCK_HEADER = "X-Fileyard-Folder-Unlock";
+const FOLDER_UNLOCKS_HEADER = "X-Fileyard-Folder-Unlocks";
+const FOLDER_UNLOCK_QUERY_PARAM = "folderUnlockToken";
 
 const LEGACY_FOLDER_MARKER_NAME = ".fileshare-folder";
 const FOLDER_PASSWORD_PURPOSE = "fileyard:folder-password:v1";
@@ -54,7 +54,7 @@ type FolderUnlockPayload = {
   exp: number;
 };
 
-export class FolderLockedError extends Error {
+class FolderLockedError extends Error {
   readonly protectedPath: string;
 
   constructor(protectedPath: string) {
@@ -407,7 +407,7 @@ async function findProtectedDescendantPaths(
   return protectedPaths;
 }
 
-export async function getFolderProtectionState(
+async function getFolderProtectionState(
   env: AppBindings,
   rootDirId: string,
   folderPath: string,
@@ -503,7 +503,7 @@ export function getProtectionStateFromSet(
   };
 }
 
-export function getFolderPasswordValidationError(password: string): string | null {
+function getFolderPasswordValidationError(password: string): string | null {
   const normalizedPassword = password.trim();
   if (normalizedPassword.length < SHARE_PASSWORD_MIN_LENGTH) {
     return `Password must be at least ${SHARE_PASSWORD_MIN_LENGTH} characters long`;
@@ -660,11 +660,11 @@ export async function verifyFolderPasswordForPath(
   };
 }
 
-export function getFolderUnlockTokenFromRequest(c: Context<AppContext>): string | undefined {
+function getFolderUnlockTokenFromRequest(c: Context<AppContext>): string | undefined {
   return c.req.header(FOLDER_UNLOCK_HEADER) ?? c.req.query(FOLDER_UNLOCK_QUERY_PARAM);
 }
 
-export function getFolderUnlockTokensFromRequest(c: Context<AppContext>): Record<string, string> {
+function getFolderUnlockTokensFromRequest(c: Context<AppContext>): Record<string, string> {
   const encodedTokens = c.req.header(FOLDER_UNLOCKS_HEADER);
   if (!encodedTokens) {
     return {};
@@ -688,7 +688,7 @@ export function getFolderUnlockTokensFromRequest(c: Context<AppContext>): Record
   }
 }
 
-export async function isFolderUnlockTokenValid(
+async function isFolderUnlockTokenValid(
   env: AppBindings,
   rootDirId: string,
   protectedPath: string,
@@ -802,7 +802,7 @@ export async function removeFolderPassword(
   }
 }
 
-export function folderLockedResponse(protectedPath: string): Response {
+function folderLockedResponse(protectedPath: string): Response {
   return new Response(
     JSON.stringify({
       success: false,

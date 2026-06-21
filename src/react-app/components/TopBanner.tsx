@@ -9,7 +9,7 @@ function getBrowserStorage(): Storage | null {
   return typeof window === "undefined" ? null : window.localStorage;
 }
 
-export function readDismissedTopBannerDate(storage: Pick<Storage, "getItem"> | null) {
+function readDismissedTopBannerDate(storage: Pick<Storage, "getItem"> | null) {
   try {
     return storage?.getItem(DISMISSED_TOP_BANNER_DATE_KEY) ?? null;
   } catch {
@@ -17,7 +17,7 @@ export function readDismissedTopBannerDate(storage: Pick<Storage, "getItem"> | n
   }
 }
 
-export function writeDismissedTopBannerDate(
+function writeDismissedTopBannerDate(
   storage: Pick<Storage, "setItem"> | null,
   date: string,
 ) {
@@ -28,7 +28,7 @@ export function writeDismissedTopBannerDate(
   }
 }
 
-export function shouldShowTopBanner(banner: TopBannerMessage | null, dismissedDate: string | null) {
+function shouldShowTopBanner(banner: TopBannerMessage | null, dismissedDate: string | null) {
   return Boolean(banner?.date && banner.contentHtml.trim() && dismissedDate !== banner.date);
 }
 
@@ -38,7 +38,7 @@ type TopBannerViewProps = {
   onDismiss: () => void;
 };
 
-export function TopBannerView({ date, messageHtml, onDismiss }: TopBannerViewProps) {
+function TopBannerView({ date, messageHtml, onDismiss }: TopBannerViewProps) {
   return (
     <div
       role="status"

@@ -12,11 +12,11 @@ type BetterAuthLogWriterOptions = {
   write: (level: BetterAuthLogLevel, message: string, ...args: unknown[]) => void;
 };
 
-export function isExpectedCredentialFailureLog(message: string): boolean {
+function isExpectedCredentialFailureLog(message: string): boolean {
   return EXPECTED_CREDENTIAL_FAILURE_MESSAGES.has(message);
 }
 
-export function createBetterAuthLogWriter(options: BetterAuthLogWriterOptions) {
+function createBetterAuthLogWriter(options: BetterAuthLogWriterOptions) {
   return (level: BetterAuthLogLevel, message: string, ...args: unknown[]) => {
     const nextLevel =
       options.isDevelopment && level === "error" && isExpectedCredentialFailureLog(message)

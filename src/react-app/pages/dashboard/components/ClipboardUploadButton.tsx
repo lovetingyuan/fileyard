@@ -1,5 +1,4 @@
 import { type KeyboardEvent, useState } from "react";
-import MdiClipboardFileOutline from "~icons/mdi/clipboard-file-outline";
 import MdiContentPaste from "~icons/mdi/content-paste";
 import type { ClipboardUploadItem } from "../../../../types";
 import { Dialog } from "../../../components/Dialog";
@@ -52,13 +51,13 @@ function shouldUseMobileUploadLayout(): boolean {
   return typeof navigator !== "undefined" && navigator.maxTouchPoints > 0;
 }
 
-export function getClipboardAutoReadUnavailableMessage(isMobileUploadLayout: boolean): string {
+function getClipboardAutoReadUnavailableMessage(isMobileUploadLayout: boolean): string {
   return isMobileUploadLayout
     ? "未读取到可上传文件"
     : "无法通过点击读取剪贴板文件，请按 Ctrl+V 粘贴文件";
 }
 
-export function getClipboardEmptyMessage(isMobileUploadLayout: boolean): string {
+function getClipboardEmptyMessage(isMobileUploadLayout: boolean): string {
   return isMobileUploadLayout
     ? "未读取到可上传文件"
     : "未读取到可上传文件；文件管理器复制的文件请按 Ctrl+V";
@@ -84,7 +83,7 @@ function ClipboardUploadFileRow({ item }: { item: ClipboardUploadItem }) {
   );
 }
 
-export function ClipboardUploadDropzone({
+function ClipboardUploadDropzone({
   isMobileUploadLayout,
   statusMessage,
   onReadClipboard,
@@ -229,28 +228,4 @@ export function useClipboardUploadDialog({ isFileMutationDisabled }: ClipboardUp
     ),
     openClipboardUploadDialog: openModal,
   };
-}
-
-export function ClipboardUploadButton({ isFileMutationDisabled }: ClipboardUploadButtonProps) {
-  const { clipboardUploadDialog, openClipboardUploadDialog } = useClipboardUploadDialog({
-    isFileMutationDisabled,
-  });
-
-  return (
-    <>
-      <div className="tooltip" data-tip="上传剪贴板文件">
-        <button
-          type="button"
-          className="btn btn-square btn-sm border-sky-500 bg-sky-500 text-white hover:border-sky-600 hover:bg-sky-600 focus-visible:outline-sky-500 disabled:border-sky-300 disabled:bg-sky-300"
-          onClick={openClipboardUploadDialog}
-          disabled={isFileMutationDisabled}
-          aria-label="上传剪贴板文件"
-        >
-          <MdiClipboardFileOutline className="h-5 w-5" />
-        </button>
-      </div>
-
-      {clipboardUploadDialog}
-    </>
-  );
 }

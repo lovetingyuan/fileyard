@@ -1,11 +1,6 @@
-import type { FileEntry, FolderEntry, UploadQueueItem } from "../../types";
+import type { FileEntry, FolderEntry } from "../../types";
 
 const RESERVED_NAMES = new Set([".fileyard-folder", ".fileshare-folder", ".user"]);
-const ACTIVE_UPLOAD_STATUSES = new Set<UploadQueueItem["status"]>([
-  "queued",
-  "preparing",
-  "uploading",
-]);
 
 function containsControlCharacters(value: string): boolean {
   for (const char of value) {
@@ -19,19 +14,6 @@ function containsControlCharacters(value: string): boolean {
 
 function getLabel(type: "file" | "folder"): string {
   return type === "file" ? "File name" : "Folder name";
-}
-
-function isPathInFolder(path: string, folderPath: string): boolean {
-  return path === folderPath || path.startsWith(`${folderPath}/`);
-}
-
-export function getRenamedPath(path: string, name: string): string {
-  const parentSeparatorIndex = path.lastIndexOf("/");
-  if (parentSeparatorIndex === -1) {
-    return name.trim();
-  }
-
-  return `${path.slice(0, parentSeparatorIndex)}/${name.trim()}`;
 }
 
 export function getRenameValidationMessage({
@@ -79,28 +61,4 @@ export function getRenameValidationMessage({
   }
 
   return null;
-}
-
-export function isUploadBlockingRename({
-  newPath,
-  oldPath,
-  targetType,
-  uploadQueue,
-}: {
-  newPath: string;
-  oldPath: string;
-  targetType: "file" | "folder";
-  uploadQueue: UploadQueueItem[];
-}): boolean {
-  return uploadQueue.some((item) => {
-    if (!ACTIVE_UPLOAD_STATUSES.has(item.status)) {
-      return false;
-    }
-
-    if (targetType === "file") {
-      return item.targetPath === oldPath || item.targetPath === newPath;
-    }
-
-    return isPathInFolder(item.targetPath, oldPath) || isPathInFolder(item.targetPath, newPath);
-  });
 }

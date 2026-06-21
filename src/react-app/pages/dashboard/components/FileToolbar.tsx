@@ -1,4 +1,4 @@
-import { forwardRef, useCallback, useImperativeHandle, useRef } from "react";
+import { useCallback, useImperativeHandle, useRef, type Ref } from "react";
 import MdiChevronDown from "~icons/mdi/chevron-down";
 import MdiClipboardFileOutline from "~icons/mdi/clipboard-file-outline";
 import MdiClose from "~icons/mdi/close";
@@ -53,16 +53,19 @@ type FileToolbarProps = {
   isCurrentPathLocked?: boolean;
   isCurrentPathMissing?: boolean;
   lockedProtectedPath?: string | null;
+  ref?: Ref<FileToolbarHandle>;
 };
 
 export type FileToolbarHandle = {
   focusSearchInput: () => void;
 };
 
-export const FileToolbar = forwardRef<FileToolbarHandle, FileToolbarProps>(function FileToolbar(
-  { isCurrentPathLocked = false, isCurrentPathMissing = false, lockedProtectedPath = null },
+export function FileToolbar({
+  isCurrentPathLocked = false,
+  isCurrentPathMissing = false,
+  lockedProtectedPath = null,
   ref,
-) {
+}: FileToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const folderInputRef = useRef<HTMLInputElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
@@ -319,4 +322,4 @@ export const FileToolbar = forwardRef<FileToolbarHandle, FileToolbarProps>(funct
       ) : null}
     </div>
   );
-});
+}

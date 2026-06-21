@@ -7,7 +7,7 @@ interface UseNativeDialogOptions {
   onAfterOpen?: () => void;
 }
 
-export function openNativeDialog(dialog: HTMLDialogElement, onAfterOpen?: () => void) {
+function openNativeDialog(dialog: HTMLDialogElement, onAfterOpen?: () => void) {
   if (!dialog.open) {
     dialog.showModal();
   }

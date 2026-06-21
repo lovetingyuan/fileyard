@@ -20,7 +20,7 @@ function normalizeBatchTargetType(type: unknown): BatchOperationRequestTarget["t
   return type;
 }
 
-export function dedupeBatchTargets(
+function dedupeBatchTargets(
   targets: BatchOperationRequestTarget[],
 ): BatchOperationRequestTarget[] {
   const seenKeys = new Set<string>();

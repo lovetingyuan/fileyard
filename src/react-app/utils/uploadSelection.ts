@@ -1,7 +1,7 @@
 import type { UploadQueueItem, UploadQueueStatus } from "../../types";
 
 export const FILE_UPLOAD_BATCH_LIMIT_BYTES = 1024 * 1024 * 1024;
-export const EMPTY_FOLDER_UPLOAD_MESSAGE = "不允许上传空文件夹";
+const EMPTY_FOLDER_UPLOAD_MESSAGE = "不允许上传空文件夹";
 const ACTIVE_UPLOAD_STATUSES = new Set<UploadQueueStatus>(["queued", "preparing", "uploading"]);
 
 export type UploadSelectionSource = "file" | "folder" | "clipboard";
@@ -72,7 +72,7 @@ function createItem(
   };
 }
 
-export function getUploadTargetPath(file: File, currentPath: string): string {
+function getUploadTargetPath(file: File, currentPath: string): string {
   const relativePath = normalizeSlashes(file.webkitRelativePath || file.name);
   return joinUploadPath(currentPath, relativePath || file.name);
 }
