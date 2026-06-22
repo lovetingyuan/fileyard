@@ -3,6 +3,18 @@ import MdiMoonWaningCrescent from "~icons/mdi/moon-waning-crescent";
 import MdiWhiteBalanceSunny from "~icons/mdi/white-balance-sunny";
 import { useTheme } from "../hooks/useTheme";
 
+const icons = {
+  light: MdiWhiteBalanceSunny,
+  dark: MdiMoonWaningCrescent,
+  system: MdiBrightnessAuto,
+};
+
+const labels = {
+  light: "亮色",
+  dark: "暗色",
+  system: "系统",
+};
+
 export function ThemeSwitcher() {
   const { theme, setTheme } = useTheme();
 
@@ -13,18 +25,6 @@ export function ThemeSwitcher() {
       dark: "system",
     };
     setTheme(next[theme]);
-  };
-
-  const icons = {
-    light: MdiWhiteBalanceSunny,
-    dark: MdiMoonWaningCrescent,
-    system: MdiBrightnessAuto,
-  };
-
-  const labels = {
-    light: "亮色",
-    dark: "暗色",
-    system: "系统",
   };
 
   const ThemeIcon = icons[theme];
