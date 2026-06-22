@@ -181,13 +181,10 @@ async function isShareBlockedByFolderPassword(
   c: ShareRouteContext,
   share: FileShareRecord,
 ): Promise<boolean> {
-  for (const file of share.files) {
-    if (await findProtectedPath(c.env, share.rootDirId, file.path)) {
-      return true;
-    }
-  }
-
-  return false;
+  const protectedPaths = await Promise.all(
+    share.files.map((file) => findProtectedPath(c.env, share.rootDirId, file.path)),
+  );
+  return protectedPaths.some(Boolean);
 }
 
 async function resolveSharedFileMetadata(

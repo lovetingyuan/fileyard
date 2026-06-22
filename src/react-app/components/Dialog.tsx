@@ -1,7 +1,7 @@
 import MdiClose from "~icons/mdi/close";
 import MdiFullscreen from "~icons/mdi/fullscreen";
 import MdiFullscreenExit from "~icons/mdi/fullscreen-exit";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useState } from "react";
 import { useNativeDialog } from "../hooks/useNativeDialog";
 import { cn } from "../utils/cn";
 import { getDialogClosedBy } from "./dialogDismissal";
@@ -63,7 +63,15 @@ function renderSlot(slot: DialogSlot | undefined, state: DialogRenderState) {
   return slot ?? null;
 }
 
-export function Dialog({
+export function Dialog(props: DialogProps) {
+  if (!props.isOpen) {
+    return null;
+  }
+
+  return <OpenDialog {...props} />;
+}
+
+function OpenDialog({
   isOpen,
   title,
   children,
@@ -102,16 +110,6 @@ export function Dialog({
   const isActiveFullscreen = supportFullscreen && isFullscreen;
   const isInteractionDisabled = isDismissDisabled || isConfirming;
 
-  useEffect(() => {
-    if (!isOpen) {
-      setIsConfirming(false);
-      setIsFullscreen(false);
-    }
-    if (!supportFullscreen) {
-      setIsFullscreen(false);
-    }
-  }, [isOpen, supportFullscreen]);
-
   const requestClose = () => {
     if (isInteractionDisabled) {
       return;
@@ -146,10 +144,6 @@ export function Dialog({
     onCancel: requestClose,
     onAfterOpen,
   });
-
-  if (!isOpen) {
-    return null;
-  }
 
   const renderState: DialogRenderState = {
     isConfirming,

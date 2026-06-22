@@ -140,17 +140,19 @@ export async function readClipboardUploadItems(
   options: ClipboardUploadItemOptions = {},
 ): Promise<ClipboardUploadItem[]> {
   const now = options.now?.() ?? new Date();
-  const files: File[] = [];
-
-  for (const item of clipboardItems) {
+  const files = (
+    await Promise.all(
+      clipboardItems.map(async (item) => {
     const type = item.types.find(isAsyncClipboardUploadType);
     if (!type) {
-      continue;
+          return null;
     }
 
     const blob = await item.getType(type);
-    files.push(fileFromClipboardBlob(blob, type, now));
-  }
+        return fileFromClipboardBlob(blob, type, now);
+      }),
+    )
+  ).filter((file): file is File => Boolean(file));
 
   return createClipboardUploadItemsFromFiles(files, { ...options, now: () => now });
 }

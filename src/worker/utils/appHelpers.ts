@@ -91,11 +91,11 @@ export async function folderExists(
     return true;
   }
 
-  for (const markerKey of getFolderMarkerKeys(rootDirId, folderPath)) {
-    const marker = await env.FILES_BUCKET.head(markerKey);
-    if (marker) {
-      return true;
-    }
+  const markers = await Promise.all(
+    getFolderMarkerKeys(rootDirId, folderPath).map((markerKey) => env.FILES_BUCKET.head(markerKey)),
+  );
+  if (markers.some(Boolean)) {
+    return true;
   }
 
   const listing = await env.FILES_BUCKET.list({

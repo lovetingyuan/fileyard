@@ -90,9 +90,12 @@ export function hasObjectSetChanged(
 }
 
 export async function deleteKeysInBatches(bucket: R2Bucket, keys: string[]): Promise<void> {
+  const batches = [];
   for (let i = 0; i < keys.length; i += 1000) {
-    await bucket.delete(keys.slice(i, i + 1000));
+    batches.push(keys.slice(i, i + 1000));
   }
+
+  await Promise.all(batches.map((batch) => bucket.delete(batch)));
 }
 
 export async function cleanupCopiedKeys(bucket: R2Bucket, copiedKeys: string[]): Promise<void> {
@@ -112,13 +115,9 @@ export async function getFolderCreatedAt(
   rootDirId: string,
   folderPath: string,
 ): Promise<string> {
-  let marker: R2Object | null = null;
-  for (const markerKey of getFolderMarkerKeys(rootDirId, folderPath)) {
-    marker = await bucket.head(markerKey);
-    if (marker) {
-      break;
-    }
-  }
+  const marker = (
+    await Promise.all(getFolderMarkerKeys(rootDirId, folderPath).map((markerKey) => bucket.head(markerKey)))
+  ).find((object): object is R2Object => Boolean(object));
 
   const markerCreatedAt = marker?.customMetadata?.createdAt ?? marker?.uploaded.toISOString();
   if (markerCreatedAt) {

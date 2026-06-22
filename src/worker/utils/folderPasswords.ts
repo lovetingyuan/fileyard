@@ -263,14 +263,16 @@ async function getFolderMarker(
   rootDirId: string,
   folderPath: string,
 ): Promise<FolderMarkerRecord | null> {
-  for (const markerKey of getFolderMarkerKeys(rootDirId, folderPath)) {
-    const object = await env.FILES_BUCKET.head(markerKey);
-    if (object) {
-      return { key: markerKey, object };
-    }
-  }
+  const marker = (
+    await Promise.all(
+      getFolderMarkerKeys(rootDirId, folderPath).map(async (key) => ({
+        key,
+        object: await env.FILES_BUCKET.head(key),
+      })),
+    )
+  ).find((candidate): candidate is FolderMarkerRecord => Boolean(candidate.object));
 
-  return null;
+  return marker ?? null;
 }
 
 async function ensureFolderMarker(
@@ -761,9 +763,11 @@ export async function assertFolderSubtreeAccess(
   await assertPathAccess(c, rootDirId, folderPath);
 
   const protectedDescendantPaths = await findProtectedDescendantPaths(c.env, rootDirId, folderPath);
-  for (const protectedDescendantPath of protectedDescendantPaths) {
-    await assertPathAccess(c, rootDirId, protectedDescendantPath);
-  }
+  await Promise.all(
+    protectedDescendantPaths.map((protectedDescendantPath) =>
+      assertPathAccess(c, rootDirId, protectedDescendantPath),
+    ),
+  );
 }
 
 export async function assertPathNotPasswordProtected(

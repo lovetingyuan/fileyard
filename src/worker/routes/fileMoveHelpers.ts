@@ -213,7 +213,8 @@ export async function moveFolderEntry(
   const sourceEtags = new Map(sourceObjects.map((object) => [object.key, object.etag]));
 
   try {
-    for (const object of sourceObjects) {
+    const copyResults = await Promise.allSettled(
+      sourceObjects.map(async (object) => {
       const source = await bucket.get(object.key, {
         onlyIf: { etagMatches: object.etag },
       });
@@ -230,7 +231,17 @@ export async function moveFolderEntry(
       if (!putResult) {
         throw new FilePathValidationError(MOVE_CONFLICT_MESSAGE, 409);
       }
-      copiedKeys.push(targetKey);
+        return targetKey;
+      }),
+    );
+    for (const result of copyResults) {
+      if (result.status === "fulfilled") {
+        copiedKeys.push(result.value);
+      }
+    }
+    const failedCopy = copyResults.find((result) => result.status === "rejected");
+    if (failedCopy) {
+      throw failedCopy.reason;
     }
 
     const currentSourceObjects = await listAllObjects(bucket, sourcePrefix);

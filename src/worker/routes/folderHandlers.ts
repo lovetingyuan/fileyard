@@ -190,7 +190,8 @@ export async function renameFolder(c: Context<AppContext>) {
     const sourceEtags = new Map(sourceObjects.map((object) => [object.key, object.etag]));
 
     try {
-      for (const object of sourceObjects) {
+      const copyResults = await Promise.allSettled(
+        sourceObjects.map(async (object) => {
         const source = await c.env.FILES_BUCKET.get(object.key, {
           onlyIf: { etagMatches: object.etag },
         });
@@ -208,7 +209,17 @@ export async function renameFolder(c: Context<AppContext>) {
         if (!putResult) {
           throw new FilePathValidationError("A file or folder with this name already exists", 409);
         }
-        copiedKeys.push(targetKey);
+          return targetKey;
+        }),
+      );
+      for (const result of copyResults) {
+        if (result.status === "fulfilled") {
+          copiedKeys.push(result.value);
+        }
+      }
+      const failedCopy = copyResults.find((result) => result.status === "rejected");
+      if (failedCopy) {
+        throw failedCopy.reason;
       }
 
       const currentSourceObjects = await listAllObjects(c.env.FILES_BUCKET, sourcePrefix);
