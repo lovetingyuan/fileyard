@@ -11,8 +11,12 @@ import { ResetPassword } from "./pages/ResetPassword";
 import { ShareDownload } from "./pages/ShareDownload";
 import type { User } from "../types";
 
-export function renderProtectedRoute(user: User | null, element: ReactElement) {
+function ProtectedRoute({ user, element }: { user: User | null; element: ReactElement }) {
   return user ? element : <Navigate to="/login" replace />;
+}
+
+export function renderProtectedRoute(user: User | null, element: ReactElement) {
+  return <ProtectedRoute user={user} element={element} />;
 }
 
 function AuthGate({ authLoading }: { authLoading: boolean }) {
@@ -65,8 +69,8 @@ export function buildAppRouteElements({
               )
             }
           />
-          <Route path="profile" element={renderProtectedRoute(user, <Profile />)} />
-          <Route index element={renderProtectedRoute(user, <Dashboard />)} />
+          <Route path="profile" element={<ProtectedRoute user={user} element={<Profile />} />} />
+          <Route index element={<ProtectedRoute user={user} element={<Dashboard />} />} />
         </Route>
       </Route>
       <Route path="*" element={<NotFound />} />

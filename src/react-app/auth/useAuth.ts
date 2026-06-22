@@ -15,6 +15,27 @@ function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
+async function runAuthAction<T>(
+  action: () => Promise<T>,
+  fallback: string,
+  onSuccess?: (data: T) => Promise<void> | void,
+): AuthResult {
+  clearAuthError();
+  setAuthMutating(true);
+
+  try {
+    const data = await action();
+    await onSuccess?.(data);
+    return { success: true, message: (data as { message?: string }).message };
+  } catch (error) {
+    const message = getErrorMessage(error, fallback);
+    setAuthError(message);
+    return { success: false, error: message };
+  } finally {
+    setAuthMutating(false);
+  }
+}
+
 export function useAuth() {
   const { authError, authMutating } = useAppStore();
   const {
@@ -29,27 +50,6 @@ export function useAuth() {
   const { logout: triggerLogout, isMutating: isLoggingOut } = useLogoutMutation();
   const { register: triggerRegister, isMutating: isRegistering } = useRegisterMutation();
   const isMutationLoading = isLoggingIn || isGoogleLoggingIn || isRegistering || isLoggingOut;
-
-  const runAuthAction = async <T>(
-    action: () => Promise<T>,
-    fallback: string,
-    onSuccess?: (data: T) => Promise<void> | void,
-  ): AuthResult => {
-    clearAuthError();
-    setAuthMutating(true);
-
-    try {
-      const data = await action();
-      await onSuccess?.(data);
-      return { success: true, message: (data as { message?: string }).message };
-    } catch (error) {
-      const message = getErrorMessage(error, fallback);
-      setAuthError(message);
-      return { success: false, error: message };
-    } finally {
-      setAuthMutating(false);
-    }
-  };
 
   const checkAuth = async () => {
     clearAuthError();

@@ -17,6 +17,11 @@ function applyTheme(effective: "light" | "dark") {
   document.documentElement.setAttribute("data-theme", daisyTheme);
 }
 
+function setTheme(newTheme: ThemePreference) {
+  localStorage.setItem(STORAGE_KEY, newTheme);
+  getStoreMethods().setThemePreference(newTheme);
+}
+
 export function useTheme() {
   const { themePreference: theme } = useAppStore();
   const effectiveTheme = getEffectiveTheme(theme);
@@ -31,11 +36,6 @@ export function useTheme() {
       return () => mediaQuery.removeEventListener("change", handleChange);
     }
   }, [theme, effectiveTheme]);
-
-  const setTheme = (newTheme: ThemePreference) => {
-    localStorage.setItem(STORAGE_KEY, newTheme);
-    getStoreMethods().setThemePreference(newTheme);
-  };
 
   return { theme, effectiveTheme, setTheme };
 }

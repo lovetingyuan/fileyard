@@ -56,7 +56,7 @@ function getUploadResultToastMessage(panelState: UploadQueuePanelState): string 
   return panelState.failed === 1 ? "文件上传失败" : `${panelState.failed} 个文件上传失败`;
 }
 
-function renderPanelSubtitle(panelState: UploadQueuePanelState) {
+function PanelSubtitle({ panelState }: { panelState: UploadQueuePanelState }) {
   const segments = [
     {
       className: "text-success",
@@ -163,7 +163,7 @@ export function UploadProgressPanel() {
           </div>
           <div className="flex items-center justify-between gap-3">
             <span className={PANEL_SUBTITLE_CLASS_NAME} title={getPanelSubtitle(panelState)}>
-              {renderPanelSubtitle(panelState)}
+              <PanelSubtitle panelState={panelState} />
             </span>
             <span className="shrink-0 text-sm font-semibold tabular-nums">{totalProgress}%</span>
           </div>
@@ -221,7 +221,7 @@ export function UploadProgressPanel() {
         </div>
         <div className="flex items-center justify-between gap-3 mx-2 mt-2">
           <p className={PANEL_SUBTITLE_CLASS_NAME} title={getPanelSubtitle(panelState)}>
-            {renderPanelSubtitle(panelState)}
+            <PanelSubtitle panelState={panelState} />
           </p>
           <span className="shrink-0 text-sm font-semibold tabular-nums">{totalProgress}%</span>
         </div>

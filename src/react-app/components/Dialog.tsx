@@ -55,12 +55,18 @@ interface DialogProps {
   confirmButtonClassName?: string;
 }
 
-function renderSlot(slot: DialogSlot | undefined, state: DialogRenderState) {
+function DialogSlotRenderer({
+  slot,
+  state,
+}: {
+  slot: DialogSlot | undefined;
+  state: DialogRenderState;
+}) {
   if (typeof slot === "function") {
-    return slot(state);
+    return <>{slot(state)}</>;
   }
 
-  return slot ?? null;
+  return <>{slot ?? null}</>;
 }
 
 export function Dialog(props: DialogProps) {
@@ -180,7 +186,9 @@ function OpenDialog({
               )}
             </div>
             <div className="flex items-center gap-2">
-              {headerActions !== undefined ? renderSlot(headerActions, renderState) : null}
+              {headerActions !== undefined ? (
+                <DialogSlotRenderer slot={headerActions} state={renderState} />
+              ) : null}
               {supportFullscreen && (
                 <button
                   type="button"
@@ -212,12 +220,14 @@ function OpenDialog({
           </div>
         )}
 
-        <div className={bodyClassName}>{renderSlot(children, renderState)}</div>
+        <div className={bodyClassName}>
+          <DialogSlotRenderer slot={children} state={renderState} />
+        </div>
 
         {shouldRenderFooter && (
           <div className={cn("modal-action", footerClassName)}>
             {footer !== undefined ? (
-              renderSlot(footer, renderState)
+              <DialogSlotRenderer slot={footer} state={renderState} />
             ) : (
               <>
                 {showCancelButton && (
