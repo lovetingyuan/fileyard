@@ -29,6 +29,7 @@ import {
   FILE_OPERATION_UPLOAD_BLOCKED_MESSAGE,
   isFolderOperationBlockedByActiveUpload,
 } from "../hooks/useUploadQueue";
+import { requestMoveTargetWithFolderPreflight } from "../utils/folderMovePreflight";
 import { getProtectedFolderOperationAction } from "../utils/protectedFolderActions";
 
 type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
@@ -154,7 +155,7 @@ export function FolderActionsMenu({
     }
 
     if (operation === "move") {
-      requestMoveTarget(action.target);
+      void requestMoveTargetWithFolderPreflight(action.target);
       return;
     }
 

@@ -19,11 +19,11 @@ import {
 import {
   closeFolderPasswordModal,
   requestDeleteTarget,
-  requestMoveTarget,
   requestRenameTarget,
   saveFolderUnlockToken,
 } from "../actions";
 import { useDashboardPath } from "../hooks/useDashboardPath";
+import { requestMoveTargetWithFolderPreflight } from "../utils/folderMovePreflight";
 import { shouldConfirmFromInputKey } from "../utils/modalKeyboard";
 
 type FolderPasswordFormState = {
@@ -141,7 +141,7 @@ export function FolderPasswordModal() {
     if (target.afterUnlock?.type === "rename") {
       requestRenameTarget(target.afterUnlock.target);
     } else if (target.afterUnlock?.type === "move") {
-      requestMoveTarget(target.afterUnlock.target);
+      await requestMoveTargetWithFolderPreflight(target.afterUnlock.target);
     } else if (target.afterUnlock?.type === "delete") {
       requestDeleteTarget(target.afterUnlock.target);
     } else if (nextPath !== null) {
