@@ -11,6 +11,7 @@ import { getDirectoryStats, getUploadLimits, listFiles } from "./fileListHandler
 import { listFolderTree, moveEntry } from "./fileMoveHandlers";
 import { batchDeleteEntries, batchMoveEntries } from "./fileBatchHandlers";
 import {
+  checkFolderPasswordSetAllowed,
   createFolder,
   deleteFolder,
   removeFolderAccessPassword,
@@ -43,6 +44,7 @@ files.patch("/api/files/move", moveJsonValidator, moveEntry);
 files.delete("/api/files/batch-delete", batchDeleteJsonValidator, batchDeleteEntries);
 files.patch("/api/files/batch-move", batchMoveJsonValidator, batchMoveEntries);
 files.post("/api/files/folders", createFolderJsonValidator, createFolder);
+files.get("/api/files/folders/password/check", pathQueryValidator, checkFolderPasswordSetAllowed);
 files.put("/api/files/folders/password", setFolderPasswordJsonValidator, setFolderAccessPassword);
 files.post(
   "/api/files/folders/password/verify",

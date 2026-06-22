@@ -2,6 +2,7 @@ import { type ComponentType, type SVGProps } from "react";
 import MdiFolder from "~icons/mdi/folder";
 import MdiLock from "~icons/mdi/lock";
 import type { FolderTreeNode } from "../../../../types";
+import { useAppStore } from "../../../store";
 import { cn } from "../../../utils/cn";
 
 type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
@@ -10,8 +11,13 @@ function getFolderLabel(path: string, name: string) {
   return path ? name : "根目录";
 }
 
+function hasExactFolderUnlockToken(folderUnlockTokens: Record<string, string>, path: string) {
+  return Object.prototype.hasOwnProperty.call(folderUnlockTokens, path);
+}
+
 function FolderTreeItem({
   Icon,
+  folderUnlockTokens,
   getDisabledReason,
   isNodeHidden,
   isInteractionDisabled,
@@ -20,6 +26,7 @@ function FolderTreeItem({
   selectedPath,
 }: {
   Icon: IconComponent;
+  folderUnlockTokens: Record<string, string>;
   getDisabledReason: (path: string) => string | null;
   isNodeHidden: (path: string) => boolean;
   isInteractionDisabled: boolean;
@@ -27,7 +34,9 @@ function FolderTreeItem({
   onSelect: (path: string) => void;
   selectedPath: string | null;
 }) {
-  const disabledReason = getDisabledReason(node.path);
+  const isPasswordVerified = hasExactFolderUnlockToken(folderUnlockTokens, node.path);
+  const disabledReason =
+    node.passwordProtected && !isPasswordVerified ? "已加密" : getDisabledReason(node.path);
   const isDisabled = Boolean(disabledReason) || isInteractionDisabled;
   const isSelected = selectedPath === node.path;
   const isSelectionVisible = isSelected && !isDisabled;
@@ -64,7 +73,11 @@ function FolderTreeItem({
             <span
               className={cn(
                 "absolute -right-1 -top-1 grid h-3 w-3 place-items-center rounded-full bg-base-100 shadow-sm ring-1 ring-base-300/70",
-                isDisabled ? "text-base-content/45" : "text-base-content",
+                isDisabled
+                  ? "text-base-content/45"
+                  : isPasswordVerified
+                    ? "text-success"
+                    : "text-base-content",
               )}
             >
               <MdiLock className="h-2 w-2" />
@@ -84,6 +97,7 @@ function FolderTreeItem({
             <FolderTreeItem
               key={child.path}
               Icon={MdiFolder}
+              folderUnlockTokens={folderUnlockTokens}
               getDisabledReason={getDisabledReason}
               isNodeHidden={isNodeHidden}
               isInteractionDisabled={isInteractionDisabled}
@@ -115,10 +129,13 @@ export function FolderTreePicker({
   selectedPath: string | null;
   tree: FolderTreeNode;
 }) {
+  const { folderUnlockTokens } = useAppStore();
+
   return (
     <ul className="menu menu-md w-full">
       <FolderTreeItem
         Icon={Icon}
+        folderUnlockTokens={folderUnlockTokens}
         getDisabledReason={getDisabledReason}
         isNodeHidden={isNodeHidden}
         isInteractionDisabled={isInteractionDisabled}

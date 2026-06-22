@@ -5,6 +5,7 @@ import type {
   BatchMoveRequest,
   CreateFolderRequest,
   CreateShareLinkRequest,
+  FolderPasswordSetCheckResponse,
   FileMutationResponse,
   MoveRequest,
   RemoveFolderPasswordRequest,
@@ -22,6 +23,7 @@ import {
 import {
   FILE_BATCH_DELETE_ENDPOINT,
   FILE_BATCH_MOVE_ENDPOINT,
+  FILE_FOLDER_PASSWORD_CHECK_ENDPOINT,
   FILE_FOLDER_PASSWORD_ENDPOINT,
   FILE_FOLDER_PASSWORD_VERIFY_ENDPOINT,
   FILE_FOLDERS_ENDPOINT,
@@ -387,6 +389,31 @@ export function useSetFolderPasswordMutation() {
 
   return {
     setFolderPassword,
+    isMutating,
+  };
+}
+
+export function useCheckFolderPasswordSetAllowedMutation() {
+  const { trigger, isMutating } = useSWRMutation<
+    FolderPasswordSetCheckResponse,
+    ApiError,
+    string,
+    string
+  >(
+    FILE_FOLDER_PASSWORD_CHECK_ENDPOINT,
+    (url, { arg }) => {
+      const params = new URLSearchParams({ path: arg });
+      return apiRequest<FolderPasswordSetCheckResponse>(`${url}?${params.toString()}`);
+    },
+    {
+      throwOnError: true,
+    },
+  );
+
+  const checkFolderPasswordSetAllowed = (path: string) => trigger(path);
+
+  return {
+    checkFolderPasswordSetAllowed,
     isMutating,
   };
 }

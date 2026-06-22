@@ -51,6 +51,7 @@ export function FolderPasswordGate({ target }: { target: FolderPasswordModalTarg
       const response = await verifyFolderPassword(target.path, normalizedPassword)
       saveFolderUnlockToken(response.protectedPath, response.unlockToken)
       setPassword('')
+      setHasEditedPassword(false)
       await refreshFileData()
     } catch (error) {
       setVerifyError(getVerifyErrorMessage(error))
@@ -82,8 +83,11 @@ export function FolderPasswordGate({ target }: { target: FolderPasswordModalTarg
               autoComplete="current-password"
               onChange={event => {
                 setPassword(event.target.value)
-                setHasEditedPassword(true)
+                setHasEditedPassword(false)
                 setVerifyError(null)
+              }}
+              onBlur={event => {
+                setHasEditedPassword(Boolean(normalizeFolderPassword(event.currentTarget.value)))
               }}
               disabled={isMutating}
             />

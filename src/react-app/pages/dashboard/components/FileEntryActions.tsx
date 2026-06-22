@@ -12,6 +12,7 @@ import MdiShareVariantOutline from "~icons/mdi/share-variant-outline";
 import toast from "react-hot-toast";
 import type { FileEntry, FolderEntry } from "../../../../types";
 import { Dropdown } from "../../../components/Dropdown";
+import { useCheckFolderPasswordSetAllowedMutation } from "../../../hooks/useFilesApi";
 import { useAppStore } from "../../../store";
 import { cn } from "../../../utils/cn";
 import {
@@ -118,10 +119,15 @@ export function FolderActionsMenu({
 }) {
   const { deletingFolderPath, folderUnlockTokens, movingPath, renamingPath, uploadQueue } =
     useAppStore();
+  const {
+    checkFolderPasswordSetAllowed,
+    isMutating: isCheckingFolderPasswordSetAllowed,
+  } = useCheckFolderPasswordSetAllowedMutation();
   const isLoading =
     deletingFolderPath === folder.path ||
     renamingPath === folder.path ||
-    movingPath === folder.path;
+    movingPath === folder.path ||
+    isCheckingFolderPasswordSetAllowed;
   const isActionDisabled = Boolean(renamingPath || movingPath) || isLoading;
   const blockIfUploading = () => {
     if (!isFolderOperationBlockedByActiveUpload(uploadQueue, folder.path)) {
@@ -153,6 +159,18 @@ export function FolderActionsMenu({
     }
 
     requestDeleteTarget(action.target);
+  };
+  const requestSetFolderPassword = async () => {
+    try {
+      await checkFolderPasswordSetAllowed(folder.path);
+      openFolderPasswordModal({
+        mode: "set",
+        path: folder.path,
+        name: folder.name,
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "无法检查是否允许设置密码");
+    }
   };
 
   return (
@@ -203,12 +221,8 @@ export function FolderActionsMenu({
                 {
                   label: "设为私密",
                   Icon: MdiLockOutline,
-                  onClick: () =>
-                    openFolderPasswordModal({
-                      mode: "set",
-                      path: folder.path,
-                      name: folder.name,
-                    }),
+                  disabled: isCheckingFolderPasswordSetAllowed,
+                  onClick: () => void requestSetFolderPassword(),
                 },
               ]),
         {

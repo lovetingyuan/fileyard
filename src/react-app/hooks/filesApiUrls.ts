@@ -10,6 +10,7 @@ export const FILE_BATCH_MOVE_ENDPOINT = "/api/files/batch-move";
 export const FILE_SHARE_LINKS_ENDPOINT = "/api/files/share-links";
 export const FILE_STATS_ENDPOINT = "/api/files/stats";
 export const FILE_FOLDER_PASSWORD_ENDPOINT = "/api/files/folders/password";
+export const FILE_FOLDER_PASSWORD_CHECK_ENDPOINT = "/api/files/folders/password/check";
 export const FILE_FOLDER_PASSWORD_VERIFY_ENDPOINT = "/api/files/folders/password/verify";
 
 export type FileListKey = [string, string, SortKey, SortOrder];

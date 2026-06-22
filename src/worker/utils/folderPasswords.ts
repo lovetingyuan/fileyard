@@ -533,17 +533,7 @@ export async function setFolderPassword(
     throw new FilePathValidationError(passwordError);
   }
 
-  if (await findProtectedPath(env, rootDirId, getParentPath(folderPath))) {
-    throw new FilePathValidationError("A parent folder already has a password", 409);
-  }
-
-  if (await getFolderPasswordRecord(env, rootDirId, folderPath)) {
-    throw new FilePathValidationError("Folder already has a password", 409);
-  }
-
-  if (await hasProtectedDescendant(env, rootDirId, folderPath)) {
-    throw new FilePathValidationError("A child folder already has a password", 409);
-  }
+  await assertFolderPasswordSetAllowed(env, rootDirId, folderPath);
 
   const marker = await ensureFolderMarker(env, rootDirId, folderPath);
   const passwordSalt = createRandomBase64Url(RANDOM_BYTES);
@@ -560,6 +550,28 @@ export async function setFolderPassword(
 
   if (!putResult) {
     throw new FilePathValidationError("Folder changed", 409);
+  }
+}
+
+export async function assertFolderPasswordSetAllowed(
+  env: AppBindings,
+  rootDirId: string,
+  folderPath: string,
+): Promise<void> {
+  if (!folderPath) {
+    throw new FilePathValidationError("Home folder does not support passwords");
+  }
+
+  if (await findProtectedPath(env, rootDirId, getParentPath(folderPath))) {
+    throw new FilePathValidationError("A parent folder already has a password", 409);
+  }
+
+  if (await getFolderPasswordRecord(env, rootDirId, folderPath)) {
+    throw new FilePathValidationError("Folder already has a password", 409);
+  }
+
+  if (await hasProtectedDescendant(env, rootDirId, folderPath)) {
+    throw new FilePathValidationError("A child folder already has a password", 409);
   }
 }
 

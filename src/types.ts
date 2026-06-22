@@ -249,6 +249,11 @@ export interface SetFolderPasswordRequest {
   password: string;
 }
 
+export interface FolderPasswordSetCheckResponse {
+  success: true;
+  allowed: true;
+}
+
 export interface VerifyFolderPasswordRequest {
   path: string;
   password: string;

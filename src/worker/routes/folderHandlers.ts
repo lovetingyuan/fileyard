@@ -2,6 +2,7 @@ import type { Context } from "hono";
 import type {
   CreateFolderRequest,
   FileMutationResponse,
+  FolderPasswordSetCheckResponse,
   RemoveFolderPasswordRequest,
   RenameRequest,
   SetFolderPasswordRequest,
@@ -10,6 +11,7 @@ import type {
 import type { AppContext } from "../context";
 import { folderExists, getFileContext } from "../utils/appHelpers";
 import {
+  assertFolderPasswordSetAllowed,
   assertFolderSubtreeAccess,
   assertPathAccess,
   handleFolderPasswordError,
@@ -280,6 +282,34 @@ export async function setFolderAccessPassword(c: Context<AppContext>) {
     }
     console.error("Failed to set folder password", error);
     return jsonError(c, "Failed to set folder password", 500);
+  }
+}
+
+export async function checkFolderPasswordSetAllowed(c: Context<AppContext>) {
+  try {
+    const query = getValidatedQuery<PathQuery>(c);
+    const path = normalizeRelativePath(query.path, { allowEmpty: false, label: "Path" });
+    assertPathNotReserved(path);
+    const { rootDirId } = await getFileContext(c);
+
+    if (!(await folderExists(c.env, rootDirId, path))) {
+      return jsonError(c, "Folder not found", 404);
+    }
+
+    await assertFolderPasswordSetAllowed(c.env, rootDirId, path);
+
+    const response: FolderPasswordSetCheckResponse = {
+      success: true,
+      allowed: true,
+    };
+    return c.json(response);
+  } catch (error) {
+    const validationError = handlePathValidationError(c, error);
+    if (validationError) {
+      return validationError;
+    }
+    console.error("Failed to check folder password availability", error);
+    return jsonError(c, "Failed to check folder password availability", 500);
   }
 }
 
