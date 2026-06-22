@@ -57,24 +57,25 @@ adminRoutes.get("/api/admin/users", adminUsersQueryValidator, async (c) => {
   const offset = (page - 1) * pageSize;
   const db = createDb(c.env);
 
-  const rows = await db
-    .select({
-      createdAt: user.createdAt,
-      email: user.email,
-      lastLoginAt: sql<number | null>`max(${session.createdAt})`,
-    })
-    .from(user)
-    .leftJoin(session, eq(session.userId, user.id))
-    .groupBy(user.id, user.email, user.createdAt)
-    .orderBy(desc(user.createdAt), desc(user.email))
-    .limit(pageSize)
-    .offset(offset);
-
-  const [totalRow] = await db
-    .select({
-      total: sql<number>`count(*)`,
-    })
-    .from(user);
+  const [rows, [totalRow]] = await Promise.all([
+    db
+      .select({
+        createdAt: user.createdAt,
+        email: user.email,
+        lastLoginAt: sql<number | null>`max(${session.createdAt})`,
+      })
+      .from(user)
+      .leftJoin(session, eq(session.userId, user.id))
+      .groupBy(user.id, user.email, user.createdAt)
+      .orderBy(desc(user.createdAt), desc(user.email))
+      .limit(pageSize)
+      .offset(offset),
+    db
+      .select({
+        total: sql<number>`count(*)`,
+      })
+      .from(user),
+  ]);
 
   const response: AdminUserListResponse = {
     success: true,

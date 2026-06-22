@@ -214,15 +214,19 @@ async function getUnlockAttemptKey(c: ShareRouteContext, shareId: string): Promi
   return `share-unlock:${await getShareIdDigest(`${shareId}:${getUnlockClientId(c)}`)}`;
 }
 
-async function getFailedUnlockCount(c: ShareRouteContext, shareId: string): Promise<number> {
-  const raw = await c.env.FILE_YARD_KV.get(await getUnlockAttemptKey(c, shareId));
+function parseFailedUnlockCount(raw: string | null): number {
   const count = raw ? Number(raw) : 0;
   return Number.isInteger(count) && count > 0 ? count : 0;
 }
 
+async function getFailedUnlockCount(c: ShareRouteContext, shareId: string): Promise<number> {
+  const raw = await c.env.FILE_YARD_KV.get(await getUnlockAttemptKey(c, shareId));
+  return parseFailedUnlockCount(raw);
+}
+
 async function recordFailedUnlock(c: ShareRouteContext, shareId: string): Promise<void> {
   const key = await getUnlockAttemptKey(c, shareId);
-  const currentCount = await getFailedUnlockCount(c, shareId);
+  const currentCount = parseFailedUnlockCount(await c.env.FILE_YARD_KV.get(key));
   await c.env.FILE_YARD_KV.put(String(key), String(currentCount + 1), {
     expirationTtl: SHARE_UNLOCK_FAILURE_TTL_SECONDS,
   });

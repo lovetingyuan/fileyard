@@ -590,14 +590,18 @@ async function getUnlockAttemptKey(
   )}`;
 }
 
+function parseFailedUnlockCount(raw: string | null): number {
+  const count = raw ? Number(raw) : 0;
+  return Number.isInteger(count) && count > 0 ? count : 0;
+}
+
 async function getFailedUnlockCount(
   c: Context<AppContext>,
   rootDirId: string,
   protectedPath: string,
 ): Promise<number> {
   const raw = await c.env.FILE_YARD_KV.get(await getUnlockAttemptKey(c, rootDirId, protectedPath));
-  const count = raw ? Number(raw) : 0;
-  return Number.isInteger(count) && count > 0 ? count : 0;
+  return parseFailedUnlockCount(raw);
 }
 
 async function recordFailedUnlock(
@@ -606,7 +610,7 @@ async function recordFailedUnlock(
   protectedPath: string,
 ): Promise<void> {
   const key = await getUnlockAttemptKey(c, rootDirId, protectedPath);
-  const currentCount = await getFailedUnlockCount(c, rootDirId, protectedPath);
+  const currentCount = parseFailedUnlockCount(await c.env.FILE_YARD_KV.get(key));
   await c.env.FILE_YARD_KV.put(key, String(currentCount + 1), {
     expirationTtl: FOLDER_UNLOCK_FAILURE_TTL_SECONDS,
   });
