@@ -2,6 +2,7 @@ import MdiChevronRight from "~icons/mdi/chevron-right";
 import MdiHomeOutline from "~icons/mdi/home-outline";
 import MdiInformationOutline from "~icons/mdi/information-outline";
 import MdiLock from "~icons/mdi/lock";
+import MdiLockOpenVariant from "~icons/mdi/lock-open-variant";
 import { useAppStore } from "../../../store";
 import { cn } from "../../../utils/cn";
 import { openDirectoryStats } from "../actions";
@@ -20,8 +21,10 @@ function hasExactUnlockToken(folderUnlockTokens: Record<string, string>, path: s
 }
 
 function BreadcrumbLockIcon({ isPasswordVerified }: { isPasswordVerified: boolean }) {
+  const LockIcon = isPasswordVerified ? MdiLockOpenVariant : MdiLock;
+
   return (
-    <MdiLock
+    <LockIcon
       className={cn("h-3 w-3 shrink-0", isPasswordVerified ? "text-success" : "text-base-content/60")}
       aria-hidden="true"
     />

@@ -1,5 +1,6 @@
 import MdiFolder from "~icons/mdi/folder";
 import MdiLock from "~icons/mdi/lock";
+import MdiLockOpenVariant from "~icons/mdi/lock-open-variant";
 import type { BatchOperationTarget, FileEntry, FolderEntry } from "../../../../types";
 import { getFileIcon } from "../../../constants/fileIcons";
 import { useAppStore } from "../../../store";
@@ -75,6 +76,8 @@ function FolderTableIcon({
   isPasswordVerified: boolean;
   passwordProtected: boolean;
 }) {
+  const LockIcon = isPasswordVerified ? MdiLockOpenVariant : MdiLock;
+
   return (
     <span className="relative inline-flex h-5 w-5 shrink-0 items-center justify-center">
       <MdiFolder className="h-5 w-5 text-warning" />
@@ -85,7 +88,7 @@ function FolderTableIcon({
             isPasswordVerified ? "text-success" : "text-base-content",
           )}
         >
-          <MdiLock className="h-2.5 w-2.5" />
+          <LockIcon className="h-2.5 w-2.5" />
         </span>
       ) : null}
     </span>

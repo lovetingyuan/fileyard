@@ -1,5 +1,6 @@
 import MdiFolder from "~icons/mdi/folder";
 import MdiLock from "~icons/mdi/lock";
+import MdiLockOpenVariant from "~icons/mdi/lock-open-variant";
 import type { BatchOperationTarget, FileEntry, FolderEntry } from "../../../../types";
 import { getFileIcon } from "../../../constants/fileIcons";
 import { cn } from "../../../utils/cn";
@@ -75,6 +76,7 @@ export function FolderGridItem({
   const { folderUnlockTokens } = useAppStore();
   const entryKey = `folder:${folder.path}`;
   const isPasswordVerified = Boolean(getFolderUnlockTokenFromTokens(folderUnlockTokens, folder.path));
+  const FolderLockIcon = isPasswordVerified ? MdiLockOpenVariant : MdiLock;
   const selection = useDashboardEntrySelection(
     {
       type: "folder",
@@ -140,7 +142,7 @@ export function FolderGridItem({
                 isPasswordVerified ? "text-success" : "text-base-content",
               )}
             >
-              <MdiLock className="h-2.5 w-2.5" />
+              <FolderLockIcon className="h-2.5 w-2.5" />
             </span>
           ) : null}
         </span>

@@ -6,6 +6,7 @@ import MdiFileTree from '~icons/mdi/file-tree'
 import MdiFolder from '~icons/mdi/folder'
 import MdiFolderOpen from '~icons/mdi/folder-open'
 import MdiLock from '~icons/mdi/lock'
+import MdiLockOpenVariant from '~icons/mdi/lock-open-variant'
 import type { FileEntry, FolderEntry } from '../../../../types'
 import { useFileList } from '../../../hooks/useFilesApi'
 import { getFileIcon } from '../../../constants/fileIcons'
@@ -125,6 +126,7 @@ function FileTreeFolderRow({
   const isPasswordVerified = Boolean(
     getFolderUnlockTokenFromTokens(folderUnlockTokens, folder.path),
   )
+  const FolderLockIcon = isPasswordVerified ? MdiLockOpenVariant : MdiLock
   const openFolder = () => {
     const action = getDashboardFolderOpenAction(folder, folderUnlockTokens)
     if (action.type === 'navigate') {
@@ -195,7 +197,7 @@ function FileTreeFolderRow({
                   isPasswordVerified ? 'text-success' : 'text-base-content',
                 )}
               >
-                <MdiLock className="h-2 w-2" />
+                <FolderLockIcon className="h-2 w-2" />
               </span>
             ) : null}
           </span>
