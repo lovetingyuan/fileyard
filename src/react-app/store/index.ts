@@ -121,6 +121,8 @@ const { useStore, getStoreMethods, getStoreState } = createStore('app-store', {
   isDirectoryStatsModalOpen: false,
   /** 当前目录统计弹窗要展示的目录路径。 */
   directoryStatsPath: '',
+  /** 当前目录统计弹窗是否隐藏未验证加密目录的统计指标。 */
+  hideProtectedDirectoryStatsMetrics: false,
   /** 用户最近选择的上传入口类型，用于区分文件或文件夹上传。 */
   uploadType: '' as 'file' | 'folder' | '',
   /** 当前上传队列的可渲染任务列表。 */

@@ -6,10 +6,14 @@ import { formatBytes } from "../../../utils/fileFormatters";
 import { closeDirectoryStats } from "../actions";
 
 export function DirectoryStatsModal() {
-  const { directoryStatsPath, isDirectoryStatsModalOpen } = useAppStore();
+  const {
+    directoryStatsPath,
+    hideProtectedDirectoryStatsMetrics,
+    isDirectoryStatsModalOpen,
+  } = useAppStore();
   const { error, isLoading, stats } = useDirectoryStats(
     directoryStatsPath,
-    isDirectoryStatsModalOpen,
+    isDirectoryStatsModalOpen && !hideProtectedDirectoryStatsMetrics,
   );
 
   const pathSegments = directoryStatsPath.split("/").filter(Boolean);
@@ -27,7 +31,9 @@ export function DirectoryStatsModal() {
       value: displayPath,
       valueClassName: "break-all font-mono text-xs sm:text-sm",
     },
-    ...(isLoading
+    ...(hideProtectedDirectoryStatsMetrics
+      ? []
+      : isLoading
       ? [
           {
             label: "状态",

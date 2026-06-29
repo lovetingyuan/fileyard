@@ -510,17 +510,26 @@ export function setDownloadingPath(path: string | null) {
   setDownloading(Boolean(path));
 }
 
-export function openDirectoryStats(path: string) {
-  const { setDirectoryStatsPath, setIsDirectoryStatsModalOpen } = getStoreMethods();
+export function openDirectoryStats(
+  path: string,
+  options: { hideProtectedMetrics?: boolean } = {},
+) {
+  const {
+    setDirectoryStatsPath,
+    setHideProtectedDirectoryStatsMetrics,
+    setIsDirectoryStatsModalOpen,
+  } = getStoreMethods();
 
   setDirectoryStatsPath(path);
+  setHideProtectedDirectoryStatsMetrics(Boolean(options.hideProtectedMetrics));
   setIsDirectoryStatsModalOpen(true);
 }
 
 export function closeDirectoryStats() {
-  const { setIsDirectoryStatsModalOpen } = getStoreMethods();
+  const { setHideProtectedDirectoryStatsMetrics, setIsDirectoryStatsModalOpen } = getStoreMethods();
 
   setIsDirectoryStatsModalOpen(false);
+  setHideProtectedDirectoryStatsMetrics(false);
 }
 
 export function setUploadType(type: "file" | "folder" | "") {

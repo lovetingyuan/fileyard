@@ -241,7 +241,12 @@ export function FolderActionsMenu({
         {
           label: "查看详情",
           Icon: MdiInformationOutline,
-          onClick: () => openDirectoryStats(folder.path),
+          onClick: () =>
+            openDirectoryStats(folder.path, {
+              hideProtectedMetrics:
+                folder.passwordProtected &&
+                !Object.prototype.hasOwnProperty.call(folderUnlockTokens, folder.path),
+            }),
         },
       ]}
     />
