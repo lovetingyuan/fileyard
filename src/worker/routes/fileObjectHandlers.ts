@@ -36,6 +36,18 @@ import {
 } from "../validation";
 export { previewFile } from "./filePreviewHandler";
 
+function getDownloadHeaders(object: R2Object, fileName: string): Headers {
+  const headers = new Headers();
+  object.writeHttpMetadata(headers);
+  headers.set("Cache-Control", "private, no-store");
+  headers.set("Content-Disposition", toContentDisposition(fileName));
+  headers.set("Content-Length", String(object.size));
+  headers.set("ETag", object.httpEtag);
+  headers.set("Last-Modified", object.uploaded.toUTCString());
+  headers.set("X-Content-Type-Options", "nosniff");
+  return headers;
+}
+
 function parseUploadContentLength(c: Context<AppContext>): number | Response {
   const contentLengthHeader = c.req.header("content-length");
   if (!contentLengthHeader) {
@@ -221,16 +233,10 @@ export async function downloadFile(c: Context<AppContext>) {
       return jsonError(c, "File not found", 404);
     }
 
-    const headers = new Headers();
-    object.writeHttpMetadata(headers);
-    headers.set("Cache-Control", "private, no-store");
-    headers.set(
-      "Content-Disposition",
-      toContentDisposition(object.customMetadata?.originalName ?? getBaseName(path)),
+    const headers = getDownloadHeaders(
+      object,
+      object.customMetadata?.originalName ?? getBaseName(path),
     );
-    headers.set("ETag", object.httpEtag);
-    headers.set("Last-Modified", object.uploaded.toUTCString());
-    headers.set("X-Content-Type-Options", "nosniff");
 
     return new Response(object.body, { headers, status: 200 });
   } catch (error) {
@@ -244,6 +250,39 @@ export async function downloadFile(c: Context<AppContext>) {
     }
     console.error("Failed to download file", error);
     return jsonError(c, "Failed to download file", 500);
+  }
+}
+
+export async function headDownloadFile(c: Context<AppContext>) {
+  try {
+    const query = getValidatedQuery<PathQuery>(c);
+    const path = normalizeRelativePath(query.path, { allowEmpty: false, label: "Path" });
+    assertPathNotReserved(path);
+    const { rootDirId } = await getFileContext(c);
+    await assertPathAccess(c, rootDirId, path);
+    const object = await c.env.FILES_BUCKET.head(getFileKey(rootDirId, path));
+
+    if (!object) {
+      return jsonError(c, "File not found", 404);
+    }
+
+    const headers = getDownloadHeaders(
+      object,
+      object.customMetadata?.originalName ?? getBaseName(path),
+    );
+
+    return new Response(null, { headers, status: 200 });
+  } catch (error) {
+    const folderPasswordError = handleFolderPasswordError(error);
+    if (folderPasswordError) {
+      return folderPasswordError;
+    }
+    const validationError = handlePathValidationError(c, error);
+    if (validationError) {
+      return validationError;
+    }
+    console.error("Failed to check downloadable file", error);
+    return jsonError(c, "Failed to check downloadable file", 500);
   }
 }
 

@@ -38,8 +38,8 @@
   "devDependencies": {
     "@babel/types": "^7.29.0",
     "@better-auth/cli": "^1.4.21",
-    "@cloudflare/vite-plugin": "^1.30.2",
-    "@cloudflare/vitest-pool-workers": "^0.14.0",
+    "@cloudflare/vite-plugin": "^1.42.4",
+    "@cloudflare/vitest-pool-workers": "^0.17.0",
     "@iconify/json": "^2.2.463",
     "@rolldown/plugin-babel": "^0.2.2",
     "@svgr/core": "^8.1.0",
@@ -59,7 +59,7 @@
     "unplugin-icons": "^23.0.1",
     "vite": "^8.0.3",
     "vitest": "^4.1.2",
-    "wrangler": "^4.83.0"
+    "wrangler": "^4.106.0"
   },
   "overrides": {
     "@esbuild-kit/core-utils": {

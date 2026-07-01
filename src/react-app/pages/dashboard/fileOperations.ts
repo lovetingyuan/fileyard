@@ -1,6 +1,5 @@
 import toast from "react-hot-toast";
 import { buildDownloadUrl } from "../../hooks/useFilesApi";
-import { getDownloadFilename } from "../../utils/fileFormatters";
 import { getFolderUnlockTokenForPath } from "../../utils/folderUnlockTokens";
 import { setDownloadingPath } from "./actions";
 
@@ -24,25 +23,21 @@ export async function runWithLargeFileUploadToast<T>(file: File, action: () => P
 export async function downloadDashboardFile(path: string, fallbackName: string) {
   try {
     setDownloadingPath(path);
-    const response = await fetch(buildDownloadUrl(path, getFolderUnlockTokenForPath(path)), {
+    const downloadUrl = buildDownloadUrl(path, getFolderUnlockTokenForPath(path));
+    const response = await fetch(downloadUrl, {
       credentials: "include",
+      method: "HEAD",
     });
     if (!response.ok) {
       throw new Error("Failed to download file");
     }
 
-    const blob = await response.blob();
-    const downloadUrl = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = downloadUrl;
-    anchor.download = getDownloadFilename(
-      response.headers.get("Content-Disposition"),
-      fallbackName,
-    );
+    anchor.download = fallbackName;
     document.body.append(anchor);
     anchor.click();
     anchor.remove();
-    URL.revokeObjectURL(downloadUrl);
   } catch (error) {
     toast.error(error instanceof Error ? error.message : "Failed to download file");
   } finally {

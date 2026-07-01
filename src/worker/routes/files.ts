@@ -3,6 +3,7 @@ import type { AppContext } from "../context";
 import {
   downloadFile,
   deleteFile,
+  headDownloadFile,
   previewFile,
   renameFile,
   uploadFile,
@@ -60,6 +61,15 @@ files.delete("/api/files/folders", pathQueryValidator, deleteFolder);
 files.patch("/api/files/folders", renameJsonValidator, renameFolder);
 files.put("/api/files/object", uploadObjectQueryValidator, uploadFile);
 files.patch("/api/files/object", renameJsonValidator, renameFile);
+files.use("/api/files/object", async (c, next) => {
+  if (c.req.method === "HEAD") {
+    const validationResult = await pathQueryValidator(c, async () => {
+      c.res = await headDownloadFile(c);
+    });
+    return validationResult ?? c.res;
+  }
+  await next();
+});
 files.get("/api/files/object", pathQueryValidator, downloadFile);
 files.get("/api/files/preview", pathQueryValidator, previewFile);
 files.delete("/api/files/object", pathQueryValidator, deleteFile);
