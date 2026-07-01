@@ -22,6 +22,7 @@ import {
   requestRenameTarget,
   saveFolderUnlockToken,
 } from "../actions";
+import { downloadDashboardArchive, getDashboardArchiveFallbackName } from "../fileOperations";
 import { useDashboardPath } from "../hooks/useDashboardPath";
 import { requestMoveTargetWithFolderPreflight } from "../utils/folderMovePreflight";
 import { shouldConfirmFromInputKey } from "../utils/modalKeyboard";
@@ -144,6 +145,11 @@ export function FolderPasswordModal() {
       await requestMoveTargetWithFolderPreflight(target.afterUnlock.target);
     } else if (target.afterUnlock?.type === "delete") {
       requestDeleteTarget(target.afterUnlock.target);
+    } else if (target.afterUnlock?.type === "download") {
+      await downloadDashboardArchive(
+        target.afterUnlock.targets,
+        getDashboardArchiveFallbackName(target.afterUnlock.targets),
+      );
     } else if (nextPath !== null) {
       setPath(nextPath);
     }

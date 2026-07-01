@@ -112,6 +112,10 @@ export type FolderPasswordAfterUnlockAction =
   | {
       type: "delete";
       target: DeleteTarget;
+    }
+  | {
+      type: "download";
+      targets: BatchOperationTarget[];
     };
 
 export type FolderPasswordModalTarget = {
@@ -294,6 +298,17 @@ export interface BatchDeleteRequest {
 export interface BatchMoveRequest {
   targets: BatchOperationRequestTarget[];
   targetParentPath: string;
+}
+
+export interface CreateArchiveDownloadRequest {
+  targets: BatchOperationRequestTarget[];
+}
+
+export interface CreateArchiveDownloadResponse {
+  success: true;
+  downloadUrl: string;
+  fileName: string;
+  expiresAt: string;
 }
 
 export interface BatchFileOperationResult {

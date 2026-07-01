@@ -7,6 +7,7 @@ export const FILE_FOLDER_TREE_ENDPOINT = "/api/files/folder-tree";
 export const FILE_MOVE_ENDPOINT = "/api/files/move";
 export const FILE_BATCH_DELETE_ENDPOINT = "/api/files/batch-delete";
 export const FILE_BATCH_MOVE_ENDPOINT = "/api/files/batch-move";
+export const FILE_ARCHIVE_TICKETS_ENDPOINT = "/api/files/archive-tickets";
 export const FILE_SHARE_LINKS_ENDPOINT = "/api/files/share-links";
 export const FILE_STATS_ENDPOINT = "/api/files/stats";
 export const FILE_FOLDER_PASSWORD_ENDPOINT = "/api/files/folders/password";

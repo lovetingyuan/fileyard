@@ -1,5 +1,6 @@
 import MdiClose from "~icons/mdi/close";
 import MdiDeleteOutline from "~icons/mdi/delete-outline";
+import MdiDownload from "~icons/mdi/download";
 import MdiFolderMoveOutline from "~icons/mdi/folder-move-outline";
 import MdiShareVariantOutline from "~icons/mdi/share-variant-outline";
 import { useAppStore } from "../../../store";
@@ -13,10 +14,12 @@ import {
   canShareDashboardSelection,
   getDashboardSelectionShareDisabledReason,
 } from "../utils/batchShareSelection";
+import { downloadDashboardArchive } from "../fileOperations";
 
 export function BatchSelectionToolbar() {
-  const { batchDeleting, batchMoving, selectedDashboardTargets, sharing } = useAppStore();
-  const isBusy = batchDeleting || batchMoving || sharing;
+  const { batchDeleting, batchMoving, downloading, selectedDashboardTargets, sharing } =
+    useAppStore();
+  const isBusy = batchDeleting || batchMoving || downloading || sharing;
   const isEmpty = selectedDashboardTargets.length === 0;
   const canShareSelection = canShareDashboardSelection(selectedDashboardTargets);
   const shareDisabledReason = getDashboardSelectionShareDisabledReason(selectedDashboardTargets);
@@ -27,6 +30,17 @@ export function BatchSelectionToolbar() {
       <span className="shrink-0 text-sm text-base-content/70">
         已选择 {selectedDashboardTargets.length} 项
       </span>
+      <div className="tooltip" data-tip="下载选中项">
+        <button
+          type="button"
+          className="btn btn-accent btn-square btn-sm"
+          disabled={isBusy || isEmpty}
+          onClick={() => void downloadDashboardArchive(selectedDashboardTargets)}
+          aria-label="下载选中项"
+        >
+          <MdiDownload className="h-5 w-5" />
+        </button>
+      </div>
       <div className="tooltip" data-tip={shareDisabledReason ?? "分享选中文件"}>
         <button
           type="button"

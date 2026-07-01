@@ -5,7 +5,7 @@ import type {
 } from "../../../../types";
 import { getFolderUnlockTokenFromTokens } from "../../../utils/folderUnlockTokens";
 
-type ProtectedFolderOperation = "delete" | "move" | "rename";
+type ProtectedFolderOperation = "delete" | "download" | "move" | "rename";
 type FolderMutationTarget = {
   type: "folder";
   path: string;
@@ -26,6 +26,10 @@ function getAfterUnlockAction(
   operation: ProtectedFolderOperation,
   target: FolderMutationTarget,
 ): FolderPasswordAfterUnlockAction {
+  if (operation === "download") {
+    return { type: "download", targets: [target] };
+  }
+
   if (operation === "rename") {
     return { type: "rename", target };
   }

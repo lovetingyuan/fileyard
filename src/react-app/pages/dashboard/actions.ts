@@ -253,9 +253,15 @@ export function closeMoveTarget() {
   setPendingMoveTarget(null);
 }
 
+type ComparableFileOperationTarget =
+  | BatchOperationTarget
+  | DeleteTarget
+  | MoveTarget
+  | RenameTarget;
+
 function isSameFileOperationTarget(
-  current: NonNullable<FolderPasswordModalTarget["afterUnlock"]>["target"] | null | undefined,
-  next: NonNullable<FolderPasswordModalTarget["afterUnlock"]>["target"] | null | undefined,
+  current: ComparableFileOperationTarget | null | undefined,
+  next: ComparableFileOperationTarget | null | undefined,
 ) {
   if (!current || !next) {
     return current === next;
@@ -272,7 +278,24 @@ function isSameAfterUnlockAction(
     return current === next;
   }
 
-  return current.type === next.type && isSameFileOperationTarget(current.target, next.target);
+  if (current.type !== next.type) {
+    return false;
+  }
+
+  if (current.type === "download" && next.type === "download") {
+    return (
+      current.targets.length === next.targets.length &&
+      current.targets.every((target, index) =>
+        isSameFileOperationTarget(target, next.targets[index]),
+      )
+    );
+  }
+
+  if (current.type === "download" || next.type === "download") {
+    return false;
+  }
+
+  return isSameFileOperationTarget(current.target, next.target);
 }
 
 function isSameFolderPasswordTarget(
@@ -510,10 +533,7 @@ export function setDownloadingPath(path: string | null) {
   setDownloading(Boolean(path));
 }
 
-export function openDirectoryStats(
-  path: string,
-  options: { hideProtectedMetrics?: boolean } = {},
-) {
+export function openDirectoryStats(path: string, options: { hideProtectedMetrics?: boolean } = {}) {
   const {
     setDirectoryStatsPath,
     setHideProtectedDirectoryStatsMetrics,

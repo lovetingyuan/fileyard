@@ -9,6 +9,7 @@ import {
   uploadFile,
 } from "./fileObjectHandlers";
 import { getDirectoryStats, getUploadLimits, listFiles } from "./fileListHandlers";
+import { createArchiveDownloadTicket, downloadArchive } from "./fileArchiveHandlers";
 import { listFolderTree, moveEntry } from "./fileMoveHandlers";
 import { batchDeleteEntries, batchMoveEntries } from "./fileBatchHandlers";
 import {
@@ -23,6 +24,7 @@ import {
 import {
   batchDeleteJsonValidator,
   batchMoveJsonValidator,
+  createArchiveDownloadJsonValidator,
   createFolderJsonValidator,
   fileListQueryValidator,
   moveJsonValidator,
@@ -41,6 +43,12 @@ files.get("/api/files/upload-limits", getUploadLimits);
 files.get("/api/files", fileListQueryValidator, listFiles);
 files.get("/api/files/stats", optionalPathQueryValidator, getDirectoryStats);
 files.get("/api/files/folder-tree", listFolderTree);
+files.post(
+  "/api/files/archive-tickets",
+  createArchiveDownloadJsonValidator,
+  createArchiveDownloadTicket,
+);
+files.get("/api/files/archive-tickets/:ticket/download", downloadArchive);
 files.patch("/api/files/move", moveJsonValidator, moveEntry);
 files.delete("/api/files/batch-delete", batchDeleteJsonValidator, batchDeleteEntries);
 files.patch("/api/files/batch-move", batchMoveJsonValidator, batchMoveEntries);

@@ -1,6 +1,7 @@
 import type {
   BatchDeleteRequest,
   BatchMoveRequest,
+  CreateArchiveDownloadRequest,
   CreateFolderRequest,
   CreateShareLinkRequest,
   MoveRequest,
@@ -252,6 +253,16 @@ function parseBatchMoveRequest(value: unknown): BatchMoveRequest | null {
   };
 }
 
+function parseCreateArchiveDownloadRequest(value: unknown): CreateArchiveDownloadRequest | null {
+  if (!isRecord(value) || !Array.isArray(value.targets) || !value.targets.every(isBatchTarget)) {
+    return null;
+  }
+
+  return {
+    targets: value.targets,
+  };
+}
+
 function parseCreateShareLinkRequest(value: unknown): CreateShareLinkRequest | null {
   const hasPath = isRecord(value) && typeof value.path === "string";
   const hasPaths =
@@ -429,6 +440,7 @@ export const renameJsonValidator = jsonBody(parseRenameRequest);
 export const moveJsonValidator = jsonBody(parseMoveRequest);
 export const batchDeleteJsonValidator = jsonBody(parseBatchDeleteRequest);
 export const batchMoveJsonValidator = jsonBody(parseBatchMoveRequest);
+export const createArchiveDownloadJsonValidator = jsonBody(parseCreateArchiveDownloadRequest);
 export const createShareLinkJsonValidator = jsonBody(parseCreateShareLinkRequest);
 export const verifySharePasswordJsonValidator = jsonBody(parseVerifySharePasswordRequest);
 export const multipartCreateJsonValidator = jsonBody(parseMultipartUploadCreateRequest);

@@ -24,7 +24,7 @@ import {
   requestMoveTarget,
   requestRenameTarget,
 } from "../actions";
-import { downloadDashboardFile } from "../fileOperations";
+import { downloadDashboardArchive, downloadDashboardFile } from "../fileOperations";
 import {
   FILE_OPERATION_UPLOAD_BLOCKED_MESSAGE,
   isFolderOperationBlockedByActiveUpload,
@@ -118,14 +118,19 @@ export function FolderActionsMenu({
   folder: FolderEntry;
   variant?: RowActionsMenuVariant;
 }) {
-  const { deletingFolderPath, folderUnlockTokens, movingPath, renamingPath, uploadQueue } =
-    useAppStore();
   const {
-    checkFolderPasswordSetAllowed,
-    isMutating: isCheckingFolderPasswordSetAllowed,
-  } = useCheckFolderPasswordSetAllowedMutation();
+    deletingFolderPath,
+    downloadingPath,
+    folderUnlockTokens,
+    movingPath,
+    renamingPath,
+    uploadQueue,
+  } = useAppStore();
+  const { checkFolderPasswordSetAllowed, isMutating: isCheckingFolderPasswordSetAllowed } =
+    useCheckFolderPasswordSetAllowedMutation();
   const isLoading =
     deletingFolderPath === folder.path ||
+    downloadingPath === folder.path ||
     renamingPath === folder.path ||
     movingPath === folder.path ||
     isCheckingFolderPasswordSetAllowed;
@@ -138,7 +143,9 @@ export function FolderActionsMenu({
     toast.error(FILE_OPERATION_UPLOAD_BLOCKED_MESSAGE);
     return true;
   };
-  const requestProtectedFolderOperation = (operation: "delete" | "move" | "rename") => {
+  const requestProtectedFolderOperation = (
+    operation: "delete" | "download" | "move" | "rename",
+  ) => {
     const action = getProtectedFolderOperationAction({
       folder,
       folderUnlockTokens,
@@ -156,6 +163,11 @@ export function FolderActionsMenu({
 
     if (operation === "move") {
       void requestMoveTargetWithFolderPreflight(action.target);
+      return;
+    }
+
+    if (operation === "download") {
+      void downloadDashboardArchive([action.target], `${action.target.name}.zip`);
       return;
     }
 
@@ -180,6 +192,17 @@ export function FolderActionsMenu({
       isLoading={isLoading}
       variant={variant}
       items={[
+        {
+          label: "下载",
+          Icon: MdiDownload,
+          onClick: () => {
+            if (blockIfUploading()) {
+              return;
+            }
+
+            requestProtectedFolderOperation("download");
+          },
+        },
         {
           label: "重命名",
           Icon: MdiPencil,
