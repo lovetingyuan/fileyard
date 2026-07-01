@@ -21,6 +21,7 @@
   "dependencies": {
     "@tailwindcss/vite": "^4.2.2",
     "better-auth": "^1.6.2",
+    "client-zip": "^2.5.0",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.2",
     "hono": "4.12.23",
