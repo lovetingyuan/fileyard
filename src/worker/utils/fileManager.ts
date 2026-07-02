@@ -146,7 +146,12 @@ export function getFolderMarkerKeys(rootDirId: string, folderPath: string): stri
 }
 
 export function isFolderMarkerKey(key: string, prefix: string): boolean {
-  return ALL_FOLDER_MARKER_NAMES.some((markerName) => key === `${prefix}${markerName}`);
+  if (!key.startsWith(prefix)) {
+    return false;
+  }
+
+  const segments = key.slice(prefix.length).split("/");
+  return isFolderMarkerName(segments[segments.length - 1] ?? "");
 }
 
 export function getBaseName(path: string): string {

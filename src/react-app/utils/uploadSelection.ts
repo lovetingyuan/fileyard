@@ -111,16 +111,6 @@ export function getUploadSelectionValidationMessage(
   if (source === "folder" && files.length === 0) {
     return EMPTY_FOLDER_UPLOAD_MESSAGE;
   }
-  if (source === "folder") {
-    const rootNames = new Set(
-      [...files]
-        .map((file) => normalizeSlashes(file.webkitRelativePath).split("/")[0])
-        .filter(Boolean),
-    );
-    if (rootNames.size > 1) {
-      return "一次只能上传一个文件夹";
-    }
-  }
   return null;
 }
 
