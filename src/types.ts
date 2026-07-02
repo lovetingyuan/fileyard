@@ -142,7 +142,7 @@ export type NewTextFileDraft = {
   content: string;
 };
 
-export type SortKey = "name" | "size" | "uploadedAt";
+export type SortKey = "name" | "size" | "uploadedAt" | "extension";
 export type SortOrder = "asc" | "desc";
 export type DashboardLayoutMode = "table" | "grid";
 

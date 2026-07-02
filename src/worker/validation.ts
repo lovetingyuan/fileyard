@@ -22,7 +22,7 @@ import { validator } from "hono/validator";
 import type { AppContext } from "./context";
 import { jsonError } from "./utils/response";
 
-const SORT_KEYS = new Set<SortKey>(["name", "size", "uploadedAt"]);
+const SORT_KEYS = new Set<SortKey>(["name", "size", "uploadedAt", "extension"]);
 const SORT_ORDERS = new Set<SortOrder>(["asc", "desc"]);
 
 export type FileListQuery = {

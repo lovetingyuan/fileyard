@@ -49,7 +49,7 @@ export function toggleDashboardSort(key: SortKey) {
   }
 
   setDashboardSortKey(key);
-  setDashboardSortOrder(key === "name" ? "asc" : "desc");
+  setDashboardSortOrder(key === "name" || key === "extension" ? "asc" : "desc");
 }
 
 function setDashboardLayoutMode(mode: DashboardLayoutMode) {
@@ -89,7 +89,6 @@ export function requestDashboardFileLocation(filePath: string) {
   } = getStoreMethods();
 
   setDashboardLocatedFilePath(filePath);
-  setDashboardTreeSidebarOpen(false);
   setCurrentFile(null);
   setPreviewing(false);
   setShareTargets([]);

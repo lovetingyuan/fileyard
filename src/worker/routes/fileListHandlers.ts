@@ -3,6 +3,7 @@ import type {
   DirectoryStatsResponse,
   FileListResponse,
   FileUploadLimitsResponse,
+  SortKey,
 } from "../../types";
 import type { AppContext } from "../context";
 import { folderExists, getFileContext, getUploadLimitBytes } from "../utils/appHelpers";
@@ -31,7 +32,7 @@ import { getFileChecksumMetadata } from "./fileChecksumMetadata";
 import { getValidatedQuery, type FileListQuery, type OptionalPathQuery } from "../validation";
 
 type SortParams = {
-  sort: "name" | "size" | "uploadedAt";
+  sort: SortKey;
   order: "asc" | "desc";
 };
 
@@ -57,6 +58,23 @@ function sortFolders(
   });
 }
 
+function getFileExtension(name: string): string | null {
+  const extensionSeparatorIndex = name.lastIndexOf(".");
+
+  if (extensionSeparatorIndex <= 0 || extensionSeparatorIndex === name.length - 1) {
+    return null;
+  }
+
+  return name.slice(extensionSeparatorIndex + 1).toLowerCase();
+}
+
+function compareUploadedAt(
+  a: FileListResponse["files"][number],
+  b: FileListResponse["files"][number],
+) {
+  return new Date(a.uploadedAt).getTime() - new Date(b.uploadedAt).getTime();
+}
+
 function sortFiles(
   files: FileListResponse["files"],
   { sort, order }: SortParams,
@@ -67,8 +85,21 @@ function sortFiles(
       cmp = a.name.localeCompare(b.name);
     } else if (sort === "size") {
       cmp = a.size - b.size;
+    } else if (sort === "extension") {
+      const aExtension = getFileExtension(a.name);
+      const bExtension = getFileExtension(b.name);
+
+      if (!aExtension || !bExtension) {
+        if (!aExtension && !bExtension) {
+          cmp = compareUploadedAt(a, b);
+        } else {
+          return aExtension ? -1 : 1;
+        }
+      } else {
+        cmp = aExtension.localeCompare(bExtension) || compareUploadedAt(a, b);
+      }
     } else {
-      cmp = new Date(a.uploadedAt).getTime() - new Date(b.uploadedAt).getTime();
+      cmp = compareUploadedAt(a, b);
     }
     return order === "desc" ? -cmp : cmp;
   });

@@ -11,6 +11,7 @@ const SORT_OPTIONS: Array<{ key: SortKey; label: string }> = [
   { key: "uploadedAt", label: "按时间排序" },
   { key: "name", label: "按名称排序" },
   { key: "size", label: "按大小排序" },
+  { key: "extension", label: "按后缀排序" },
 ];
 
 export function FileSortMenu() {
