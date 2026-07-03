@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import MdiChevronLeft from "~icons/mdi/chevron-left";
+import MdiChevronRight from "~icons/mdi/chevron-right";
 import MdiPencil from "~icons/mdi/pencil";
 import toast from "react-hot-toast";
 import { Dialog } from "../../../components/Dialog";
@@ -6,9 +8,13 @@ import { buildPreviewUrl, useUpdateFileMutation } from "../../../hooks/useFilesA
 import { useAppStore } from "../../../store";
 import { getPreviewInfo } from "../../../utils/previewInfo";
 import { getFolderUnlockTokenForPath } from "../../../utils/folderUnlockTokens";
-import { closeFilePreview } from "../actions";
+import { closeFilePreview, openFilePreview } from "../actions";
 import { runWithLargeFileUploadToast } from "../fileOperations";
 import { useDashboardFileView } from "../hooks/useDashboardFileView";
+import {
+  getAdjacentPreviewFile,
+  type PreviewNavigationDirection,
+} from "../utils/previewNavigation";
 import {
   getPreviewContentWrapperClassName,
   getPreviewModalBoxClassName,
@@ -40,7 +46,7 @@ function getPreviewSizeError(
 
 export function PreviewModal() {
   const { currentFile, folderUnlockTokens, previewing } = useAppStore();
-  const { refresh } = useDashboardFileView();
+  const { filteredFiles, refresh } = useDashboardFileView();
   const { updateFile } = useUpdateFileMutation();
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState("");
@@ -60,18 +66,24 @@ export function PreviewModal() {
 
   useEffect(() => clearCopyFeedbackTimeout, []);
 
-  const handleClose = () => {
+  const resetPreviewState = () => {
     clearCopyFeedbackTimeout();
     setIsEditing(false);
     setEditContent("");
     setForceTextPreview(false);
     setIsCopyFeedbackVisible(false);
     setLoadedTextState(null);
+  };
+
+  const handleClose = () => {
+    resetPreviewState();
     closeFilePreview();
   };
 
   const file = previewing ? currentFile : null;
-  const previewUrl = file ? buildPreviewUrl(file.path, getFolderUnlockTokenForPath(file.path)) : "";
+  const previewUrl = file
+    ? buildPreviewUrl(file.path, getFolderUnlockTokenForPath(file.path), file.uploadedAt)
+    : "";
   void folderUnlockTokens;
   const info = file ? getPreviewInfo(file) : { kind: "unsupported" as const };
   const effectiveInfo = forceTextPreview ? { kind: "text" as const } : info;
@@ -84,6 +96,18 @@ export function PreviewModal() {
   const canEditTextFile = effectiveInfo.kind === "text";
   const loadedText =
     loadedTextState && loadedTextState.path === file.path ? loadedTextState.content : null;
+  const previousFile = getAdjacentPreviewFile(filteredFiles, file, "previous");
+  const nextPreviewFile = getAdjacentPreviewFile(filteredFiles, file, "next");
+
+  const handlePreviewNavigation = (direction: PreviewNavigationDirection) => {
+    const targetFile = direction === "previous" ? previousFile : nextPreviewFile;
+    if (!targetFile) {
+      return;
+    }
+
+    resetPreviewState();
+    openFilePreview(targetFile);
+  };
 
   const handleDataLoaded = (data: string) => {
     setLoadedTextState({ path: file.path, content: data });
@@ -154,6 +178,30 @@ export function PreviewModal() {
       bodyClassName="flex-1 min-h-0 overflow-auto p-1"
       closeButtonAriaLabel="关闭文件预览弹窗"
       headerClassName="items-center"
+      headerActions={({ isInteractionDisabled }) => (
+        <>
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm btn-square"
+            onClick={() => handlePreviewNavigation("previous")}
+            disabled={isInteractionDisabled || isEditing || !previousFile}
+            title="上一个文件"
+            aria-label="上一个文件"
+          >
+            <MdiChevronLeft className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm btn-square"
+            onClick={() => handlePreviewNavigation("next")}
+            disabled={isInteractionDisabled || isEditing || !nextPreviewFile}
+            title="下一个文件"
+            aria-label="下一个文件"
+          >
+            <MdiChevronRight className="h-5 w-5" />
+          </button>
+        </>
+      )}
       footer={
         (canCopyText || canEditTextFile) && !sizeError
           ? ({ confirm, isConfirming }) =>

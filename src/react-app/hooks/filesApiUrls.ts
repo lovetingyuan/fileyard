@@ -53,10 +53,17 @@ export function buildDownloadUrl(path: string, folderUnlockToken?: string | null
   return `${FILE_OBJECT_ENDPOINT}?${params.toString()}`;
 }
 
-export function buildPreviewUrl(path: string, folderUnlockToken?: string | null): string {
+export function buildPreviewUrl(
+  path: string,
+  folderUnlockToken?: string | null,
+  version?: string | null,
+): string {
   const params = new URLSearchParams({ path });
   if (folderUnlockToken) {
     params.set("folderUnlockToken", folderUnlockToken);
+  }
+  if (version) {
+    params.set("v", version);
   }
   return `/api/files/preview?${params.toString()}`;
 }

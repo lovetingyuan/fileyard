@@ -18,9 +18,13 @@ const PREVIEW_SANDBOX_CSP = [
   "style-src 'unsafe-inline'",
 ].join("; ");
 
-const PREVIEW_FETCH_METADATA_VARY = "Sec-Fetch-Dest, Sec-Fetch-Mode";
+export const PREVIEW_AUTHENTICATED_VARY = "Cookie, Sec-Fetch-Dest, Sec-Fetch-Mode";
 
-type PreviewByteRange =
+const PREVIEW_CACHE_CONTROL_WITH_VERSION = "private, max-age=3600";
+const PREVIEW_CACHE_CONTROL_REVALIDATE = "private, no-cache";
+const PREVIEW_CACHE_CONTROL_NO_STORE = "private, no-store";
+
+export type PreviewByteRange =
   | {
       kind: "offset";
       length?: number;
@@ -36,6 +40,13 @@ type PreviewResponseRange = {
   length: number;
   start: number;
 };
+
+export type PreviewResponseObject = Pick<
+  R2Object,
+  "httpEtag" | "size" | "uploaded" | "writeHttpMetadata"
+>;
+
+export type PreviewResponseObjectBody = PreviewResponseObject & Pick<R2ObjectBody, "body">;
 
 function isDirectBrowserPreviewNavigation(c: Context<AppContext>): boolean {
   return (
@@ -53,7 +64,7 @@ function parseRangeInteger(value: string): number | null {
   return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : null;
 }
 
-function parsePreviewByteRange(value: string | undefined): PreviewByteRange | null {
+export function parsePreviewByteRange(value: string | undefined): PreviewByteRange | null {
   if (!value) {
     return null;
   }
@@ -133,12 +144,86 @@ function getPreviewResponseRange(
   };
 }
 
+export function getPreviewCacheControl(version: string | null | undefined): string {
+  return version?.trim() ? PREVIEW_CACHE_CONTROL_WITH_VERSION : PREVIEW_CACHE_CONTROL_REVALIDATE;
+}
+
+export function getPreviewConditionalHeaders(requestHeaders: Headers): Headers | undefined {
+  const headers = new Headers();
+  const ifNoneMatch = requestHeaders.get("If-None-Match");
+  const ifModifiedSince = requestHeaders.get("If-Modified-Since");
+
+  if (ifNoneMatch) {
+    headers.set("If-None-Match", ifNoneMatch);
+  }
+  if (ifModifiedSince) {
+    headers.set("If-Modified-Since", ifModifiedSince);
+  }
+
+  return headers.keys().next().done ? undefined : headers;
+}
+
+export function hasPreviewObjectBody(
+  object: PreviewResponseObject | PreviewResponseObjectBody,
+): object is PreviewResponseObjectBody {
+  return "body" in object && object.body !== undefined;
+}
+
+function createPreviewHeaders(object: PreviewResponseObject, cacheControl: string): Headers {
+  const headers = new Headers();
+  object.writeHttpMetadata(headers);
+  headers.set("Cache-Control", cacheControl);
+  headers.set("Content-Disposition", "inline");
+  headers.set("ETag", object.httpEtag);
+  headers.set("Last-Modified", object.uploaded.toUTCString());
+  headers.set("Accept-Ranges", "bytes");
+  headers.set("Content-Security-Policy", PREVIEW_SANDBOX_CSP);
+  headers.set("Vary", PREVIEW_AUTHENTICATED_VARY);
+  return headers;
+}
+
+export function createNotModifiedPreviewResponse(
+  object: PreviewResponseObject,
+  cacheControl: string,
+): Response {
+  const headers = createPreviewHeaders(object, cacheControl);
+  headers.delete("Content-Length");
+  return new Response(null, { headers, status: 304 });
+}
+
+export function createPreviewBodyResponse(
+  object: PreviewResponseObjectBody,
+  previewRange: PreviewByteRange | null,
+  cacheControl: string,
+): Response {
+  const headers = createPreviewHeaders(object, cacheControl);
+
+  if (previewRange) {
+    const responseRange = getPreviewResponseRange(previewRange, object.size);
+    if (!responseRange) {
+      headers.set("Content-Range", `bytes */${object.size}`);
+      headers.set("Content-Length", "0");
+      return new Response(null, { headers, status: 416 });
+    }
+
+    headers.set(
+      "Content-Range",
+      `bytes ${responseRange.start}-${responseRange.end}/${object.size}`,
+    );
+    headers.set("Content-Length", String(responseRange.length));
+    return new Response(object.body, { headers, status: 206 });
+  }
+
+  headers.set("Content-Length", String(object.size));
+  return new Response(object.body, { headers, status: 200 });
+}
+
 export async function previewFile(c: Context<AppContext>) {
   try {
     if (isDirectBrowserPreviewNavigation(c)) {
       return jsonError(c, "Preview cannot be opened directly", 403, {
-        "Cache-Control": "private, no-store",
-        Vary: PREVIEW_FETCH_METADATA_VARY,
+        "Cache-Control": PREVIEW_CACHE_CONTROL_NO_STORE,
+        Vary: PREVIEW_AUTHENTICATED_VARY,
       });
     }
 
@@ -148,43 +233,29 @@ export async function previewFile(c: Context<AppContext>) {
     const { rootDirId } = await getFileContext(c);
     await assertPathAccess(c, rootDirId, path);
     const previewRange = parsePreviewByteRange(c.req.header("range"));
+    const conditionalHeaders = getPreviewConditionalHeaders(c.req.raw.headers);
+    const cacheControl = getPreviewCacheControl(c.req.query("v"));
+    const rangeOptions: Pick<R2GetOptions, "range"> = previewRange
+      ? { range: toR2Range(previewRange) }
+      : {};
+    const fileKey = getFileKey(rootDirId, path);
 
-    const object = await c.env.FILES_BUCKET.get(getFileKey(rootDirId, path), {
-      ...(previewRange ? { range: toR2Range(previewRange) } : {}),
-    });
+    const object = conditionalHeaders
+      ? await c.env.FILES_BUCKET.get(fileKey, {
+          ...rangeOptions,
+          onlyIf: conditionalHeaders,
+        })
+      : await c.env.FILES_BUCKET.get(fileKey, rangeOptions);
 
-    if (!object || !object.body) {
+    if (!object) {
       return jsonError(c, "File not found", 404);
     }
 
-    const headers = new Headers();
-    object.writeHttpMetadata(headers);
-    headers.set("Cache-Control", "private, no-store");
-    headers.set("Content-Disposition", "inline");
-    headers.set("ETag", object.httpEtag);
-    headers.set("Last-Modified", object.uploaded.toUTCString());
-    headers.set("Accept-Ranges", "bytes");
-    headers.set("Content-Security-Policy", PREVIEW_SANDBOX_CSP);
-    headers.set("Vary", PREVIEW_FETCH_METADATA_VARY);
-
-    if (previewRange) {
-      const responseRange = getPreviewResponseRange(previewRange, object.size);
-      if (!responseRange) {
-        headers.set("Content-Range", `bytes */${object.size}`);
-        headers.set("Content-Length", "0");
-        return new Response(null, { headers, status: 416 });
-      }
-
-      headers.set(
-        "Content-Range",
-        `bytes ${responseRange.start}-${responseRange.end}/${object.size}`,
-      );
-      headers.set("Content-Length", String(responseRange.length));
-      return new Response(object.body, { headers, status: 206 });
+    if (!hasPreviewObjectBody(object)) {
+      return createNotModifiedPreviewResponse(object, cacheControl);
     }
 
-    headers.set("Content-Length", String(object.size));
-    return new Response(object.body, { headers, status: 200 });
+    return createPreviewBodyResponse(object, previewRange, cacheControl);
   } catch (error) {
     const folderPasswordError = handleFolderPasswordError(error);
     if (folderPasswordError) {
