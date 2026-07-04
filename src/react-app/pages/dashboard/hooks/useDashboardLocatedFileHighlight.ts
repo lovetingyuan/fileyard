@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { type RefObject, useEffect } from "react";
 import { useAppStore } from "../../../store";
 import { clearDashboardLocatedFilePath } from "../actions";
 import {
@@ -7,8 +7,10 @@ import {
   scrollDashboardLocatedFileIntoView,
 } from "../utils/dashboardFileLocation";
 
-export function useDashboardLocatedFileHighlight<TElement extends HTMLElement>(filePath: string) {
-  const elementRef = useRef<TElement>(null);
+export function useDashboardLocatedFileHighlight<TElement extends HTMLElement>(
+  filePath: string,
+  elementRef: RefObject<TElement | null>,
+) {
   const { dashboardLocatedFilePath } = useAppStore();
   const isHighlighted = dashboardLocatedFilePath === filePath;
 
@@ -28,10 +30,7 @@ export function useDashboardLocatedFileHighlight<TElement extends HTMLElement>(f
       window.clearTimeout(scrollTimer);
       window.clearTimeout(highlightTimer);
     };
-  }, [filePath, isHighlighted]);
+  }, [elementRef, filePath, isHighlighted]);
 
-  return {
-    elementRef,
-    isHighlighted,
-  };
+  return isHighlighted;
 }

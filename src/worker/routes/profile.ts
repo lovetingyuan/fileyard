@@ -16,7 +16,10 @@ function isPngFile(buffer: ArrayBuffer): boolean {
     return false;
   }
   const header = new Uint8Array(buffer, 0, PNG_MAGIC_BYTES.length);
-  return PNG_MAGIC_BYTES.every((byte, i) => header[i] === byte);
+  return (
+    header.length === PNG_MAGIC_BYTES.length &&
+    PNG_MAGIC_BYTES.every((byte, i) => header[i] === byte)
+  );
 }
 
 function resolveAuthAvatarUrl(input: string | null | undefined): string | null {

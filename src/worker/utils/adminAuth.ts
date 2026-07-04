@@ -5,12 +5,14 @@ function normalizeEmail(value: string): string {
 }
 
 function parseAdminUserEmails(value: string | undefined): Set<string> {
-  return new Set(
-    (value ?? "")
-      .split(/[,\n;]/)
-      .map(normalizeEmail)
-      .filter(Boolean),
-  );
+  const emails = new Set<string>();
+  for (const item of (value ?? "").split(/[,\n;]/)) {
+    const email = normalizeEmail(item);
+    if (email) {
+      emails.add(email);
+    }
+  }
+  return emails;
 }
 
 export async function isAdminUser(

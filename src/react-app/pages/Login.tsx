@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import MdiAccountPlusOutline from "~icons/mdi/account-plus-outline";
 import MdiAlertCircleOutline from "~icons/mdi/alert-circle-outline";
@@ -54,7 +54,11 @@ export function Login() {
   const [formError, setFormError] = useState<string | null>(null);
   const shownKeyRef = useRef<string | null>(null);
 
-  if (shownKeyRef.current !== location.key) {
+  useEffect(() => {
+    if (shownKeyRef.current === location.key) {
+      return;
+    }
+
     shownKeyRef.current = location.key;
     if (registered) {
       toast.success(AUTH_FEEDBACK_MESSAGES.registered, {
@@ -69,7 +73,7 @@ export function Login() {
         id: `auth-feedback:${location.key}:verified`,
       });
     }
-  }
+  }, [location.key, registered, reset, verified]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -52,6 +52,14 @@ type UseUploadQueueArgs = {
   onUploadsComplete: () => Promise<void> | void;
 };
 
+function useLazyRef<T>(createValue: () => T): { current: T } {
+  const ref = useRef<T | null>(null);
+  if (ref.current === null) {
+    ref.current = createValue();
+  }
+  return ref as { current: T };
+}
+
 function getDuplicateUploadToastMessage(ignoredCount: number): string {
   return ignoredCount === 1
     ? "该文件已在上传列表中，已忽略"
@@ -62,10 +70,10 @@ export function useUploadQueue({ currentPath, onUploadsComplete }: UseUploadQueu
   const { isUploadPanelMinimized, uploadQueue: items } = useAppStore();
   const { setIsUploadPanelMinimized, setUploadQueue } = getStoreMethods();
   const itemsRef = useRef<UploadQueueItem[]>(items);
-  const activeIdsRef = useRef(new Set<string>());
-  const activeItemPromisesRef = useRef(new Map<string, Promise<void>>());
-  const uploadTasksRef = useRef(new Map<string, UploadTask>());
-  const ensureParentFoldersRef = useRef(createFolderEnsureer(createFolder));
+  const activeIdsRef = useLazyRef(() => new Set<string>());
+  const activeItemPromisesRef = useLazyRef(() => new Map<string, Promise<void>>());
+  const uploadTasksRef = useLazyRef(() => new Map<string, UploadTask>());
+  const ensureParentFoldersRef = useLazyRef(() => createFolderEnsureer(createFolder));
   const uploadedSinceIdleRef = useRef(false);
 
   const setItems = (updater: (items: UploadQueueItem[]) => UploadQueueItem[]) => {
@@ -93,7 +101,7 @@ export function useUploadQueue({ currentPath, onUploadsComplete }: UseUploadQueu
     void onUploadsComplete();
   };
 
-  const processQueueRef = useUploadQueueProcessor({
+  const processQueue = useUploadQueueProcessor({
     activeIdsRef,
     activeItemPromisesRef,
     ensureParentFoldersRef,
@@ -125,7 +133,7 @@ export function useUploadQueue({ currentPath, onUploadsComplete }: UseUploadQueu
 
   const cancelUpload = (id: string) => {
     cancelUploadIds(new Set([id]));
-    processQueueRef.current();
+    processQueue();
     finishIdleBatch();
   };
 
@@ -166,13 +174,16 @@ export function useUploadQueue({ currentPath, onUploadsComplete }: UseUploadQueu
     setItems((currentItems) => appendUploadQueueItems(currentItems, nextItems));
     setIsUploadPanelMinimized(false);
     uploadedSinceIdleRef.current = false;
-    processQueueRef.current();
+    processQueue();
   };
 
   const cancelRemainingUploads = () => {
-    const remainingIds = new Set(
-      itemsRef.current.filter((item) => REMAINING_STATUSES.has(item.status)).map((item) => item.id),
-    );
+    const remainingIds = new Set<string>();
+    for (const item of itemsRef.current) {
+      if (REMAINING_STATUSES.has(item.status)) {
+        remainingIds.add(item.id);
+      }
+    }
     cancelUploadIds(remainingIds);
     finishIdleBatch();
   };
@@ -180,12 +191,16 @@ export function useUploadQueue({ currentPath, onUploadsComplete }: UseUploadQueu
   const cancelUploadsInFolderAndWait = async (folderPath: string) => {
     const activeItems = getActiveUploadItemsInFolder(itemsRef.current, folderPath);
     const activeIds = new Set(activeItems.map((item) => item.id));
-    const promises = activeItems
-      .map((item) => activeItemPromisesRef.current.get(item.id))
-      .filter((promise): promise is Promise<void> => Boolean(promise));
+    const promises: Promise<void>[] = [];
+    for (const item of activeItems) {
+      const promise = activeItemPromisesRef.current.get(item.id);
+      if (promise) {
+        promises.push(promise);
+      }
+    }
 
     cancelUploadIds(activeIds);
-    processQueueRef.current();
+    processQueue();
     if (promises.length > 0) {
       await Promise.allSettled(promises);
     }
@@ -196,7 +211,7 @@ export function useUploadQueue({ currentPath, onUploadsComplete }: UseUploadQueu
     setItems((currentItems) =>
       currentItems.map((item) => (item.id === id ? resetFailedUploadItem(item) : item)),
     );
-    processQueueRef.current();
+    processQueue();
   };
 
   const minimizePanel = () => {

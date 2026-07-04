@@ -481,10 +481,16 @@ export function replaceDashboardSelectionWithFailedResults(
   const sourceTargetsByKey = new Map(
     sourceTargets.map((target) => [getDashboardSelectionKey(target), target]),
   );
-  const failedTargets = results
-    .filter((result) => !result.success)
-    .map((result) => sourceTargetsByKey.get(getDashboardSelectionKey(result)))
-    .filter((target): target is BatchOperationTarget => Boolean(target));
+  const failedTargets: BatchOperationTarget[] = [];
+  for (const result of results) {
+    if (result.success) {
+      continue;
+    }
+    const target = sourceTargetsByKey.get(getDashboardSelectionKey(result));
+    if (target) {
+      failedTargets.push(target);
+    }
+  }
 
   setSelectedDashboardTargets(failedTargets);
   setDashboardSelectionAnchorKey(

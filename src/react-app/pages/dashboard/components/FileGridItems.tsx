@@ -1,6 +1,7 @@
 import MdiFolder from "~icons/mdi/folder";
 import MdiLock from "~icons/mdi/lock";
 import MdiLockOpenVariant from "~icons/mdi/lock-open-variant";
+import { useRef } from "react";
 import type { BatchOperationTarget, FileEntry, FolderEntry } from "../../../../types";
 import { getFileIcon } from "../../../constants/fileIcons";
 import { cn } from "../../../utils/cn";
@@ -163,7 +164,8 @@ export function FileGridItem({
 }) {
   const fileIcon = getFileIcon(file.name);
   const entryKey = `file:${file.path}`;
-  const locatedFile = useDashboardLocatedFileHighlight<HTMLDivElement>(file.path);
+  const locatedFileRef = useRef<HTMLDivElement>(null);
+  const isLocatedFileHighlighted = useDashboardLocatedFileHighlight(file.path, locatedFileRef);
   const selection = useDashboardEntrySelection(
     {
       type: "file",
@@ -176,11 +178,11 @@ export function FileGridItem({
 
   return (
     <div
-      ref={locatedFile.elementRef}
+      ref={locatedFileRef}
       className={cn(
         GRID_ITEM_CLASS,
         selection.isSelected && GRID_SELECTED_ITEM_CLASS,
-        locatedFile.isHighlighted && GRID_LOCATED_FILE_ITEM_CLASS,
+        isLocatedFileHighlighted && GRID_LOCATED_FILE_ITEM_CLASS,
       )}
       data-dashboard-file-path={file.path}
       role="listitem"

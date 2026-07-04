@@ -85,12 +85,14 @@ export function createArchiveEntries(
   objects: R2Object[],
 ): ArchiveEntry[] {
   const entries: ArchiveEntry[] = [];
+  const objectsByKey = new Map<string, R2Object>();
+  for (const object of objects) {
+    objectsByKey.set(object.key, object);
+  }
 
   for (const target of dedupeArchiveTargets(targets)) {
     if (target.type === "file") {
-      const object = objects.find(
-        (candidate) => candidate.key === getFileKey(rootDirId, target.path),
-      );
+      const object = objectsByKey.get(getFileKey(rootDirId, target.path));
       if (object) {
         entries.push(createFileEntry(object, getBaseName(target.path)));
       }

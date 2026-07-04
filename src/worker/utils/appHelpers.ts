@@ -12,10 +12,13 @@ import {
 import { UploadTooLargeError } from "./response";
 
 function appendVary(currentValue: string | null, nextValue: string): string {
-  const existingValues = (currentValue ?? "")
-    .split(",")
-    .map((value) => value.trim())
-    .filter(Boolean);
+  const existingValues: string[] = [];
+  for (const value of (currentValue ?? "").split(",")) {
+    const trimmedValue = value.trim();
+    if (trimmedValue) {
+      existingValues.push(trimmedValue);
+    }
+  }
 
   if (!existingValues.includes(nextValue)) {
     existingValues.push(nextValue);

@@ -1,4 +1,5 @@
 import toast from 'react-hot-toast'
+import { useId } from 'react'
 import { Dialog } from '../../../components/Dialog'
 import { useUploadFileMutation } from '../../../hooks/useFilesApi'
 import { useAppStore } from '../../../store'
@@ -16,6 +17,8 @@ export function NewTextFileModal() {
   const { currentPath } = useDashboardPath()
   const { refresh } = useDashboardFileView()
   const { uploadFile } = useUploadFileMutation()
+  const fileNameInputId = useId()
+  const fileContentTextareaId = useId()
 
   if (!addNewTextFile) {
     return null
@@ -61,10 +64,11 @@ export function NewTextFileModal() {
       {({ isConfirming }) => (
         <>
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm">
+            <label className="text-sm" htmlFor={fileNameInputId}>
               <span>文件名</span>
             </label>
             <input
+              id={fileNameInputId}
               type="text"
               placeholder="example.txt"
               className="input input-bordered w-full"
@@ -75,10 +79,11 @@ export function NewTextFileModal() {
           </div>
 
           <div className="flex flex-1 flex-col gap-1.5">
-            <label className="text-sm">
+            <label className="text-sm" htmlFor={fileContentTextareaId}>
               <span>文件内容</span>
             </label>
             <textarea
+              id={fileContentTextareaId}
               className="textarea textarea-bordered w-full h-80 font-mono text-sm"
               placeholder="输入文本内容..."
               value={addNewTextFile.content}

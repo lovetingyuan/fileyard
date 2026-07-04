@@ -1,6 +1,7 @@
 import MdiFolder from "~icons/mdi/folder";
 import MdiLock from "~icons/mdi/lock";
 import MdiLockOpenVariant from "~icons/mdi/lock-open-variant";
+import { useRef } from "react";
 import type { BatchOperationTarget, FileEntry, FolderEntry } from "../../../../types";
 import { getFileIcon } from "../../../constants/fileIcons";
 import { useAppStore } from "../../../store";
@@ -210,7 +211,8 @@ export function FileRow({
   const fileIcon = getFileIcon(file.name);
   const rowKey = `file:${file.path}`;
   const createdAtTooltip = `创建时间：${formatDetailedDate(file.createdAt)}`;
-  const locatedFile = useDashboardLocatedFileHighlight<HTMLTableRowElement>(file.path);
+  const locatedFileRef = useRef<HTMLTableRowElement>(null);
+  const isLocatedFileHighlighted = useDashboardLocatedFileHighlight(file.path, locatedFileRef);
   const selection = useDashboardEntrySelection(
     {
       type: "file",
@@ -223,13 +225,13 @@ export function FileRow({
 
   return (
     <tr
-      ref={locatedFile.elementRef}
+      ref={locatedFileRef}
       className={cn(
         "group",
         STRIPED_ROW_CLASS,
         selection.isSelectionActive && "cursor-pointer",
         selection.isSelected && SELECTED_ROW_CLASS,
-        locatedFile.isHighlighted && LOCATED_FILE_ROW_CLASS,
+        isLocatedFileHighlighted && LOCATED_FILE_ROW_CLASS,
       )}
       data-dashboard-file-path={file.path}
       onClick={selection.handleActiveSelectionClick}

@@ -15,6 +15,14 @@ type MutableValueRef<T> = {
   current: T;
 };
 
+function useLazyRef<T>(createValue: () => T): MutableValueRef<T> {
+  const ref = useRef<T | null>(null);
+  if (ref.current === null) {
+    ref.current = createValue();
+  }
+  return ref as MutableValueRef<T>;
+}
+
 type UseUploadQueueProcessorArgs = {
   activeIdsRef: MutableValueRef<Set<string>>;
   activeItemPromisesRef: MutableValueRef<Map<string, Promise<void>>>;
@@ -42,11 +50,10 @@ export function useUploadQueueProcessor({
   uploadTasksRef,
   uploadedSinceIdleRef,
 }: UseUploadQueueProcessorArgs) {
-  const processQueueRef = useRef<() => void>(() => undefined);
-  const scheduledIdsRef = useRef(new Set<string>());
-  const uploadQueueRef = useRef(new PQueue({ concurrency: maxConcurrentUploads }));
+  const scheduledIdsRef = useLazyRef(() => new Set<string>());
+  const uploadQueueRef = useLazyRef(() => new PQueue({ concurrency: maxConcurrentUploads }));
 
-  const startItem = async (item: UploadQueueItem) => {
+  async function startItem(item: UploadQueueItem) {
     if (isItemCanceled(item.id)) {
       return;
     }
@@ -125,12 +132,12 @@ export function useUploadQueueProcessor({
     } finally {
       uploadTasksRef.current.delete(item.id);
       activeIdsRef.current.delete(item.id);
-      processQueueRef.current();
+      processQueue();
       finishIdleBatch();
     }
-  };
+  }
 
-  const processQueue = () => {
+  function processQueue() {
     uploadQueueRef.current.concurrency = maxConcurrentUploads;
 
     for (const nextItem of itemsRef.current) {
@@ -148,9 +155,7 @@ export function useUploadQueueProcessor({
         activeItemPromisesRef.current.delete(nextItem.id);
       });
     }
-  };
+  }
 
-  processQueueRef.current = processQueue;
-
-  return processQueueRef;
+  return processQueue;
 }

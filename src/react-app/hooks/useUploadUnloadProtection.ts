@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 
 type BeforeUnloadTarget = Pick<Window, "addEventListener" | "removeEventListener">;
 
@@ -38,23 +38,14 @@ function createUploadUnloadProtection({
 }
 
 export function useUploadUnloadProtection(isUploading: boolean) {
-  const protectionRef = useRef<ReturnType<typeof createUploadUnloadProtection> | null>(null);
-
-  if (protectionRef.current === null && typeof window !== "undefined") {
-    protectionRef.current = createUploadUnloadProtection();
-  }
-
   useEffect(() => {
-    const protection = protectionRef.current;
-    if (!protection) {
+    if (!isUploading || typeof window === "undefined") {
       return;
     }
 
-    if (isUploading) {
-      protection.start();
-      return () => protection.stop();
-    }
+    const protection = createUploadUnloadProtection();
+    protection.start();
 
-    protection.stop();
+    return () => protection.stop();
   }, [isUploading]);
 }

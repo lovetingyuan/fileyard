@@ -1,7 +1,7 @@
 import MdiClose from "~icons/mdi/close";
 import MdiFullscreen from "~icons/mdi/fullscreen";
 import MdiFullscreenExit from "~icons/mdi/fullscreen-exit";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useId, useState } from "react";
 import { useNativeDialog } from "../hooks/useNativeDialog";
 import { cn } from "../utils/cn";
 import { getDialogClosedBy } from "./dialogDismissal";
@@ -111,6 +111,7 @@ function OpenDialog({
   cancelButtonClassName = "",
   confirmButtonClassName = "",
 }: DialogProps) {
+  const generatedTitleId = useId();
   const [isConfirming, setIsConfirming] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const isActiveFullscreen = supportFullscreen && isFullscreen;
@@ -168,21 +169,27 @@ function OpenDialog({
       ? (confirmLoadingText ?? confirmText)
       : confirmText;
   const isConfirmLoading = confirmLoading || isConfirming;
+  const titleId = title ? generatedTitleId : undefined;
 
   return (
     <dialog
       ref={dialogRef}
       closedby={getDialogClosedBy(isInteractionDisabled)}
       className={cn("modal", dialogClassName)}
+      aria-labelledby={titleId}
     >
       <div className={getDialogBoxClassName(widthMode, boxClassName, isActiveFullscreen)}>
         {(title || supportFullscreen || showCloseButton || headerActions !== undefined) && (
           <div className={cn("mb-4 flex items-center justify-between gap-4", headerClassName)}>
             <div className="min-w-0 flex-1">
               {typeof title === "string" ? (
-                <h3 className={cn("font-bold text-base", titleClassName)}>{title}</h3>
+                <h3 id={titleId} className={cn("font-bold text-base", titleClassName)}>
+                  {title}
+                </h3>
+              ) : title ? (
+                <div id={titleId}>{title}</div>
               ) : (
-                title
+                null
               )}
             </div>
             <div className="flex items-center gap-2">

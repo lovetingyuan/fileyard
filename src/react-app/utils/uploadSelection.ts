@@ -25,12 +25,14 @@ type FilterFilesAlreadyInUploadQueueResult = {
 };
 
 function normalizeSlashes(value: string): string {
-  return value
-    .replace(/\\/g, "/")
-    .split("/")
-    .map((segment) => segment.trim())
-    .filter(Boolean)
-    .join("/");
+  const segments: string[] = [];
+  for (const segment of value.replace(/\\/g, "/").split("/")) {
+    const trimmedSegment = segment.trim();
+    if (trimmedSegment) {
+      segments.push(trimmedSegment);
+    }
+  }
+  return segments.join("/");
 }
 
 function joinUploadPath(parentPath: string, childPath: string): string {
@@ -82,11 +84,12 @@ export function filterFilesAlreadyInUploadQueue({
   currentPath,
   uploadQueue,
 }: FilterFilesAlreadyInUploadQueueArgs): FilterFilesAlreadyInUploadQueueResult {
-  const queuedTargetPaths = new Set(
-    uploadQueue
-      .filter((item) => ACTIVE_UPLOAD_STATUSES.has(item.status))
-      .map((item) => item.targetPath),
-  );
+  const queuedTargetPaths = new Set<string>();
+  for (const item of uploadQueue) {
+    if (ACTIVE_UPLOAD_STATUSES.has(item.status)) {
+      queuedTargetPaths.add(item.targetPath);
+    }
+  }
   const acceptedFiles: File[] = [];
   let ignoredCount = 0;
 

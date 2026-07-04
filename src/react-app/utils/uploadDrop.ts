@@ -81,10 +81,14 @@ async function readEntry(entry: FileSystemEntry, parentPath = ""): Promise<Entry
 }
 
 function getDroppedEntries(dataTransfer: DataTransfer): FileSystemEntry[] {
-  return Array.from(dataTransfer.items)
-    .filter((item) => item.kind === "file")
-    .map((item) => item.webkitGetAsEntry())
-    .filter((entry): entry is FileSystemEntry => Boolean(entry));
+  return Array.from(dataTransfer.items).flatMap((item) => {
+    if (item.kind !== "file") {
+      return [];
+    }
+
+    const entry = item.webkitGetAsEntry();
+    return entry ? [entry] : [];
+  });
 }
 
 export async function getDroppedUploadFiles(

@@ -45,12 +45,14 @@ type OrderedUploadEntry =
     };
 
 function normalizeSlashes(value: string): string {
-  return value
-    .replace(/\\/g, "/")
-    .split("/")
-    .map((segment) => segment.trim())
-    .filter(Boolean)
-    .join("/");
+  const segments: string[] = [];
+  for (const segment of value.replace(/\\/g, "/").split("/")) {
+    const trimmedSegment = segment.trim();
+    if (trimmedSegment) {
+      segments.push(trimmedSegment);
+    }
+  }
+  return segments.join("/");
 }
 
 function getFolderUploadRoot(item: UploadQueueItem): FolderUploadRoot | null {
@@ -104,16 +106,24 @@ function createFolderDisplayRow(group: FolderUploadGroup): UploadFolderProgressD
 }
 
 function getFailedFileRows(items: UploadQueueItem[]): UploadProgressDisplayRow[] {
-  return items
-    .filter((item) => FAILED_FILE_ROW_STATUSES.has(item.status))
-    .map((item) => ({ kind: "file", item }));
+  const rows: UploadProgressDisplayRow[] = [];
+  for (const item of items) {
+    if (FAILED_FILE_ROW_STATUSES.has(item.status)) {
+      rows.push({ kind: "file", item });
+    }
+  }
+  return rows;
 }
 
 export function getUploadProgressDisplayRows(items: UploadQueueItem[]): UploadProgressDisplayRow[] {
   const orderedEntries: OrderedUploadEntry[] = [];
   const folderGroups = new Map<string, FolderUploadGroup>();
 
-  for (const item of items.filter((uploadItem) => uploadItem.status !== "canceled")) {
+  for (const item of items) {
+    if (item.status === "canceled") {
+      continue;
+    }
+
     const folderRoot = getFolderUploadRoot(item);
     if (!folderRoot) {
       orderedEntries.push({ kind: "file", item });

@@ -150,10 +150,13 @@ export async function listFiles(c: Context<AppContext>) {
       cursor = listing.truncated ? listing.cursor : undefined;
     } while (cursor);
 
-    const folderNames = [...allPrefixes]
-      .map((folderPrefix) => folderPrefix.slice(prefix.length).replace(/\/$/, ""))
-      .filter((name) => name !== SYSTEM_PROFILE_FOLDER_NAME)
-      .filter(Boolean);
+    const folderNames: string[] = [];
+    for (const folderPrefix of allPrefixes) {
+      const name = folderPrefix.slice(prefix.length).replace(/\/$/, "");
+      if (name && name !== SYSTEM_PROFILE_FOLDER_NAME) {
+        folderNames.push(name);
+      }
+    }
 
     const folders = await Promise.all(
       folderNames.map(async (name) => {
@@ -173,23 +176,30 @@ export async function listFiles(c: Context<AppContext>) {
       folders.map((folder) => folder.path),
     );
 
-    const fileItems = await Promise.all(
-      allObjects
-        .filter((object) => !isFolderMarkerKey(object.key, prefix))
-        .map(async (object) => {
+    const fileItemPromises: Array<Promise<FileListResponse["files"][number]>> = [];
+    for (const object of allObjects) {
+      if (isFolderMarkerKey(object.key, prefix)) {
+        continue;
+      }
+
+      fileItemPromises.push(
+        (async () => {
           const name = object.key.slice(prefix.length);
+          const filePath = joinRelativePath(path, name);
           return {
             name,
-            path: joinRelativePath(path, name),
+            path: filePath,
             size: object.size,
             createdAt: resolveFileCreatedAt(object),
             uploadedAt: object.uploaded.toISOString(),
             contentType: object.httpMetadata?.contentType ?? null,
             checksums: getFileChecksumMetadata(object.checksums),
-            protectedBy: await getFileProtectedBy(c.env, rootDirId, joinRelativePath(path, name)),
+            protectedBy: await getFileProtectedBy(c.env, rootDirId, filePath),
           };
-        }),
-    );
+        })(),
+      );
+    }
+    const fileItems = await Promise.all(fileItemPromises);
 
     const response: FileListResponse = {
       success: true,

@@ -6,6 +6,9 @@ import { generateRootDirId } from "../utils/token";
 
 export type AppProfile = InferSelectModel<typeof appUserProfile>;
 
+const APP_PROFILE_UNIQUE_CONSTRAINT_ERROR =
+  /UNIQUE constraint failed|app_user_profile\.root_dir_id/u;
+
 async function findAppProfile(db: AppDatabase, userId: string): Promise<AppProfile | undefined> {
   return db.query.appUserProfile.findFirst({
     where: eq(appUserProfile.userId, userId),
@@ -47,10 +50,7 @@ export async function getOrCreateAppProfileByDb(
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      if (
-        message.includes("UNIQUE constraint failed") ||
-        message.includes("app_user_profile.root_dir_id")
-      ) {
+      if (APP_PROFILE_UNIQUE_CONSTRAINT_ERROR.test(message)) {
         continue;
       }
       throw error;

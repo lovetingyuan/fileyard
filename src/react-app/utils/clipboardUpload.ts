@@ -108,10 +108,17 @@ export function extractClipboardFilesFromData(clipboardData: ClipboardDataLike |
     return files;
   }
 
-  return Array.from(clipboardData.items ?? [])
-    .filter((item) => item.kind === "file")
-    .map((item) => item.getAsFile?.() ?? null)
-    .filter((file): file is File => Boolean(file));
+  const filesFromItems: File[] = [];
+  for (const item of Array.from(clipboardData.items ?? [])) {
+    if (item.kind !== "file") {
+      continue;
+    }
+    const file = item.getAsFile?.();
+    if (file) {
+      filesFromItems.push(file);
+    }
+  }
+  return filesFromItems;
 }
 
 export function createClipboardUploadItemsFromFiles(
@@ -143,16 +150,16 @@ export async function readClipboardUploadItems(
   const files = (
     await Promise.all(
       clipboardItems.map(async (item) => {
-    const type = item.types.find(isAsyncClipboardUploadType);
-    if (!type) {
+        const type = item.types.find(isAsyncClipboardUploadType);
+        if (!type) {
           return null;
-    }
+        }
 
-    const blob = await item.getType(type);
+        const blob = await item.getType(type);
         return fileFromClipboardBlob(blob, type, now);
       }),
     )
-  ).filter((file): file is File => Boolean(file));
+  ).flatMap((file) => (file ? [file] : []));
 
   return createClipboardUploadItemsFromFiles(files, { ...options, now: () => now });
 }
