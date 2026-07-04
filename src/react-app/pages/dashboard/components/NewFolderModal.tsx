@@ -102,7 +102,7 @@ export function NewFolderModal() {
           <input
             ref={setInputRef}
             type="text"
-            className={cn("input input-bordered w-full", fieldErrorMessage && "input-error")}
+            className={cn("input w-full", fieldErrorMessage && "input-error")}
             value={name}
             onChange={(event) => {
               setName(event.target.value);

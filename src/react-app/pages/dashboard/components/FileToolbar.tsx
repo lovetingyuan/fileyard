@@ -163,7 +163,7 @@ export function FileToolbar({
                 <MdiChevronDown className="h-4 w-4 opacity-70" />
               </>
             }
-            triggerClassName="btn btn-sm border-emerald-500 bg-emerald-500 px-3 text-white hover:border-emerald-600 hover:bg-emerald-600 focus-visible:outline-emerald-500 disabled:border-emerald-300 disabled:bg-emerald-300"
+            triggerClassName="btn btn-primary btn-sm px-3"
             triggerAriaLabel="上传"
             disabled={isFileMutationDisabled}
             placement="bottom-end"
@@ -180,7 +180,7 @@ export function FileToolbar({
                 disabled={isFileMutationDisabled}
                 aria-label="上传文件"
               >
-                <MdiFileUpload className="h-4 w-4 text-emerald-500" />
+                <MdiFileUpload className="h-4 w-4 text-primary" />
                 上传文件
               </button>
             </li>
@@ -195,7 +195,7 @@ export function FileToolbar({
                 disabled={isFileMutationDisabled}
                 aria-label="上传文件夹"
               >
-                <MdiFolderUpload className="h-4 w-4 text-green-500" />
+                <MdiFolderUpload className="h-4 w-4 text-secondary" />
                 上传文件夹
               </button>
             </li>
@@ -207,7 +207,7 @@ export function FileToolbar({
                 disabled={isFileMutationDisabled}
                 aria-label="上传粘贴板"
               >
-                <MdiClipboardFileOutline className="h-4 w-4 text-sky-500" />
+                <MdiClipboardFileOutline className="h-4 w-4 text-accent" />
                 上传粘贴板
               </button>
             </li>
@@ -271,7 +271,7 @@ export function FileToolbar({
                 ref={searchInputRef}
                 type="text"
                 className={cn(
-                  "placeholder:text-[12px] input input-sm input-bordered absolute top-0 right-0 h-8 w-full min-w-0 transition-opacity duration-150 ease-in-out sm:w-52 group-focus-within/search:border-base-300 group-focus-within/search:bg-base-100 group-focus-within/search:opacity-100 group-focus-within/search:outline-none",
+                  "placeholder:text-[12px] input input-sm absolute top-0 right-0 h-8 w-full min-w-0 transition-opacity duration-150 ease-in-out sm:w-52 group-focus-within/search:border-base-300 group-focus-within/search:bg-base-100 group-focus-within/search:opacity-100 group-focus-within/search:outline-none",
                   isSearchExpanded
                     ? "border-base-300 bg-base-100 pr-9 opacity-100"
                     : "border-transparent bg-transparent pr-9 opacity-0",

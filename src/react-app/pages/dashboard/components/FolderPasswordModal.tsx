@@ -262,7 +262,7 @@ export function FolderPasswordModal() {
               <input
                 ref={passwordInputRef}
                 type="password"
-                className={cn("input input-bordered w-full", visibleInputError && "input-error")}
+                className={cn("input w-full", visibleInputError && "input-error")}
                 value={password}
                 autoComplete={target.mode === "set" ? "new-password" : "current-password"}
                 onChange={(event) => {
@@ -287,7 +287,7 @@ export function FolderPasswordModal() {
               <span className="text-xs font-semibold text-base-content/50">确认密码</span>
               <input
                 type="password"
-                className={cn("input input-bordered w-full", visiblePasswordError && "input-error")}
+                className={cn("input w-full", visiblePasswordError && "input-error")}
                 value={confirmPassword}
                 autoComplete="new-password"
                 onChange={(event) => {

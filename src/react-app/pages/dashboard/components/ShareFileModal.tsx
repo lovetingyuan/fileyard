@@ -233,7 +233,7 @@ export function ShareFileModal() {
           )}
           title={shareTargetTitle}
         >
-          <span className="select-none text-gray-400">
+          <span className="select-none text-base-content/45">
             {isMultiFileShare ? "文件： " : "文件名： "}
           </span>
           {isMultiFileShare ? (

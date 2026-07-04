@@ -1,6 +1,6 @@
 import { cn } from "../../../utils/cn";
 
-const RENAME_INPUT_BASE_CLASS_NAME = "input input-bordered w-full";
+const RENAME_INPUT_BASE_CLASS_NAME = "input w-full";
 const DEFAULT_RENAME_CONFIRM_TEXT = "保存";
 const FILE_TYPE_CHANGE_CONFIRM_TEXT = "更改文件类型并保存";
 const FILE_TYPE_CHANGE_CONFIRM_BUTTON_CLASS_NAME = "btn btn-sm btn-warning";

@@ -71,7 +71,7 @@ export function NewTextFileModal() {
               id={fileNameInputId}
               type="text"
               placeholder="example.txt"
-              className="input input-bordered w-full"
+              className="input w-full"
               value={addNewTextFile.name}
               onChange={event => updateNewTextFileDraft({ name: event.target.value })}
               disabled={isConfirming}
@@ -84,7 +84,7 @@ export function NewTextFileModal() {
             </label>
             <textarea
               id={fileContentTextareaId}
-              className="textarea textarea-bordered w-full h-80 font-mono text-sm"
+              className="textarea w-full h-80 font-mono text-sm"
               placeholder="输入文本内容..."
               value={addNewTextFile.content}
               onChange={event => updateNewTextFileDraft({ content: event.target.value })}

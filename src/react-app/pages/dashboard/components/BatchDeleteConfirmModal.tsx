@@ -32,7 +32,7 @@ function BatchFailureList({
   }
 
   return (
-    <div className="alert alert-error items-start py-3 text-sm">
+    <div role="alert" className="alert alert-error items-start py-3 text-sm">
       <MdiAlertCircleOutline className="mt-0.5 h-4 w-4 shrink-0" />
       <div className="min-w-0 space-y-2">
         <p>{failedResults.length} 项操作失败</p>
@@ -123,7 +123,7 @@ export function BatchDeleteConfirmModal() {
           </div>
         </div>
         {blockedReason ? (
-          <div className="alert alert-warning items-start py-3 text-sm">
+          <div role="alert" className="alert alert-warning items-start py-3 text-sm">
             <MdiAlertCircleOutline className="mt-0.5 h-4 w-4 shrink-0" />
             <span>{blockedReason}</span>
           </div>

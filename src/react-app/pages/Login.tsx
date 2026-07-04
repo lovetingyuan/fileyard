@@ -115,7 +115,7 @@ export function Login() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {formError && (
-              <div className="alert alert-error">
+              <div role="alert" className="alert alert-error">
                 <MdiAlertCircleOutline className="h-5 w-5" />
                 <span>{formError}</span>
               </div>
@@ -134,7 +134,7 @@ export function Login() {
                 name="email"
                 autoComplete="email"
                 placeholder="email@example.com"
-                className="input input-bordered w-full"
+                className="input w-full"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
@@ -156,7 +156,7 @@ export function Login() {
                 name="password"
                 autoComplete="current-password"
                 placeholder="••••••••"
-                className="input input-bordered w-full"
+                className="input w-full"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}

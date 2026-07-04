@@ -55,7 +55,7 @@ export function ForgotPassword() {
                 name="email"
                 autoComplete="email"
                 placeholder="email@example.com"
-                className="input input-bordered w-full"
+                className="input w-full"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isMutating}
@@ -65,7 +65,7 @@ export function ForgotPassword() {
             </div>
 
             {message && (
-              <div className="alert alert-info">
+              <div role="alert" className="alert alert-info">
                 <MdiInformationOutline />
                 <span>{message}</span>
               </div>

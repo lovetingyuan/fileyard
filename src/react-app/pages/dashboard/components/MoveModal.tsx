@@ -137,7 +137,7 @@ export function MoveModal() {
           </div>
 
           {conflictMessage ? (
-            <div className="alert alert-error py-2 text-sm">
+            <div role="alert" className="alert alert-error py-2 text-sm">
               <MdiAlertCircleOutline className="h-4 w-4" />
               <span>{conflictMessage}</span>
             </div>

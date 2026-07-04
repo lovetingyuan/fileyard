@@ -30,14 +30,14 @@ function canCancelItem(status: UploadQueueStatus): boolean {
 }
 
 const STATUS_BADGE_CLASS_NAMES: Record<UploadQueueStatus, string> = {
-  queued: "border-slate-200 bg-slate-100 text-slate-700",
-  preparing: "border-sky-200 bg-sky-100 text-sky-700",
-  uploading: "border-cyan-200 bg-cyan-100 text-cyan-800",
-  success: "border-emerald-200 bg-emerald-100 text-emerald-700",
-  failed: "border-rose-200 bg-rose-100 text-rose-700",
-  canceled: "border-zinc-300 bg-zinc-200 text-zinc-700",
-  oversized: "border-amber-200 bg-amber-100 text-amber-800",
-  duplicate: "border-violet-200 bg-violet-100 text-violet-700",
+  queued: "badge-neutral",
+  preparing: "badge-info",
+  uploading: "badge-info",
+  success: "badge-success",
+  failed: "badge-error",
+  canceled: "badge-neutral",
+  oversized: "badge-warning",
+  duplicate: "badge-warning",
 };
 
 export function UploadProgressRow({ item }: UploadProgressRowProps) {

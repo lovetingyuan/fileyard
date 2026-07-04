@@ -176,6 +176,7 @@ function OpenDialog({
       ref={dialogRef}
       closedby={getDialogClosedBy(isInteractionDisabled)}
       className={cn("modal", dialogClassName)}
+      tabIndex={0}
       aria-labelledby={titleId}
     >
       <div className={getDialogBoxClassName(widthMode, boxClassName, isActiveFullscreen)}>

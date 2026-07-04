@@ -99,7 +99,7 @@ export function ResetPassword() {
                 name="password"
                 autoComplete="new-password"
                 placeholder="••••••••"
-                className="input input-bordered w-full"
+                className="input w-full"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isMutating}
@@ -134,7 +134,7 @@ export function ResetPassword() {
                 name="confirmPassword"
                 autoComplete="new-password"
                 placeholder="••••••••"
-                className="input input-bordered w-full"
+                className="input w-full"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 disabled={isMutating}

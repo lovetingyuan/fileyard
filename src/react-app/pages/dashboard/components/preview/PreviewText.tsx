@@ -59,7 +59,7 @@ export function TextPreview({
     return (
       <textarea
         className={cn(
-          "textarea textarea-bordered w-full resize-none bg-info/5 font-mono text-sm",
+          "textarea w-full resize-none bg-info/5 font-mono text-sm",
           isFullscreen ? "h-full" : "h-[60vh]",
         )}
         aria-label="编辑文件内容"

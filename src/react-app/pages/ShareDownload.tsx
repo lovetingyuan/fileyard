@@ -189,7 +189,7 @@ export function ShareDownload() {
                   <input
                     type="password"
                     className={cn(
-                      "input input-bordered min-w-0 flex-1",
+                      "input min-w-0 flex-1",
                       visibleUnlockError && "input-error",
                     )}
                     value={password}

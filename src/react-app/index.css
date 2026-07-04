@@ -4,14 +4,3 @@
     emerald --default,
     forest --prefersdark;
 }
-
-html body {
-  .input,
-  .select,
-  .textarea {
-    &:focus,
-    &:focus-within {
-      outline-offset: 0;
-    }
-  }
-}

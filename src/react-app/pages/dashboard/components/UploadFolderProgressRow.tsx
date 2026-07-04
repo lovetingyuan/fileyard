@@ -29,18 +29,18 @@ function getFolderStatusBadge(row: UploadFolderProgressDisplayRow): {
 } {
   if (row.remaining > 0) {
     return {
-      className: "border-cyan-200 bg-cyan-100 text-cyan-800",
+      className: "badge-info",
       text: "上传中",
     };
   }
   if (row.failed > 0 || row.canceled > 0) {
     return {
-      className: "border-amber-200 bg-amber-100 text-amber-800",
+      className: "badge-warning",
       text: "上传已结束",
     };
   }
   return {
-    className: "border-emerald-200 bg-emerald-100 text-emerald-700",
+    className: "badge-success",
     text: "上传完成",
   };
 }

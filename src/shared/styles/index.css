@@ -6,17 +6,6 @@
     forest --prefersdark;
 }
 
-html body {
-  .input,
-  .select,
-  .textarea {
-    &:focus,
-    &:focus-within {
-      outline-offset: 0;
-    }
-  }
-}
-
 ::highlight(fileyard-dashboard-search-result) {
   background-color: color-mix(in oklab, var(--color-accent) 55%, transparent);
   color: var(--color-base-content);

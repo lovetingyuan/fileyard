@@ -76,7 +76,7 @@ export function FolderPasswordGate({ target }: { target: FolderPasswordModalTarg
             <input
               type="password"
               className={cn(
-                'input input-bordered input-sm h-9 min-h-9 w-full min-w-0',
+                'input input-sm h-9 min-h-9 w-full min-w-0',
                 visibleError && 'input-error',
               )}
               value={password}

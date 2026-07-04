@@ -68,7 +68,7 @@ export function Register() {
                 name="email"
                 autoComplete="email"
                 placeholder="email@example.com"
-                className="input input-bordered w-full"
+                className="input w-full"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
@@ -90,7 +90,7 @@ export function Register() {
                 name="password"
                 autoComplete="new-password"
                 placeholder="••••••••"
-                className="input input-bordered w-full"
+                className="input w-full"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
@@ -125,7 +125,7 @@ export function Register() {
                 name="confirmPassword"
                 autoComplete="new-password"
                 placeholder="••••••••"
-                className="input input-bordered w-full"
+                className="input w-full"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 disabled={loading}
