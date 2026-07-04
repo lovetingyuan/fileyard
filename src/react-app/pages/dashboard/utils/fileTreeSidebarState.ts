@@ -1,6 +1,8 @@
 import { getFolderUnlockTokenFromTokens } from "../../../utils/folderUnlockTokens";
+import { cn } from "../../../utils/cn";
 
 const DASHBOARD_TREE_SIDEBAR_OPEN_STORAGE_KEY = "dashboard-tree-sidebar-open";
+export const DASHBOARD_TREE_DRAWER_ID = "dashboard-file-tree-drawer";
 
 type DashboardTreeSidebarStorage = Pick<Storage, "getItem" | "setItem">;
 
@@ -92,4 +94,11 @@ export function shouldLoadDashboardTreeFolderChildren(
   }
 
   return Boolean(getFolderUnlockTokenFromTokens(folderUnlockTokens, folder.path));
+}
+
+export function getDashboardTreeDrawerClassName(isOpen: boolean) {
+  return cn(
+    "drawer h-full min-h-0 shrink-0 transition-[width] duration-200 ease-in-out",
+    isOpen ? "w-0 md:w-72 md:drawer-open" : "w-0",
+  );
 }

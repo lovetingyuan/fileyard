@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import MdiAlertCircleOutline from '~icons/mdi/alert-circle-outline'
 import MdiChevronDown from '~icons/mdi/chevron-down'
 import MdiChevronRight from '~icons/mdi/chevron-right'
-import MdiFileTree from '~icons/mdi/file-tree'
 import MdiFolder from '~icons/mdi/folder'
 import MdiFolderOpen from '~icons/mdi/folder-open'
 import MdiLock from '~icons/mdi/lock'
@@ -22,6 +21,8 @@ import { useDashboardPath } from '../hooks/useDashboardPath'
 import { getDashboardFolderOpenAction } from '../utils/dashboardFolderNavigation'
 import { getDashboardFileParentPath } from '../utils/dashboardFileLocation'
 import {
+  DASHBOARD_TREE_DRAWER_ID,
+  getDashboardTreeDrawerClassName,
   getDashboardTreeAutoOpenPaths,
   mergeDashboardTreeOpenPaths,
   shouldLoadDashboardTreeFolderChildren,
@@ -338,32 +339,25 @@ export function FileTreeSidebar() {
 
   return (
     <aside
-      className={cn(
-        'absolute inset-y-0 left-0 z-[110] h-full min-h-0 shrink-0 transition-[width] duration-200 ease-in-out md:relative md:inset-auto md:z-10',
-        isDashboardTreeSidebarOpen
-          ? 'w-72 max-w-[calc(100vw-1rem)] overflow-hidden border-r border-base-300/70 bg-base-100/95 shadow-xl md:max-w-none md:bg-base-100/85 md:shadow-none'
-          : 'pointer-events-none w-0 overflow-visible',
-      )}
+      className={getDashboardTreeDrawerClassName(isDashboardTreeSidebarOpen)}
       aria-label="Home 文件树侧栏"
     >
-      <div className={cn('flex h-full min-h-0 flex-col', !isDashboardTreeSidebarOpen && 'w-12')}>
-        <div
-          className={cn(
-            'flex h-13 shrink-0 items-center gap-2',
-            isDashboardTreeSidebarOpen ? 'px-2' : 'justify-center',
-          )}
-        >
-          <button
-            type="button"
-            className="btn btn-ghost btn-square btn-sm pointer-events-auto shrink-0"
-            aria-expanded={isDashboardTreeSidebarOpen}
-            aria-label={isDashboardTreeSidebarOpen ? '折叠 Home 文件树' : '展开 Home 文件树'}
-            title={isDashboardTreeSidebarOpen ? '折叠 Home 文件树' : '展开 Home 文件树'}
-            onClick={toggleDashboardTreeSidebar}
-          >
-            <MdiFileTree className="h-5 w-5" />
-          </button>
-          {isDashboardTreeSidebarOpen ? (
+      <input
+        id={DASHBOARD_TREE_DRAWER_ID}
+        type="checkbox"
+        className="drawer-toggle"
+        checked={isDashboardTreeSidebarOpen}
+        aria-label="Home 文件树侧栏开关"
+        onChange={toggleDashboardTreeSidebar}
+      />
+      <div className="drawer-side z-[110] md:z-10">
+        <label
+          htmlFor={DASHBOARD_TREE_DRAWER_ID}
+          aria-label="关闭 Home 文件树"
+          className="drawer-overlay"
+        />
+        <div className="flex h-full min-h-full w-72 max-w-[calc(100vw-1rem)] flex-col overflow-hidden border-r border-base-300/70 bg-base-100/95 shadow-xl md:max-w-none md:bg-base-100/85 md:shadow-none">
+          <div className="flex h-13 shrink-0 items-center gap-2 px-2">
             <button
               type="button"
               className={cn(
@@ -385,26 +379,26 @@ export function FileTreeSidebar() {
               />
               <span className="min-w-0 flex-1 truncate">Home</span>
             </button>
+          </div>
+
+          {isDashboardTreeSidebarOpen ? (
+            <nav
+              className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-2 pb-3"
+              aria-label="Home 文件树"
+            >
+              <FileTreeLevel
+                currentPath={currentPath}
+                folderUnlockTokens={folderUnlockTokens}
+                isNavigationDisabled={isNavigationDisabled}
+                isRootLevel
+                onToggleFolder={handleToggleFolder}
+                openPaths={openPaths}
+                path=""
+                setPath={setPath}
+              />
+            </nav>
           ) : null}
         </div>
-
-        {isDashboardTreeSidebarOpen ? (
-          <nav
-            className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-2 pb-3"
-            aria-label="Home 文件树"
-          >
-            <FileTreeLevel
-              currentPath={currentPath}
-              folderUnlockTokens={folderUnlockTokens}
-              isNavigationDisabled={isNavigationDisabled}
-              isRootLevel
-              onToggleFolder={handleToggleFolder}
-              openPaths={openPaths}
-              path=""
-              setPath={setPath}
-            />
-          </nav>
-        ) : null}
       </div>
     </aside>
   )

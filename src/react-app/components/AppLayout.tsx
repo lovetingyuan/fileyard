@@ -1,6 +1,9 @@
-import { Link, Outlet } from "react-router-dom";
+import { Link, Outlet, useLocation } from "react-router-dom";
+import MdiFileTree from "~icons/mdi/file-tree";
 import { useAuth } from "../auth/useAuth";
 import { useProfile } from "../hooks/useProfileApi";
+import { DASHBOARD_TREE_DRAWER_ID } from "../pages/dashboard/utils/fileTreeSidebarState";
+import { useAppStore } from "../store";
 import { UserAvatar } from "./UserAvatar";
 import { ThemeSwitcher } from "./ThemeSwitcher";
 
@@ -23,8 +26,27 @@ function AuthenticatedNavMenu() {
   );
 }
 
+function DashboardTreeSidebarButton() {
+  const { isDashboardTreeSidebarOpen } = useAppStore();
+  const label = isDashboardTreeSidebarOpen ? "折叠 Home 文件树" : "展开 Home 文件树";
+
+  return (
+    <label
+      htmlFor={DASHBOARD_TREE_DRAWER_ID}
+      className="btn btn-ghost btn-square btn-sm drawer-button shrink-0"
+      aria-expanded={isDashboardTreeSidebarOpen}
+      aria-label={label}
+      title={label}
+    >
+      <MdiFileTree className="h-5 w-5" />
+    </label>
+  );
+}
+
 export function AppLayout() {
   const { user } = useAuth();
+  const location = useLocation();
+  const isDashboardRoute = location.pathname === "/" && Boolean(user);
 
   return (
     <div className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-base-200">
@@ -42,7 +64,8 @@ export function AppLayout() {
       />
 
       <div className="relative z-10 flex h-full min-h-0 flex-col">
-        <nav className="navbar sticky top-0 z-20 shrink-0 bg-base-100 px-6 shadow-sm">
+        <nav className="navbar sticky top-0 z-20 shrink-0 gap-2 bg-base-100 px-6 shadow-sm">
+          {isDashboardRoute ? <DashboardTreeSidebarButton /> : null}
           <div className="mr-auto p-1">
             <Link to="/" className="flex items-center gap-2 text-xl">
               <img src="/favicon.svg" alt="logo" className="h-6 w-6" />
