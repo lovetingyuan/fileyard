@@ -354,7 +354,7 @@ export function FileTreeSidebar() {
         <label
           htmlFor={DASHBOARD_TREE_DRAWER_ID}
           aria-label="关闭 Home 文件树"
-          className="drawer-overlay"
+          className="drawer-overlay md:hidden"
         />
         <div className="flex h-full min-h-full w-72 max-w-[calc(100vw-1rem)] flex-col overflow-hidden border-r border-base-300/70 bg-base-100/95 shadow-xl md:max-w-none md:bg-base-100/85 md:shadow-none">
           <div className="flex h-13 shrink-0 items-center gap-2 px-2">
