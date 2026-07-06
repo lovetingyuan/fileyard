@@ -16,7 +16,10 @@ import {
   getNextDashboardLayoutMode,
   persistDashboardLayoutMode,
 } from "./utils/dashboardLayoutMode";
-import { persistDashboardTreeSidebarOpen } from "./utils/fileTreeSidebarState";
+import {
+  persistDashboardTreeSidebarOpen,
+  shouldCloseDashboardTreeSidebarAfterNavigation,
+} from "./utils/fileTreeSidebarState";
 import {
   getDashboardSelectionKey,
   getNextDashboardSelection,
@@ -76,6 +79,12 @@ export function toggleDashboardTreeSidebar() {
   const { getIsDashboardTreeSidebarOpen } = getStoreMethods();
 
   setDashboardTreeSidebarOpen(!getIsDashboardTreeSidebarOpen());
+}
+
+export function closeDashboardTreeSidebarAfterNavigation() {
+  if (shouldCloseDashboardTreeSidebarAfterNavigation()) {
+    setDashboardTreeSidebarOpen(false);
+  }
 }
 
 export function requestDashboardFileLocation(filePath: string) {

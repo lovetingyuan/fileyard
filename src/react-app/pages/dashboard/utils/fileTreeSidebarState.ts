@@ -5,12 +5,15 @@ const DASHBOARD_TREE_SIDEBAR_OPEN_STORAGE_KEY = "dashboard-tree-sidebar-open";
 export const DASHBOARD_TREE_DRAWER_ID = "dashboard-file-tree-drawer";
 
 type DashboardTreeSidebarStorage = Pick<Storage, "getItem" | "setItem">;
+type DashboardTreeSidebarMatchMedia = (query: string) => Pick<MediaQueryList, "matches">;
 
 type TreeFolderProtectionState = {
   path: string;
   passwordProtected: boolean;
   protectedBy: string | null;
 };
+
+const DASHBOARD_TREE_DESKTOP_MEDIA_QUERY = "(min-width: 768px)";
 
 function getDashboardTreeSidebarStorage(): DashboardTreeSidebarStorage | null {
   if (typeof window === "undefined") {
@@ -22,6 +25,14 @@ function getDashboardTreeSidebarStorage(): DashboardTreeSidebarStorage | null {
   } catch {
     return null;
   }
+}
+
+function getDashboardTreeSidebarMatchMedia(): DashboardTreeSidebarMatchMedia | null {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+    return null;
+  }
+
+  return window.matchMedia.bind(window);
 }
 
 export function getInitialDashboardTreeSidebarOpen(
@@ -51,6 +62,16 @@ export function persistDashboardTreeSidebarOpen(
   } catch {
     return;
   }
+}
+
+export function shouldCloseDashboardTreeSidebarAfterNavigation(
+  matchMedia: DashboardTreeSidebarMatchMedia | null = getDashboardTreeSidebarMatchMedia(),
+): boolean {
+  if (!matchMedia) {
+    return false;
+  }
+
+  return !matchMedia(DASHBOARD_TREE_DESKTOP_MEDIA_QUERY).matches;
 }
 
 export function getDashboardTreeAutoOpenPaths(currentPath: string): string[] {

@@ -13,6 +13,7 @@ import { useAppStore } from '../../../store'
 import { cn } from '../../../utils/cn'
 import { getFolderUnlockTokenFromTokens } from '../../../utils/folderUnlockTokens'
 import {
+  closeDashboardTreeSidebarAfterNavigation,
   openFolderPasswordModal,
   requestDashboardFileLocation,
   toggleDashboardTreeSidebar,
@@ -47,6 +48,7 @@ type FileTreeLevelProps = {
   folderUnlockTokens: Record<string, string>
   isNavigationDisabled: boolean
   onToggleFolder: (path: string) => void
+  onNavigate: () => void
   openPaths: string[]
   path: string
   setPath: (path: string) => void
@@ -60,6 +62,10 @@ function getFileTreeLevelClassName(isRootLevel = false) {
       : 'w-[calc(100%-0.5rem)]',
     'max-w-full min-w-0 overflow-hidden',
   )
+}
+
+function closeTreeSidebarAfterNavigation() {
+  closeDashboardTreeSidebarAfterNavigation()
 }
 
 function FileTreeLoadingRows({ isRootLevel = false }: { isRootLevel?: boolean }) {
@@ -113,6 +119,7 @@ function FileTreeFolderRow({
   isNavigationDisabled,
   isOpen,
   onToggleFolder,
+  onNavigate,
   openPaths,
   setPath,
 }: Omit<FileTreeLevelProps, 'path'> & {
@@ -132,10 +139,12 @@ function FileTreeFolderRow({
     const action = getDashboardFolderOpenAction(folder, folderUnlockTokens)
     if (action.type === 'navigate') {
       setPath(action.path)
+      onNavigate()
       return
     }
 
     openFolderPasswordModal(action.target)
+    onNavigate()
   }
   const handleFolderClick = () => {
     if (isCurrent && canLoadChildren) {
@@ -211,6 +220,7 @@ function FileTreeFolderRow({
           folderUnlockTokens={folderUnlockTokens}
           isNavigationDisabled={isNavigationDisabled}
           onToggleFolder={onToggleFolder}
+          onNavigate={onNavigate}
           openPaths={openPaths}
           path={folder.path}
           setPath={setPath}
@@ -223,10 +233,12 @@ function FileTreeFolderRow({
 function FileTreeFileRow({
   file,
   isNavigationDisabled,
+  onNavigate,
   setPath,
 }: {
   file: FileEntry
   isNavigationDisabled: boolean
+  onNavigate: () => void
   setPath: (path: string) => void
 }) {
   const fileIcon = getFileIcon(file.name)
@@ -242,6 +254,7 @@ function FileTreeFileRow({
         onClick={() => {
           requestDashboardFileLocation(file.path)
           setPath(getDashboardFileParentPath(file.path))
+          onNavigate()
         }}
       >
         <fileIcon.Icon className={cn('h-4 w-4 shrink-0', fileIcon.color)} />
@@ -256,6 +269,7 @@ function FileTreeLevel({
   folderUnlockTokens,
   isNavigationDisabled,
   isRootLevel = false,
+  onNavigate,
   onToggleFolder,
   openPaths,
   path,
@@ -299,6 +313,7 @@ function FileTreeLevel({
             isNavigationDisabled={isNavigationDisabled}
             isOpen={isOpen}
             onToggleFolder={onToggleFolder}
+            onNavigate={onNavigate}
             openPaths={openPaths}
             setPath={setPath}
           />
@@ -309,6 +324,7 @@ function FileTreeLevel({
           key={`file:${file.path}`}
           file={file}
           isNavigationDisabled={isNavigationDisabled}
+          onNavigate={onNavigate}
           setPath={setPath}
         />
       ))}
@@ -369,7 +385,10 @@ export function FileTreeSidebar() {
               disabled={isNavigationDisabled}
               aria-current={isRootCurrent ? 'page' : undefined}
               title="Home"
-              onClick={() => setPath('')}
+              onClick={() => {
+                setPath('')
+                closeTreeSidebarAfterNavigation()
+              }}
             >
               <MdiFolderOpen
                 className={cn(
@@ -391,6 +410,7 @@ export function FileTreeSidebar() {
                 folderUnlockTokens={folderUnlockTokens}
                 isNavigationDisabled={isNavigationDisabled}
                 isRootLevel
+                onNavigate={closeTreeSidebarAfterNavigation}
                 onToggleFolder={handleToggleFolder}
                 openPaths={openPaths}
                 path=""
