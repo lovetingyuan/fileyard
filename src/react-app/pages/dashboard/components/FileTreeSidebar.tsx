@@ -73,7 +73,7 @@ function FileTreeLoadingRows({ isRootLevel = false }: { isRootLevel?: boolean })
     <ul className={getFileTreeLevelClassName(isRootLevel)} aria-busy="true">
       {Array.from({ length: TREE_LEVEL_LOADING_ROW_COUNT }, (_, index) => (
         <li key={index} className="w-full max-w-full min-w-0 overflow-hidden">
-          <span className="flex w-full max-w-full min-w-0 items-center gap-2 overflow-hidden px-2 py-1">
+          <span className="flex w-full max-w-full min-w-0 items-center gap-2 overflow-hidden px-2 py-1.5">
             <span className="skeleton h-4 w-4 shrink-0 rounded-sm" />
             <span className="skeleton h-3 w-28 max-w-[80%]" />
           </span>
