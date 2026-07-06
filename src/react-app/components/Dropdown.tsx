@@ -2,6 +2,8 @@ import {
   type CSSProperties,
   type HTMLAttributes,
   type KeyboardEvent,
+  type MouseEvent,
+  type PointerEvent,
   type ReactNode,
   useId,
   useRef,
@@ -80,6 +82,12 @@ export function Dropdown({
     }
   };
 
+  const keepPopoverTriggerFocused = (
+    event: PointerEvent<HTMLUListElement> | MouseEvent<HTMLUListElement>,
+  ) => {
+    event.preventDefault();
+  };
+
   if (supportsPopover) {
     return (
       <div {...containerProps} className={containerClassName}>
@@ -97,8 +105,10 @@ export function Dropdown({
           ref={contentRef}
           popover="auto"
           id={popoverId}
-          className={cn("dropdown", placementClassName, contentClassName)}
+          className={cn("dropdown pointer-events-auto", placementClassName, contentClassName)}
           style={contentAnchorStyle}
+          onPointerDown={keepPopoverTriggerFocused}
+          onMouseDown={keepPopoverTriggerFocused}
           onClick={closeDropdown}
         >
           {children}
