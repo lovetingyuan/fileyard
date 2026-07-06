@@ -65,7 +65,12 @@ export function getRenameValidationMessageForInput({
 export function getVisibleRenameValidationMessage(
   validationMessage: string | null,
   hasEditedName: boolean,
+  isRenaming: boolean,
 ): string | null {
+  if (isRenaming) {
+    return null;
+  }
+
   if (!hasEditedName) {
     return null;
   }
@@ -139,11 +144,25 @@ export function getRenameConfirmButtonClassName({
   return undefined;
 }
 
-export function focusRenameInput(node: HTMLInputElement | null) {
+function getRenameInputSelectionEnd(name: string, type: "file" | "folder"): number {
+  if (type === "folder") {
+    return name.length;
+  }
+
+  const extensionSeparatorIndex = name.lastIndexOf(".");
+
+  if (extensionSeparatorIndex <= 0 || extensionSeparatorIndex === name.length - 1) {
+    return name.length;
+  }
+
+  return extensionSeparatorIndex;
+}
+
+export function focusRenameInput(node: HTMLInputElement | null, type: "file" | "folder") {
   if (!node) {
     return;
   }
 
   node.focus();
-  node.select();
+  node.setSelectionRange(0, getRenameInputSelectionEnd(node.value, type));
 }

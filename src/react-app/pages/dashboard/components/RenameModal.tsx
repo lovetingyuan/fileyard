@@ -35,7 +35,7 @@ export function RenameModal() {
     inputRef.current = node
   }
   const focusInputAfterOpen = () => {
-    focusRenameInput(inputRef.current)
+    focusRenameInput(inputRef.current, pendingRenameTarget?.type ?? 'file')
   }
 
   if (!pendingRenameTarget) {
@@ -56,11 +56,12 @@ export function RenameModal() {
     name,
     rawValidationMessage,
   })
+  const isRenaming = Boolean(renamingPath)
   const visibleValidationMessage = getVisibleRenameValidationMessage(
     validationMessage,
     hasEditedName,
+    isRenaming,
   )
-  const isRenaming = Boolean(renamingPath)
   const confirmDisabled = isRenameConfirmDisabled({
     currentName: pendingRenameTarget.name,
     isRenaming,
