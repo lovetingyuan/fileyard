@@ -6,7 +6,6 @@ import { stableResourceSWROptions } from "./stableResourceSWR";
 const TOP_BANNER_KEY = "/api/top-banner";
 const TOP_BANNER_SWR_OPTIONS = {
   ...stableResourceSWROptions,
-  shouldRetryOnError: false,
 };
 
 async function fetchTopBanner() {

@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { SWRConfig } from "swr";
 import { AdminApp } from "./AdminApp";
 import { readAdminUsersSearchParams } from "./utils/adminUsers";
+import { appSWRConfig } from "../shared/swrConfig";
 import "../shared/styles/index.css";
 
 function initTheme() {
@@ -21,7 +22,7 @@ const { page, pageSize } = readAdminUsersSearchParams(window.location.search);
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <SWRConfig value={{ shouldRetryOnError: false }}>
+    <SWRConfig value={appSWRConfig}>
       <AdminApp page={page} pageSize={pageSize} />
     </SWRConfig>
   </StrictMode>,

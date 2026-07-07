@@ -29,19 +29,9 @@ import {
   shouldLoadDashboardTreeFolderChildren,
   toggleDashboardTreeOpenPath,
 } from '../utils/fileTreeSidebarState'
+import { scrollCurrentFileTreeRowIntoView } from '../utils/fileTreeRowScroll'
 
 const TREE_LEVEL_LOADING_ROW_COUNT = 4
-
-export function scrollCurrentFileTreeRowIntoView(row: HTMLDivElement | null, isCurrent: boolean) {
-  if (!isCurrent) {
-    return
-  }
-
-  row?.scrollIntoView({
-    block: 'center',
-    inline: 'nearest',
-  })
-}
 
 type FileTreeLevelProps = {
   currentPath: string
@@ -366,13 +356,13 @@ export function FileTreeSidebar() {
         aria-label="Home 文件树侧栏开关"
         onChange={toggleDashboardTreeSidebar}
       />
-      <div className="drawer-side z-[110] md:z-10">
+      <div className="drawer-side z-[110] h-full min-h-0 overflow-hidden overscroll-contain md:z-10">
         <label
           htmlFor={DASHBOARD_TREE_DRAWER_ID}
           aria-label="关闭 Home 文件树"
           className="drawer-overlay md:hidden"
         />
-        <div className="flex h-full min-h-full w-72 max-w-[calc(100vw-1rem)] flex-col overflow-hidden border-r border-base-300/70 bg-base-100/95 shadow-xl md:max-w-none md:bg-base-100/85 md:shadow-none">
+        <div className="flex h-full min-h-0 w-72 max-w-[calc(100vw-1rem)] flex-col overflow-hidden border-r border-base-300/70 bg-base-100/95 shadow-xl md:max-w-none md:bg-base-100/85 md:shadow-none">
           <div className="flex h-13 shrink-0 items-center gap-2 px-2">
             <button
               type="button"
@@ -402,7 +392,8 @@ export function FileTreeSidebar() {
 
           {isDashboardTreeSidebarOpen ? (
             <nav
-              className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-2 pb-3"
+              className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-2 pb-3 [scrollbar-gutter:stable]"
+              data-dashboard-tree-scroll-container="true"
               aria-label="Home 文件树"
             >
               <FileTreeLevel

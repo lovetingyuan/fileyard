@@ -26,7 +26,7 @@ export function PdfPreview({
     async (url: string) => {
       const response = await fetch(url, { credentials: "include" });
       if (!response.ok) {
-        throw new Error("加载失败");
+        throw Object.assign(new Error("加载失败"), { status: response.status });
       }
       const blob = await response.blob();
       return URL.createObjectURL(blob);

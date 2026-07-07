@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { SWRConfig } from "swr";
 import App from "./App.tsx";
+import { appSWRConfig } from "../shared/swrConfig";
 import "../shared/styles/index.css";
 
 // Initialize theme before React renders to prevent flash
@@ -19,7 +20,7 @@ initTheme();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <SWRConfig value={{ shouldRetryOnError: false }}>
+    <SWRConfig value={appSWRConfig}>
       <App />
     </SWRConfig>
   </StrictMode>,

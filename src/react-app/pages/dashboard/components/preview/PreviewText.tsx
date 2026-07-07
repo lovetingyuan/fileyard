@@ -30,7 +30,7 @@ export function TextPreview({
     (url: string) =>
       fetch(url, { credentials: "include" }).then((r) => {
         if (!r.ok) {
-          throw new Error("加载失败");
+          throw Object.assign(new Error("加载失败"), { status: r.status });
         }
         return r.text();
       }),
