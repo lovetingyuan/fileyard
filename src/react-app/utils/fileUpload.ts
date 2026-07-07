@@ -21,7 +21,7 @@ type UploadTask = {
 const FILE_OBJECT_ENDPOINT = "/api/files/object";
 const MULTIPART_ENDPOINT = "/api/files/multipart";
 const MULTIPART_PART_ENDPOINT = "/api/files/multipart/part";
-const MULTIPART_COMPLETE_ENDPOINT = "/api/files/multipart/complete";
+const MULTIPART_COMPLETIONS_ENDPOINT = "/api/files/multipart/completions";
 
 type ErrorPayload = {
   error?: string;
@@ -196,7 +196,7 @@ async function completeMultipartUpload(
   parentPath: string,
   signal: AbortSignal,
 ): Promise<FileMutationResponse> {
-  return requestJson<FileMutationResponse>(MULTIPART_COMPLETE_ENDPOINT, {
+  return requestJson<FileMutationResponse>(MULTIPART_COMPLETIONS_ENDPOINT, {
     method: "POST",
     headers: getFolderUnlockHeadersForPath(parentPath),
     body: JSON.stringify({ uploadId, parts }),

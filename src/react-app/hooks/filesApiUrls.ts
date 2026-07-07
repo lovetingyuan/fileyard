@@ -3,16 +3,15 @@ import type { SortKey, SortOrder } from "../../types";
 export const FILES_ENDPOINT = "/api/files";
 export const FILE_OBJECT_ENDPOINT = "/api/files/object";
 export const FILE_FOLDERS_ENDPOINT = "/api/files/folders";
-export const FILE_FOLDER_TREE_ENDPOINT = "/api/files/folder-tree";
-export const FILE_MOVE_ENDPOINT = "/api/files/move";
-export const FILE_BATCH_DELETE_ENDPOINT = "/api/files/batch-delete";
-export const FILE_BATCH_MOVE_ENDPOINT = "/api/files/batch-move";
-export const FILE_ARCHIVE_TICKETS_ENDPOINT = "/api/files/archive-tickets";
+export const FILE_FOLDER_TREE_ENDPOINT = "/api/files/folders/tree";
+export const FILE_ENTRIES_ENDPOINT = "/api/files/entries";
+export const FILE_BATCH_ENTRIES_ENDPOINT = "/api/files/entries/batch";
+export const FILE_ARCHIVE_DOWNLOADS_ENDPOINT = "/api/files/archive-downloads";
 export const FILE_SHARE_LINKS_ENDPOINT = "/api/files/share-links";
 export const FILE_STATS_ENDPOINT = "/api/files/stats";
 export const FILE_FOLDER_PASSWORD_ENDPOINT = "/api/files/folders/password";
-export const FILE_FOLDER_PASSWORD_CHECK_ENDPOINT = "/api/files/folders/password/check";
-export const FILE_FOLDER_PASSWORD_VERIFY_ENDPOINT = "/api/files/folders/password/verify";
+export const FILE_FOLDER_PASSWORD_POLICY_ENDPOINT = "/api/files/folders/password-policy";
+export const FILE_FOLDER_UNLOCKS_ENDPOINT = "/api/files/folders/unlocks";
 
 export type FileListKey = [string, string, SortKey, SortOrder];
 

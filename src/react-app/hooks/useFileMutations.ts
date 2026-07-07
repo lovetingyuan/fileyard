@@ -21,13 +21,12 @@ import {
   getFolderUnlockHeadersForPaths,
 } from "../utils/folderUnlockTokens";
 import {
-  FILE_BATCH_DELETE_ENDPOINT,
-  FILE_BATCH_MOVE_ENDPOINT,
-  FILE_FOLDER_PASSWORD_CHECK_ENDPOINT,
+  FILE_BATCH_ENTRIES_ENDPOINT,
+  FILE_ENTRIES_ENDPOINT,
   FILE_FOLDER_PASSWORD_ENDPOINT,
-  FILE_FOLDER_PASSWORD_VERIFY_ENDPOINT,
+  FILE_FOLDER_PASSWORD_POLICY_ENDPOINT,
+  FILE_FOLDER_UNLOCKS_ENDPOINT,
   FILE_FOLDERS_ENDPOINT,
-  FILE_MOVE_ENDPOINT,
   FILE_OBJECT_ENDPOINT,
   FILE_SHARE_LINKS_ENDPOINT,
 } from "./filesApiUrls";
@@ -214,7 +213,7 @@ export function useMoveEntryMutation() {
     string,
     MoveRequest
   >(
-    FILE_MOVE_ENDPOINT,
+    FILE_ENTRIES_ENDPOINT,
     (url, { arg }) =>
       apiRequest<FileMutationResponse>(url, {
         method: "PATCH",
@@ -242,7 +241,7 @@ export function useBatchDeleteEntriesMutation() {
     string,
     BatchDeleteRequest
   >(
-    FILE_BATCH_DELETE_ENDPOINT,
+    FILE_ENTRIES_ENDPOINT,
     (url, { arg }) =>
       apiRequest<BatchFileMutationResponse>(url, {
         method: "DELETE",
@@ -269,7 +268,7 @@ export function useBatchMoveEntriesMutation() {
     string,
     BatchMoveRequest
   >(
-    FILE_BATCH_MOVE_ENDPOINT,
+    FILE_BATCH_ENTRIES_ENDPOINT,
     (url, { arg }) =>
       apiRequest<BatchFileMutationResponse>(url, {
         method: "PATCH",
@@ -400,7 +399,7 @@ export function useCheckFolderPasswordSetAllowedMutation() {
     string,
     string
   >(
-    FILE_FOLDER_PASSWORD_CHECK_ENDPOINT,
+    FILE_FOLDER_PASSWORD_POLICY_ENDPOINT,
     (url, { arg }) => {
       const params = new URLSearchParams({ path: arg });
       return apiRequest<FolderPasswordSetCheckResponse>(`${url}?${params.toString()}`);
@@ -425,7 +424,7 @@ export function useVerifyFolderPasswordMutation() {
     string,
     VerifyFolderPasswordRequest
   >(
-    FILE_FOLDER_PASSWORD_VERIFY_ENDPOINT,
+    FILE_FOLDER_UNLOCKS_ENDPOINT,
     (url, { arg }) =>
       apiRequest<VerifyFolderPasswordResponse>(url, {
         method: "POST",

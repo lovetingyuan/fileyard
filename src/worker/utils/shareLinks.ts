@@ -304,18 +304,13 @@ export function buildShareDownloadUrl(
   ticket?: string,
   fileIndex?: number,
 ): string {
-  const url = `${origin}/api/share-links/${encodeURIComponent(shareId)}/download`;
-  if (!ticket && fileIndex === undefined) {
+  const url = `${origin}/api/share-links/${encodeURIComponent(shareId)}/files/${fileIndex ?? 0}`;
+  if (!ticket) {
     return url;
   }
 
   const params = new URLSearchParams();
-  if (ticket) {
-    params.set("ticket", ticket);
-  }
-  if (fileIndex !== undefined) {
-    params.set("file", String(fileIndex));
-  }
+  params.set("ticket", ticket);
   return `${url}?${params.toString()}`;
 }
 

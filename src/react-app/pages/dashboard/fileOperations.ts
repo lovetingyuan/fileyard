@@ -4,7 +4,7 @@ import type {
   CreateArchiveDownloadRequest,
   CreateArchiveDownloadResponse,
 } from "../../../types";
-import { buildDownloadUrl, FILE_ARCHIVE_TICKETS_ENDPOINT } from "../../hooks/useFilesApi";
+import { buildDownloadUrl, FILE_ARCHIVE_DOWNLOADS_ENDPOINT } from "../../hooks/useFilesApi";
 import { ApiError, apiRequest } from "../../utils/apiRequest";
 import {
   getFolderUnlockHeadersForPaths,
@@ -133,7 +133,7 @@ export async function downloadDashboardArchive(
   try {
     setDownloadingPath(downloadingPath ?? "__archive-download__");
     const response = await apiRequest<CreateArchiveDownloadResponse>(
-      FILE_ARCHIVE_TICKETS_ENDPOINT,
+      FILE_ARCHIVE_DOWNLOADS_ENDPOINT,
       {
         method: "POST",
         headers: getFolderUnlockHeadersForPaths(targets.map((target) => target.path)),

@@ -42,21 +42,21 @@ const files = new Hono<AppContext>();
 files.get("/api/files/upload-limits", getUploadLimits);
 files.get("/api/files", fileListQueryValidator, listFiles);
 files.get("/api/files/stats", optionalPathQueryValidator, getDirectoryStats);
-files.get("/api/files/folder-tree", listFolderTree);
+files.get("/api/files/folders/tree", listFolderTree);
 files.post(
-  "/api/files/archive-tickets",
+  "/api/files/archive-downloads",
   createArchiveDownloadJsonValidator,
   createArchiveDownloadTicket,
 );
-files.get("/api/files/archive-tickets/:ticket/download", downloadArchive);
-files.patch("/api/files/move", moveJsonValidator, moveEntry);
-files.delete("/api/files/batch-delete", batchDeleteJsonValidator, batchDeleteEntries);
-files.patch("/api/files/batch-move", batchMoveJsonValidator, batchMoveEntries);
+files.get("/api/files/archive-downloads/:ticket", downloadArchive);
+files.patch("/api/files/entries", moveJsonValidator, moveEntry);
+files.delete("/api/files/entries", batchDeleteJsonValidator, batchDeleteEntries);
+files.patch("/api/files/entries/batch", batchMoveJsonValidator, batchMoveEntries);
 files.post("/api/files/folders", createFolderJsonValidator, createFolder);
-files.get("/api/files/folders/password/check", pathQueryValidator, checkFolderPasswordSetAllowed);
+files.get("/api/files/folders/password-policy", pathQueryValidator, checkFolderPasswordSetAllowed);
 files.put("/api/files/folders/password", setFolderPasswordJsonValidator, setFolderAccessPassword);
 files.post(
-  "/api/files/folders/password/verify",
+  "/api/files/folders/unlocks",
   verifyFolderPasswordJsonValidator,
   verifyFolderAccessPassword,
 );
@@ -69,15 +69,7 @@ files.delete("/api/files/folders", pathQueryValidator, deleteFolder);
 files.patch("/api/files/folders", renameJsonValidator, renameFolder);
 files.put("/api/files/object", uploadObjectQueryValidator, uploadFile);
 files.patch("/api/files/object", renameJsonValidator, renameFile);
-files.use("/api/files/object", async (c, next) => {
-  if (c.req.method === "HEAD") {
-    const validationResult = await pathQueryValidator(c, async () => {
-      c.res = await headDownloadFile(c);
-    });
-    return validationResult ?? c.res;
-  }
-  await next();
-});
+files.on("HEAD", "/api/files/object", pathQueryValidator, headDownloadFile);
 files.get("/api/files/object", pathQueryValidator, downloadFile);
 files.get("/api/files/preview", pathQueryValidator, previewFile);
 files.delete("/api/files/object", pathQueryValidator, deleteFile);

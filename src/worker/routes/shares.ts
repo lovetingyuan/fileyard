@@ -227,7 +227,7 @@ async function getFailedUnlockCount(c: ShareRouteContext, shareId: string): Prom
 async function recordFailedUnlock(c: ShareRouteContext, shareId: string): Promise<void> {
   const key = await getUnlockAttemptKey(c, shareId);
   const currentCount = parseFailedUnlockCount(await c.env.FILE_YARD_KV.get(key));
-  await c.env.FILE_YARD_KV.put(String(key), String(currentCount + 1), {
+  await c.env.FILE_YARD_KV.put(key, String(currentCount + 1), {
     expirationTtl: SHARE_UNLOCK_FAILURE_TTL_SECONDS,
   });
 }
@@ -355,7 +355,7 @@ shares.get("/api/share-links/:id", shareIdParamValidator, async (c) => {
 });
 
 shares.post(
-  "/api/share-links/:id/unlock",
+  "/api/share-links/:id/unlocks",
   shareIdParamValidator,
   verifySharePasswordJsonValidator,
   async (c) => {
@@ -399,7 +399,7 @@ shares.post(
   },
 );
 
-shares.get("/api/share-links/:id/download", shareIdParamValidator, async (c) => {
+shares.get("/api/share-links/:id/files/:fileIndex", shareIdParamValidator, async (c) => {
   try {
     const { id } = getValidatedParam<ShareIdParam>(c);
     const share = await findFileShareById(createDb(c.env), id);
@@ -424,7 +424,7 @@ shares.get("/api/share-links/:id/download", shareIdParamValidator, async (c) => 
       return jsonShareError("Invalid download ticket", 403);
     }
 
-    const fileIndex = parseShareDownloadFileIndex(c.req.query("file"), share.files.length);
+    const fileIndex = parseShareDownloadFileIndex(c.req.param("fileIndex"), share.files.length);
     const file = share.files[fileIndex];
     if (!file) {
       return jsonShareError("Shared file not found", 404);

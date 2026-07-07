@@ -18,7 +18,7 @@ const multipartFiles = new Hono<AppContext>();
 multipartFiles.post("/api/files/multipart", multipartCreateJsonValidator, createMultipartUpload);
 multipartFiles.put("/api/files/multipart/part", multipartPartQueryValidator, uploadMultipartPart);
 multipartFiles.post(
-  "/api/files/multipart/complete",
+  "/api/files/multipart/completions",
   multipartCompleteJsonValidator,
   completeMultipartUpload,
 );

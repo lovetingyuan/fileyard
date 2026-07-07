@@ -124,7 +124,7 @@ export function ShareDownload() {
     setUnlockError(null);
     try {
       const response = await apiRequest<SharedFileMetadataResponse>(
-        `/api/share-links/${encodeURIComponent(shareId)}/unlock`,
+        `/api/share-links/${encodeURIComponent(shareId)}/unlocks`,
         {
           method: "POST",
           credentials: "same-origin",
@@ -188,10 +188,7 @@ export function ShareDownload() {
                 <div className="flex gap-3">
                   <input
                     type="password"
-                    className={cn(
-                      "input min-w-0 flex-1",
-                      visibleUnlockError && "input-error",
-                    )}
+                    className={cn("input min-w-0 flex-1", visibleUnlockError && "input-error")}
                     value={password}
                     autoComplete="current-password"
                     onChange={(event) => {

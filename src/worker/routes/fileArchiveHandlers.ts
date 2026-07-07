@@ -134,7 +134,7 @@ function getArchiveFileName(targets: BatchOperationRequestTarget[]): string {
 }
 
 function getArchiveDownloadUrl(ticket: string): string {
-  return `/api/files/archive-tickets/${encodeURIComponent(ticket)}/download`;
+  return `/api/files/archive-downloads/${encodeURIComponent(ticket)}`;
 }
 
 function applyArchiveHeaders(headers: Headers, fileName: string): Headers {
