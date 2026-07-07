@@ -52,6 +52,7 @@ export function PreviewModal() {
   const [editContent, setEditContent] = useState("");
   const [forceTextPreview, setForceTextPreview] = useState(false);
   const [isCopyFeedbackVisible, setIsCopyFeedbackVisible] = useState(false);
+  const [isTextWrapEnabled, setIsTextWrapEnabled] = useState(false);
   const copyFeedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [loadedTextState, setLoadedTextState] = useState<{ path: string; content: string } | null>(
     null,
@@ -72,6 +73,7 @@ export function PreviewModal() {
     setEditContent("");
     setForceTextPreview(false);
     setIsCopyFeedbackVisible(false);
+    setIsTextWrapEnabled(false);
     setLoadedTextState(null);
   };
 
@@ -229,6 +231,16 @@ export function PreviewModal() {
                 </>
               ) : (
                 <>
+                  <label className="flex items-center gap-2 text-sm text-base-content/70">
+                    <span>自动换行</span>
+                    <input
+                      type="checkbox"
+                      className="toggle toggle-sm"
+                      checked={isTextWrapEnabled}
+                      onChange={(event) => setIsTextWrapEnabled(event.target.checked)}
+                      aria-label="自动换行展示"
+                    />
+                  </label>
                   <PreviewCopyTextButton
                     disabled={loadedText === null}
                     isCopied={isCopyFeedbackVisible}
@@ -285,6 +297,7 @@ export function PreviewModal() {
                     isEditing={isEditing && effectiveInfo.kind === "text"}
                     editContent={editContent}
                     isBusy={isConfirming}
+                    isTextWrapEnabled={isTextWrapEnabled}
                     onEditContentChange={setEditContent}
                     onDataLoaded={handleDataLoaded}
                   />

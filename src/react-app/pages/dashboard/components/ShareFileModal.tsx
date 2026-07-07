@@ -331,8 +331,14 @@ export function ShareFileModal() {
                 />
               </div>
             ) : (
-              <div className="rounded-lg border border-base-300 bg-base-100 px-3 py-2 text-sm leading-6 text-base-content/50">
-                {isLoading ? "正在生成链接..." : "链接生成后显示"}
+              <div className="flex min-w-0 items-center justify-between gap-2 rounded-lg border border-base-300 bg-base-100 px-3 py-2 text-sm leading-6 text-base-content/50">
+                <span>{isLoading ? "正在生成链接..." : "链接生成后显示"}</span>
+                {isLoading ? (
+                  <span
+                    className="loading loading-spinner loading-xs shrink-0 text-primary"
+                    aria-hidden="true"
+                  />
+                ) : null}
               </div>
             )}
           </div>

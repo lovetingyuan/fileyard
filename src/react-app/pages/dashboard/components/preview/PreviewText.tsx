@@ -12,6 +12,7 @@ export function TextPreview({
   isEditing,
   editContent,
   isBusy,
+  isTextWrapEnabled,
   onEditContentChange,
   onDataLoaded,
 }: {
@@ -20,6 +21,7 @@ export function TextPreview({
   isBusy: boolean;
   isEditing: boolean;
   isFullscreen: boolean;
+  isTextWrapEnabled: boolean;
   onDataLoaded?: (data: string) => void;
   onEditContentChange: (content: string) => void;
   previewUrl: string;
@@ -70,12 +72,17 @@ export function TextPreview({
     );
   }
 
+  const textWhitespaceClassName = isTextWrapEnabled
+    ? "whitespace-pre-wrap break-words"
+    : "whitespace-pre";
+
   return (
     <pre
       className={cn(
         isFullscreen
-          ? "h-full overflow-auto whitespace-pre rounded-box bg-base-200 p-4 text-sm"
+          ? "h-full overflow-auto rounded-box bg-base-200 p-4 text-sm"
           : STANDARD_TEXT_CLASS_NAME,
+        textWhitespaceClassName,
       )}
     >
       {data}
