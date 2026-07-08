@@ -177,22 +177,26 @@ export function closeFilePreview() {
   setCurrentFile(null);
 }
 
-export function openFileDetails(file: FileEntry) {
+export function openFileDetails(file: FileEntry, options: { keepPreviewOpen?: boolean } = {}) {
   const { setCurrentFile, setPreviewing, setShareTargets, setSharing, setViewDetail } =
     getStoreMethods();
 
   setCurrentFile(file);
-  setPreviewing(false);
+  if (!options.keepPreviewOpen) {
+    setPreviewing(false);
+  }
   setShareTargets([]);
   setSharing(false);
   setViewDetail(true);
 }
 
 export function closeFileDetails() {
-  const { setCurrentFile, setViewDetail } = getStoreMethods();
+  const { getPreviewing, setCurrentFile, setViewDetail } = getStoreMethods();
 
   setViewDetail(false);
-  setCurrentFile(null);
+  if (!getPreviewing()) {
+    setCurrentFile(null);
+  }
 }
 
 export function openFileShare(file: FileEntry) {

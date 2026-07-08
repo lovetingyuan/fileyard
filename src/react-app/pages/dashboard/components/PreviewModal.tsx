@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import MdiChevronLeft from "~icons/mdi/chevron-left";
 import MdiChevronRight from "~icons/mdi/chevron-right";
+import MdiInformationOutline from "~icons/mdi/information-outline";
 import MdiPencil from "~icons/mdi/pencil";
 import toast from "react-hot-toast";
 import { Dialog } from "../../../components/Dialog";
@@ -8,7 +9,7 @@ import { buildPreviewUrl, useUpdateFileMutation } from "../../../hooks/useFilesA
 import { useAppStore } from "../../../store";
 import { getPreviewInfo } from "../../../utils/previewInfo";
 import { getFolderUnlockTokenForPath } from "../../../utils/folderUnlockTokens";
-import { closeFilePreview, openFilePreview } from "../actions";
+import { closeFilePreview, openFileDetails, openFilePreview } from "../actions";
 import { runWithLargeFileUploadToast } from "../fileOperations";
 import { useDashboardFileView } from "../hooks/useDashboardFileView";
 import {
@@ -182,6 +183,16 @@ export function PreviewModal() {
       headerClassName="items-center"
       headerActions={({ isInteractionDisabled }) => (
         <>
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm btn-square"
+            onClick={() => openFileDetails(file, { keepPreviewOpen: true })}
+            disabled={isInteractionDisabled || isEditing}
+            title="查看详情"
+            aria-label="查看详情"
+          >
+            <MdiInformationOutline className="h-5 w-5" />
+          </button>
           <button
             type="button"
             className="btn btn-ghost btn-sm btn-square"
