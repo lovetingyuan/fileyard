@@ -4,7 +4,7 @@ import MdiChevronDown from "~icons/mdi/chevron-down";
 import MdiChevronUp from "~icons/mdi/chevron-up";
 import { Fragment, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
-import { useAppStore } from "../../../store";
+import { getStoreMethods, useAppStore } from "../../../store";
 import { cn } from "../../../utils/cn";
 import type { UploadQueuePanelState } from "../hooks/useUploadQueue";
 import {
@@ -100,7 +100,7 @@ export function UploadProgressPanel() {
   useEffect(() => {
     const previousPanelState = previousPanelStateRef.current;
     if (shouldAutoMinimizeUploadPanel(previousPanelState, panelState)) {
-      minimizeDashboardUploadPanel();
+      getStoreMethods().setIsUploadPanelMinimized(true);
       const message = getUploadResultToastMessage(panelState);
 
       if (panelState.hasTerminalIssues) {

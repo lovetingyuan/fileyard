@@ -160,6 +160,8 @@ export function useUploadQueue({ currentPath, onUploadsComplete }: UseUploadQueu
       return;
     }
 
+    ensureParentFoldersRef.current.clearCache();
+
     const limits = await fetchUploadLimits().catch(() => ({
       success: true as const,
       maxFileBytes: FILE_UPLOAD_BATCH_LIMIT_BYTES,

@@ -35,7 +35,12 @@ export type UploadQueuePanelState = UploadQueueStats & {
 };
 
 type CreateFolder = (parentPath: string, name: string) => Promise<void>;
-type EnsureParentFolders = (parentPath: string, isCanceled: () => boolean) => Promise<void>;
+export type EnsureParentFolders = ((
+  parentPath: string,
+  isCanceled: () => boolean,
+) => Promise<void>) & {
+  clearCache: () => void;
+};
 
 function isFolderAlreadyExistsError(error: unknown): boolean {
   return error instanceof ApiError && error.status === 409 && error.message.includes("folder");
@@ -55,34 +60,43 @@ export function toErrorMessage(error: unknown): string {
 export function createFolderEnsureer(createFolderRequest: CreateFolder): EnsureParentFolders {
   const folderCreationPromises = new Map<string, Promise<void>>();
 
-  return async function ensureParentFolders(parentPath, isCanceled) {
-    if (!parentPath) {
-      return;
-    }
-
-    const segments = parentPath.split("/");
-    let path = "";
-    for (const name of segments) {
-      if (isCanceled()) {
-        throw new UploadCanceledError();
+  const ensureParentFolders: EnsureParentFolders = Object.assign(
+    async (parentPath: string, isCanceled: () => boolean) => {
+      if (!parentPath) {
+        return;
       }
 
-      const folderPath = path ? `${path}/${name}` : name;
-      let creationPromise = folderCreationPromises.get(folderPath);
-      if (!creationPromise) {
-        creationPromise = createFolderRequest(path, name).catch((error: unknown) => {
-          if (!isFolderAlreadyExistsError(error)) {
-            folderCreationPromises.delete(folderPath);
-            throw error;
-          }
-        });
-        folderCreationPromises.set(folderPath, creationPromise);
-      }
+      const segments = parentPath.split("/");
+      let path = "";
+      for (const name of segments) {
+        if (isCanceled()) {
+          throw new UploadCanceledError();
+        }
 
-      await creationPromise;
-      path = folderPath;
-    }
-  };
+        const folderPath = path ? `${path}/${name}` : name;
+        let creationPromise = folderCreationPromises.get(folderPath);
+        if (!creationPromise) {
+          creationPromise = createFolderRequest(path, name).catch((error: unknown) => {
+            if (!isFolderAlreadyExistsError(error)) {
+              folderCreationPromises.delete(folderPath);
+              throw error;
+            }
+          });
+          folderCreationPromises.set(folderPath, creationPromise);
+        }
+
+        await creationPromise;
+        path = folderPath;
+      }
+    },
+    {
+      clearCache: () => {
+        folderCreationPromises.clear();
+      },
+    },
+  );
+
+  return ensureParentFolders;
 }
 
 export function updateUploadQueueItem(
