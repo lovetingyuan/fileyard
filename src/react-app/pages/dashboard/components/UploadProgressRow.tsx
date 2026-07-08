@@ -8,7 +8,10 @@ import {
 } from "../hooks/useUploadQueue";
 import { cn } from "../../../utils/cn";
 import { formatBytes } from "../../../utils/fileFormatters";
-import { getUploadProgressRowBackgroundStyle } from "./uploadProgressRowStyle";
+import {
+  getUploadProgressRowBackgroundStyle,
+  UPLOAD_PROGRESS_ROW_CLASS_NAME,
+} from "./uploadProgressRowStyle";
 
 interface UploadProgressRowProps {
   item: UploadQueueItem;
@@ -46,7 +49,7 @@ export function UploadProgressRow({ item }: UploadProgressRowProps) {
 
   return (
     <li
-      className="rounded-box bg-base-200/70 bg-[linear-gradient(to_right,var(--upload-row-progress-color),var(--upload-row-progress-color))] bg-no-repeat px-3 py-2 transition-[background-size] duration-200 ease-out [background-size:var(--upload-row-progress)_100%]"
+      className={UPLOAD_PROGRESS_ROW_CLASS_NAME}
       style={getUploadProgressRowBackgroundStyle(progress, item.status)}
     >
       <div className="flex min-w-0 items-center gap-2">

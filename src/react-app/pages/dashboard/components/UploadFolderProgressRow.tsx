@@ -1,9 +1,14 @@
 import MdiCloseCircleOutline from "~icons/mdi/close-circle-outline";
 import MdiFolderUpload from "~icons/mdi/folder-upload";
+import type { UploadQueueStatus } from "../../../../types";
 import { cn } from "../../../utils/cn";
 import { formatBytes } from "../../../utils/fileFormatters";
 import { cancelDashboardUploadsInFolderAndWait } from "../hooks/useUploadQueue";
 import type { UploadFolderProgressDisplayRow } from "./uploadProgressDisplay";
+import {
+  getUploadProgressRowBackgroundStyle,
+  UPLOAD_PROGRESS_ROW_CLASS_NAME,
+} from "./uploadProgressRowStyle";
 
 interface UploadFolderProgressRowProps {
   row: UploadFolderProgressDisplayRow;
@@ -11,9 +16,6 @@ interface UploadFolderProgressRowProps {
 
 function getFolderStatusLabel(row: UploadFolderProgressDisplayRow): string {
   const segments: string[] = [];
-  if (row.remaining > 0) {
-    segments.push(`${row.remaining} 个进行中`);
-  }
   if (row.failed > 0) {
     segments.push(`${row.failed} 个失败`);
   }
@@ -21,6 +23,19 @@ function getFolderStatusLabel(row: UploadFolderProgressDisplayRow): string {
     segments.push(`${row.canceled} 个已取消`);
   }
   return segments.join(" · ");
+}
+
+function getFolderProgressStatus(row: UploadFolderProgressDisplayRow): UploadQueueStatus {
+  if (row.remaining > 0) {
+    return "uploading";
+  }
+  if (row.failed > 0) {
+    return "failed";
+  }
+  if (row.canceled > 0) {
+    return "canceled";
+  }
+  return "success";
 }
 
 function getFolderStatusBadge(row: UploadFolderProgressDisplayRow): {
@@ -51,7 +66,10 @@ export function UploadFolderProgressRow({ row }: UploadFolderProgressRowProps) {
   const statusLabel = getFolderStatusLabel(row);
 
   return (
-    <li className="rounded-box bg-base-200/70 px-3 py-2">
+    <li
+      className={UPLOAD_PROGRESS_ROW_CLASS_NAME}
+      style={getUploadProgressRowBackgroundStyle(progress, getFolderProgressStatus(row))}
+    >
       <div className="flex min-w-0 items-center gap-2">
         <MdiFolderUpload className="h-4 w-4 shrink-0 text-info" aria-hidden="true" />
         <div className="min-w-0 flex-1">
