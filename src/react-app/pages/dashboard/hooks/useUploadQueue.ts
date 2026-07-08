@@ -41,6 +41,7 @@ export {
   getUploadQueueItemProgress,
   getUploadQueuePanelState,
   isFolderOperationBlockedByActiveUpload,
+  shouldAutoMinimizeUploadPanel,
 } from "./uploadQueueUtils";
 export type { UploadQueuePanelState } from "./uploadQueueUtils";
 

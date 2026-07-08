@@ -11,6 +11,7 @@ import {
   getFolderUnlockTokenForPath,
 } from "../../utils/folderUnlockTokens";
 import { openFolderPasswordModal, setDownloadingPath } from "./actions";
+import { ensureFolderSubtreesUnlockedBeforeOperation } from "./utils/folderSubtreeProtectionPreflight";
 
 const LARGE_FILE_UPLOAD_THRESHOLD_BYTES = 20 * 1024 * 1024;
 
@@ -109,6 +110,10 @@ export async function downloadDashboardArchive(
   fallbackName = getDashboardArchiveFallbackName(targets),
 ) {
   if (targets.length === 0) {
+    return;
+  }
+
+  if (!(await ensureFolderSubtreesUnlockedBeforeOperation(targets))) {
     return;
   }
 

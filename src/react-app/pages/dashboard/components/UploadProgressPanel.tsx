@@ -13,6 +13,7 @@ import {
   getUploadQueuePanelState,
   minimizeDashboardUploadPanel,
   restoreDashboardUploadPanel,
+  shouldAutoMinimizeUploadPanel,
 } from "../hooks/useUploadQueue";
 import { UploadFolderProgressRow } from "./UploadFolderProgressRow";
 import { UploadProgressRow } from "./UploadProgressRow";
@@ -94,10 +95,11 @@ export function UploadProgressPanel() {
   const { isUploadPanelMinimized, uploadQueue: items } = useAppStore();
   const panelState = getUploadQueuePanelState(items);
   const isMinimized = isUploadPanelMinimized;
-  const wasCompleteRef = useRef(panelState.isComplete);
+  const previousPanelStateRef = useRef(panelState);
 
   useEffect(() => {
-    if (panelState.isComplete && !wasCompleteRef.current) {
+    const previousPanelState = previousPanelStateRef.current;
+    if (shouldAutoMinimizeUploadPanel(previousPanelState, panelState)) {
       minimizeDashboardUploadPanel();
       const message = getUploadResultToastMessage(panelState);
 
@@ -107,12 +109,13 @@ export function UploadProgressPanel() {
         toast.success(message, { id: UPLOAD_RESULT_TOAST_ID });
       }
     }
-    wasCompleteRef.current = panelState.isComplete;
+    previousPanelStateRef.current = panelState;
   }, [
     panelState.completed,
     panelState.failed,
     panelState.hasTerminalIssues,
     panelState.isComplete,
+    panelState.total,
   ]);
 
   if (!panelState.shouldShowPanel) {

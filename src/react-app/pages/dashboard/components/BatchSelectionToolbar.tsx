@@ -3,6 +3,7 @@ import MdiDeleteOutline from "~icons/mdi/delete-outline";
 import MdiDownload from "~icons/mdi/download";
 import MdiFolderMoveOutline from "~icons/mdi/folder-move-outline";
 import MdiShareVariantOutline from "~icons/mdi/share-variant-outline";
+import toast from "react-hot-toast";
 import { useAppStore } from "../../../store";
 import {
   clearDashboardSelection,
@@ -15,15 +16,57 @@ import {
   getDashboardSelectionShareDisabledReason,
 } from "../utils/batchShareSelection";
 import { downloadDashboardArchive } from "../fileOperations";
+import {
+  FILE_OPERATION_UPLOAD_BLOCKED_MESSAGE,
+  isFolderOperationBlockedByActiveUpload,
+} from "../hooks/useUploadQueue";
+import { ensureFolderSubtreesUnlockedBeforeOperation } from "../utils/folderSubtreeProtectionPreflight";
 
 export function BatchSelectionToolbar() {
-  const { batchDeleting, batchMoving, downloading, selectedDashboardTargets, sharing } =
+  const { batchDeleting, batchMoving, downloading, selectedDashboardTargets, sharing, uploadQueue } =
     useAppStore();
   const isBusy = batchDeleting || batchMoving || downloading || sharing;
   const isEmpty = selectedDashboardTargets.length === 0;
   const canShareSelection = canShareDashboardSelection(selectedDashboardTargets);
   const shareDisabledReason = getDashboardSelectionShareDisabledReason(selectedDashboardTargets);
   const canMoveSelection = selectedDashboardTargets.length > 0;
+  const blockIfUploading = () => {
+    const isBlocked = selectedDashboardTargets.some(
+      (target) =>
+        target.type === "folder" && isFolderOperationBlockedByActiveUpload(uploadQueue, target.path),
+    );
+    if (!isBlocked) {
+      return false;
+    }
+
+    toast.error(FILE_OPERATION_UPLOAD_BLOCKED_MESSAGE);
+    return true;
+  };
+  const handleDownloadSelection = async () => {
+    if (blockIfUploading()) {
+      return;
+    }
+
+    await downloadDashboardArchive(selectedDashboardTargets);
+  };
+  const handleRequestBatchDeleteTargets = async () => {
+    if (blockIfUploading()) {
+      return;
+    }
+
+    if (await ensureFolderSubtreesUnlockedBeforeOperation(selectedDashboardTargets)) {
+      requestBatchDeleteTargets();
+    }
+  };
+  const handleRequestBatchMoveTargets = async () => {
+    if (blockIfUploading()) {
+      return;
+    }
+
+    if (await ensureFolderSubtreesUnlockedBeforeOperation(selectedDashboardTargets)) {
+      requestBatchMoveTargets();
+    }
+  };
 
   return (
     <div className="ml-auto flex w-max max-w-full min-w-0 flex-wrap items-center justify-end gap-2 sm:gap-3">
@@ -35,7 +78,7 @@ export function BatchSelectionToolbar() {
           type="button"
           className="btn btn-accent btn-square btn-sm"
           disabled={isBusy || isEmpty}
-          onClick={() => void downloadDashboardArchive(selectedDashboardTargets)}
+          onClick={() => void handleDownloadSelection()}
           aria-label="下载选中项"
         >
           <MdiDownload className="h-5 w-5" />
@@ -57,7 +100,7 @@ export function BatchSelectionToolbar() {
           type="button"
           className="btn btn-error btn-square btn-sm text-error-content"
           disabled={isBusy || isEmpty}
-          onClick={requestBatchDeleteTargets}
+          onClick={() => void handleRequestBatchDeleteTargets()}
           aria-label="删除选中项"
         >
           <MdiDeleteOutline className="h-5 w-5" />
@@ -68,7 +111,7 @@ export function BatchSelectionToolbar() {
           type="button"
           className="btn btn-primary btn-square btn-sm"
           disabled={isBusy || !canMoveSelection}
-          onClick={requestBatchMoveTargets}
+          onClick={() => void handleRequestBatchMoveTargets()}
           aria-label="移动选中项"
         >
           <MdiFolderMoveOutline className="h-5 w-5" />

@@ -29,8 +29,11 @@ import {
   FILE_OPERATION_UPLOAD_BLOCKED_MESSAGE,
   isFolderOperationBlockedByActiveUpload,
 } from "../hooks/useUploadQueue";
-import { requestMoveTargetWithFolderPreflight } from "../utils/folderMovePreflight";
 import { getProtectedFolderOperationAction } from "../utils/protectedFolderActions";
+import {
+  ensureFolderHasNoEncryptedDescendantsBeforeSetPrivate,
+  ensureFolderSubtreesUnlockedBeforeOperation,
+} from "../utils/folderSubtreeProtectionPreflight";
 
 type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
 type RowActionsMenuVariant = "table" | "grid";
@@ -143,7 +146,7 @@ export function FolderActionsMenu({
     toast.error(FILE_OPERATION_UPLOAD_BLOCKED_MESSAGE);
     return true;
   };
-  const requestProtectedFolderOperation = (
+  const requestProtectedFolderOperation = async (
     operation: "delete" | "download" | "move" | "rename",
   ) => {
     const action = getProtectedFolderOperationAction({
@@ -156,13 +159,17 @@ export function FolderActionsMenu({
       return;
     }
 
+    if (!(await ensureFolderSubtreesUnlockedBeforeOperation([action.target]))) {
+      return;
+    }
+
     if (operation === "rename") {
       requestRenameTarget(action.target);
       return;
     }
 
     if (operation === "move") {
-      void requestMoveTargetWithFolderPreflight(action.target);
+      requestMoveTarget(action.target);
       return;
     }
 
@@ -175,6 +182,10 @@ export function FolderActionsMenu({
   };
   const requestSetFolderPassword = async () => {
     try {
+      if (!(await ensureFolderHasNoEncryptedDescendantsBeforeSetPrivate(folder.path))) {
+        return;
+      }
+
       await checkFolderPasswordSetAllowed(folder.path);
       openFolderPasswordModal({
         mode: "set",
@@ -200,7 +211,7 @@ export function FolderActionsMenu({
               return;
             }
 
-            requestProtectedFolderOperation("download");
+            void requestProtectedFolderOperation("download");
           },
         },
         {
@@ -211,7 +222,7 @@ export function FolderActionsMenu({
               return;
             }
 
-            requestProtectedFolderOperation("rename");
+            void requestProtectedFolderOperation("rename");
           },
         },
         {
@@ -222,7 +233,7 @@ export function FolderActionsMenu({
               return;
             }
 
-            requestProtectedFolderOperation("move");
+            void requestProtectedFolderOperation("move");
           },
         },
         ...(folder.passwordProtected
@@ -258,7 +269,7 @@ export function FolderActionsMenu({
               return;
             }
 
-            requestProtectedFolderOperation("delete");
+            void requestProtectedFolderOperation("delete");
           },
         },
         {

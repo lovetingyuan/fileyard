@@ -230,3 +230,10 @@ export function getUploadQueuePanelState(items: UploadQueueItem[]): UploadQueueP
     shouldShowPanel: retainedItems.length > 0,
   };
 }
+
+export function shouldAutoMinimizeUploadPanel(
+  previous: UploadQueuePanelState,
+  current: UploadQueuePanelState,
+): boolean {
+  return current.isComplete && (!previous.isComplete || previous.total !== current.total);
+}
