@@ -1,40 +1,20 @@
-import { ApiError } from "./utils/apiRequest";
-import { useAdminUsers } from "./hooks/useAdminUsers";
-import { AdminUsersPageView } from "./components/AdminUsersPageView";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
+import { AdminLogin } from "./pages/AdminLogin";
+import { AdminUsersPage } from "./pages/AdminUsersPage";
 
-function toErrorKind(
-  error: ApiError | undefined,
-): "forbidden" | "other" | "unauthorized" | undefined {
-  if (!error) {
-    return undefined;
-  }
-  if (error.status === 401) {
-    return "unauthorized";
-  }
-  if (error.status === 403) {
-    return "forbidden";
-  }
-  return "other";
-}
-
-type AdminAppProps = {
-  page: number;
-  pageSize: number;
-};
-
-export function AdminApp({ page, pageSize }: AdminAppProps) {
-  const { data, error, isLoading } = useAdminUsers(page, pageSize);
-
+export function AdminApp() {
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_color-mix(in_oklab,var(--color-primary)_20%,transparent),transparent_32%),linear-gradient(180deg,color-mix(in_oklab,var(--color-base-200)_90%,white),var(--color-base-200))]">
-      <AdminUsersPageView
-        items={data?.items ?? []}
-        page={data?.page ?? page}
-        pageSize={data?.pageSize ?? pageSize}
-        total={data?.total ?? 0}
-        state={isLoading ? "loading" : error ? "error" : "ready"}
-        errorKind={toErrorKind(error)}
-      />
-    </div>
+    <BrowserRouter>
+      <Toaster position="top-center" toastOptions={{ duration: 5000 }} />
+      <Routes>
+        <Route path="/admin" element={<Navigate to="/admin/users" replace />} />
+        <Route path="/admin/" element={<Navigate to="/admin/users" replace />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin/users" element={<AdminUsersPage />} />
+        <Route path="/admin/users/" element={<AdminUsersPage />} />
+        <Route path="*" element={<Navigate to="/admin/users" replace />} />
+      </Routes>
+    </BrowserRouter>
   );
 }

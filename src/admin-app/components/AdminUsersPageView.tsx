@@ -1,14 +1,15 @@
-import type { AdminUserListItem } from "../../types";
-import { buildAdminUsersPageHref, formatAdminDateTime } from "../utils/adminUsers";
+import type { AdminUserListItem } from '../../types'
+import { buildAdminUsersPageHref, formatAdminDateTime } from '../utils/adminUsers'
 
 export type AdminUsersPageViewProps = {
-  errorKind?: "forbidden" | "other" | "unauthorized";
-  items: AdminUserListItem[];
-  page: number;
-  pageSize: number;
-  state: "error" | "loading" | "ready";
-  total: number;
-};
+  errorKind?: 'forbidden' | 'other' | 'unauthorized'
+  items: AdminUserListItem[]
+  loginHref: string
+  page: number
+  pageSize: number
+  state: 'error' | 'loading' | 'ready'
+  total: number
+}
 
 function StatusCard({
   actionHref,
@@ -16,14 +17,14 @@ function StatusCard({
   description,
   title,
 }: {
-  actionHref?: string;
-  actionLabel?: string;
-  description: string;
-  title: string;
+  actionHref?: string
+  actionLabel?: string
+  description: string
+  title: string
 }) {
   return (
     <section className="mx-auto flex w-full max-w-3xl flex-1 items-center justify-center px-6 py-16">
-      <div className="w-full rounded-[2rem] border border-base-300/70 bg-base-100/95 p-8 shadow-xl shadow-base-content/5 backdrop-blur">
+      <div className="w-full rounded-4xl border border-base-300/70 bg-base-100/95 p-8 shadow-xl shadow-base-content/5 backdrop-blur">
         <p className="text-sm font-semibold uppercase tracking-[0.3em] text-primary/70">Admin</p>
         <h1 className="mt-3 text-3xl font-semibold text-base-content">{title}</h1>
         <p className="mt-4 text-base leading-7 text-base-content/70">{description}</p>
@@ -34,22 +35,22 @@ function StatusCard({
         ) : null}
       </div>
     </section>
-  );
+  )
 }
 
 function Pagination({
   page,
   pageSize,
   total,
-}: Pick<AdminUsersPageViewProps, "page" | "pageSize" | "total">) {
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const hasPrevious = page > 1;
-  const hasNext = page < totalPages;
+}: Pick<AdminUsersPageViewProps, 'page' | 'pageSize' | 'total'>) {
+  const totalPages = Math.max(1, Math.ceil(total / pageSize))
+  const hasPrevious = page > 1
+  const hasNext = page < totalPages
 
   return (
     <div className="mt-6 flex flex-col gap-3 border-t border-base-300/70 pt-4 text-sm text-base-content/70 sm:flex-row sm:items-center sm:justify-between">
       <p>
-        第 <span className="font-semibold text-base-content">{page}</span> / {totalPages} 页，共{" "}
+        第 <span className="font-semibold text-base-content">{page}</span> / {totalPages} 页，共{' '}
         {total} 位用户
       </p>
       <div className="join self-start sm:self-auto">
@@ -75,43 +76,44 @@ function Pagination({
         )}
       </div>
     </div>
-  );
+  )
 }
 
 export function AdminUsersPageView({
   errorKind,
   items,
+  loginHref,
   page,
   pageSize,
   state,
   total,
 }: AdminUsersPageViewProps) {
-  if (state === "loading") {
-    return <StatusCard title="正在加载用户列表" description="后台正在读取用户数据，请稍候。" />;
+  if (state === 'loading') {
+    return <StatusCard title="正在加载用户列表" description="后台正在读取用户数据，请稍候。" />
   }
 
-  if (state === "error" && errorKind === "unauthorized") {
+  if (state === 'error' && errorKind === 'unauthorized') {
     return (
       <StatusCard
         title="请先登录"
         description="登录后才能查看后台用户管理页面。"
-        actionHref="/login"
+        actionHref={loginHref}
         actionLabel="前往登录"
       />
-    );
+    )
   }
 
-  if (state === "error" && errorKind === "forbidden") {
-    return <StatusCard title="你没有管理员权限" description="当前账号没有访问后台系统的权限。" />;
+  if (state === 'error' && errorKind === 'forbidden') {
+    return <StatusCard title="你没有管理员权限" description="当前账号没有访问后台系统的权限。" />
   }
 
-  if (state === "error") {
-    return <StatusCard title="加载失败" description="用户列表暂时不可用，请稍后重试。" />;
+  if (state === 'error') {
+    return <StatusCard title="加载失败" description="用户列表暂时不可用，请稍后重试。" />
   }
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-8 sm:px-6 lg:px-8">
-      <section className="rounded-[2rem] border border-base-300/70 bg-base-100/95 p-6 shadow-xl shadow-base-content/5 backdrop-blur sm:p-8">
+      <section className="rounded-4xl border border-base-300/70 bg-base-100/95 p-6 shadow-xl shadow-base-content/5 backdrop-blur sm:p-8">
         <div className="flex flex-col gap-4 border-b border-base-300/70 pb-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.3em] text-primary/70">
@@ -147,7 +149,7 @@ export function AdminUsersPageView({
                     </tr>
                   </thead>
                   <tbody>
-                    {items.map((item) => (
+                    {items.map(item => (
                       <tr key={item.email}>
                         <td className="font-medium text-base-content">{item.email}</td>
                         <td className="whitespace-nowrap text-base-content/70">
@@ -167,5 +169,5 @@ export function AdminUsersPageView({
         )}
       </section>
     </main>
-  );
+  )
 }

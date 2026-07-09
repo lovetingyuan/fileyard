@@ -2,8 +2,8 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { SWRConfig } from "swr";
 import App from "./App.tsx";
-import { appSWRConfig } from "../shared/swrConfig";
-import "../shared/styles/index.css";
+import { appSWRConfig } from "./swrConfig";
+import "./index.css";
 
 // Initialize theme before React renders to prevent flash
 function initTheme() {

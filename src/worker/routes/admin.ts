@@ -1,5 +1,5 @@
 import { desc, eq, sql } from "drizzle-orm";
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import type { AdminUserListResponse } from "../../types";
 import type { AppContext } from "../context";
 import { createDb } from "../db/client";
@@ -7,6 +7,7 @@ import { session, user } from "../db/schema";
 import { jsonError } from "../utils/response";
 import { isAdminUser } from "../utils/adminAuth";
 import { adminUsersQueryValidator, getValidatedQuery, type AdminUsersQuery } from "../validation";
+import { toAdminShellAssetRequest } from "./adminShell";
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 20;
@@ -35,11 +36,15 @@ function toIsoString(value: Date | number | string | null | undefined): string |
 
 const adminRoutes = new Hono<AppContext>();
 
-adminRoutes.get("/admin/users", (c) => {
-  const url = new URL(c.req.url);
-  url.pathname = "/admin/users/";
-  return Response.redirect(url.toString(), 308);
-});
+function serveAdminShell(c: Context<AppContext>) {
+  return c.env.ASSETS.fetch(toAdminShellAssetRequest(c.req.raw));
+}
+
+adminRoutes.get("/admin", serveAdminShell);
+adminRoutes.get("/admin/", serveAdminShell);
+adminRoutes.get("/admin/login", serveAdminShell);
+adminRoutes.get("/admin/users", serveAdminShell);
+adminRoutes.get("/admin/users/", serveAdminShell);
 
 adminRoutes.get("/api/admin/users", adminUsersQueryValidator, async (c) => {
   const currentUser = c.get("user");

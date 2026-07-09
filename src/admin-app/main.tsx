@@ -2,9 +2,8 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { SWRConfig } from "swr";
 import { AdminApp } from "./AdminApp";
-import { readAdminUsersSearchParams } from "./utils/adminUsers";
-import { appSWRConfig } from "../shared/swrConfig";
-import "../shared/styles/index.css";
+import { appSWRConfig } from "./swrConfig";
+import "./index.css";
 
 function initTheme() {
   const stored = localStorage.getItem("theme-preference");
@@ -18,12 +17,10 @@ function initTheme() {
 
 initTheme();
 
-const { page, pageSize } = readAdminUsersSearchParams(window.location.search);
-
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <SWRConfig value={appSWRConfig}>
-      <AdminApp page={page} pageSize={pageSize} />
+      <AdminApp />
     </SWRConfig>
   </StrictMode>,
 );

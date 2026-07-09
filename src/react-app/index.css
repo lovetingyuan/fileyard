@@ -4,3 +4,8 @@
     emerald --default,
     forest --prefersdark;
 }
+
+::highlight(fileyard-dashboard-search-result) {
+  background-color: color-mix(in oklab, var(--color-accent) 55%, transparent);
+  color: var(--color-base-content);
+}
