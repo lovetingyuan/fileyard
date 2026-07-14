@@ -1,9 +1,9 @@
 import { BrowserRouter, Routes, useLocation } from "react-router-dom";
-import { Toaster } from "react-hot-toast";
 import { useAuth } from "./auth/useAuth";
 import { buildAppRouteElements } from "./routes";
 import { allowsAuthenticatedEmailActionPath } from "./utils/authRouteAccess";
 import { TopBanner } from "./components/TopBanner";
+import { ToastViewport } from "./components/ToastViewport";
 export { renderProtectedRoute } from "./routes";
 
 function AppContent() {
@@ -25,7 +25,7 @@ function AppContent() {
 function AppShell() {
   return (
     <div className="flex h-dvh min-h-0 flex-col overflow-hidden">
-      <Toaster position="top-center" toastOptions={{ duration: 5000 }} />
+      <ToastViewport />
       <TopBanner />
       <AppContent />
     </div>

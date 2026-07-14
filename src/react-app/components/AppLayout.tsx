@@ -2,7 +2,8 @@ import { Link, Outlet, useLocation } from "react-router-dom";
 import MdiFileTree from "~icons/mdi/file-tree";
 import { useAuth } from "../auth/useAuth";
 import { useProfile } from "../hooks/useProfileApi";
-import { DASHBOARD_TREE_DRAWER_ID } from "../pages/dashboard/utils/fileTreeSidebarState";
+import { toggleDashboardTreeSidebar } from "../pages/dashboard/actions";
+import { DASHBOARD_TREE_SIDEBAR_ID } from "../pages/dashboard/utils/fileTreeSidebarState";
 import { useAppStore } from "../store";
 import { UserAvatar } from "./UserAvatar";
 import { ThemeSwitcher } from "./ThemeSwitcher";
@@ -31,15 +32,17 @@ function DashboardTreeSidebarButton() {
   const label = isDashboardTreeSidebarOpen ? "折叠 Home 文件树" : "展开 Home 文件树";
 
   return (
-    <label
-      htmlFor={DASHBOARD_TREE_DRAWER_ID}
+    <button
+      type="button"
       className="btn btn-ghost btn-square btn-sm drawer-button shrink-0"
       aria-expanded={isDashboardTreeSidebarOpen}
+      aria-controls={DASHBOARD_TREE_SIDEBAR_ID}
       aria-label={label}
       title={label}
+      onClick={toggleDashboardTreeSidebar}
     >
-      <MdiFileTree className="h-5 w-5" />
-    </label>
+      <MdiFileTree aria-hidden="true" className="h-5 w-5" />
+    </button>
   );
 }
 

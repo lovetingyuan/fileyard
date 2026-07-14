@@ -3,6 +3,7 @@ import { cn } from "../../../utils/cn";
 
 const DASHBOARD_TREE_SIDEBAR_OPEN_STORAGE_KEY = "dashboard-tree-sidebar-open";
 export const DASHBOARD_TREE_DRAWER_ID = "dashboard-file-tree-drawer";
+export const DASHBOARD_TREE_SIDEBAR_ID = "dashboard-file-tree-sidebar";
 
 type DashboardTreeSidebarStorage = Pick<Storage, "getItem" | "setItem">;
 type DashboardTreeSidebarMatchMedia = (query: string) => Pick<MediaQueryList, "matches">;

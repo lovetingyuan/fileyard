@@ -1,4 +1,5 @@
 import { useEffect, useEffectEvent, useRef } from "react";
+import { registerToastDialogHost } from "../components/toastDialogHost";
 
 interface UseNativeDialogOptions {
   isOpen: boolean;
@@ -7,12 +8,10 @@ interface UseNativeDialogOptions {
   onAfterOpen?: () => void;
 }
 
-function openNativeDialog(dialog: HTMLDialogElement, onAfterOpen?: () => void) {
+function openNativeDialog(dialog: HTMLDialogElement) {
   if (!dialog.open) {
     dialog.showModal();
   }
-
-  onAfterOpen?.();
 }
 
 export function useNativeDialog({
@@ -50,7 +49,9 @@ export function useNativeDialog({
       return;
     }
 
-    openNativeDialog(dialog, handleAfterOpen);
+    openNativeDialog(dialog);
+    const unregisterToastHost = registerToastDialogHost(dialog);
+    handleAfterOpen();
 
     const cancelListener = (event: Event) => {
       handleCancel(event);
@@ -63,6 +64,7 @@ export function useNativeDialog({
       if (dialog.open) {
         dialog.close();
       }
+      unregisterToastHost();
     };
   }, [isOpen]);
 

@@ -23,6 +23,7 @@ import { getDashboardFolderOpenAction } from '../utils/dashboardFolderNavigation
 import { getDashboardFileParentPath } from '../utils/dashboardFileLocation'
 import {
   DASHBOARD_TREE_DRAWER_ID,
+  DASHBOARD_TREE_SIDEBAR_ID,
   getDashboardTreeDrawerClassName,
   getDashboardTreeAutoOpenPaths,
   mergeDashboardTreeOpenPaths,
@@ -345,6 +346,7 @@ export function FileTreeSidebar() {
 
   return (
     <aside
+      id={DASHBOARD_TREE_SIDEBAR_ID}
       className={getDashboardTreeDrawerClassName(isDashboardTreeSidebarOpen)}
       aria-label="Home 文件树侧栏"
     >
