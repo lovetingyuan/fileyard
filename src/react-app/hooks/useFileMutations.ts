@@ -10,8 +10,10 @@ import type {
   MoveRequest,
   RemoveFolderPasswordRequest,
   RenameRequest,
+  SendFolderPasswordRecoveryCodeRequest,
   ShareLinkResponse,
   SetFolderPasswordRequest,
+  VerifyFolderPasswordRecoveryCodeRequest,
   VerifyFolderPasswordRequest,
   VerifyFolderPasswordResponse,
 } from "../../types";
@@ -24,6 +26,8 @@ import {
   FILE_BATCH_ENTRIES_ENDPOINT,
   FILE_ENTRIES_ENDPOINT,
   FILE_FOLDER_PASSWORD_ENDPOINT,
+  FILE_FOLDER_PASSWORD_FORGOT_ENDPOINT,
+  FILE_FOLDER_PASSWORD_FORGOT_VERIFY_ENDPOINT,
   FILE_FOLDER_PASSWORD_POLICY_ENDPOINT,
   FILE_FOLDER_UNLOCKS_ENDPOINT,
   FILE_FOLDERS_ENDPOINT,
@@ -466,6 +470,59 @@ export function useRemoveFolderPasswordMutation() {
 
   return {
     removeFolderPassword,
+    isMutating,
+  };
+}
+
+export function useSendFolderPasswordRecoveryCodeMutation() {
+  const { trigger, isMutating } = useSWRMutation<
+    FileMutationResponse,
+    ApiError,
+    string,
+    SendFolderPasswordRecoveryCodeRequest
+  >(
+    FILE_FOLDER_PASSWORD_FORGOT_ENDPOINT,
+    (url, { arg }) =>
+      apiRequest<FileMutationResponse>(url, {
+        method: "POST",
+        body: JSON.stringify(arg),
+      }),
+    {
+      throwOnError: true,
+    },
+  );
+
+  const sendFolderPasswordRecoveryCode = (path: string) => trigger({ path });
+
+  return {
+    sendFolderPasswordRecoveryCode,
+    isMutating,
+  };
+}
+
+export function useVerifyFolderPasswordRecoveryCodeMutation() {
+  const { trigger, isMutating } = useSWRMutation<
+    FileMutationResponse,
+    ApiError,
+    string,
+    VerifyFolderPasswordRecoveryCodeRequest
+  >(
+    FILE_FOLDER_PASSWORD_FORGOT_VERIFY_ENDPOINT,
+    (url, { arg }) =>
+      apiRequest<FileMutationResponse>(url, {
+        method: "POST",
+        body: JSON.stringify(arg),
+      }),
+    {
+      throwOnError: true,
+    },
+  );
+
+  const verifyFolderPasswordRecoveryCode = (path: string, otp: string) =>
+    trigger({ path, otp });
+
+  return {
+    verifyFolderPasswordRecoveryCode,
     isMutating,
   };
 }

@@ -10,7 +10,6 @@ import {
   useVerifyFolderPasswordMutation,
 } from '../../../hooks/useFilesApi'
 import { useAppStore } from '../../../store'
-import { cn } from '../../../utils/cn'
 import {
   getFolderPasswordConfirmError,
   getFolderPasswordLengthError,
@@ -27,6 +26,9 @@ import { useDashboardPath } from '../hooks/useDashboardPath'
 import { requestMoveTargetWithFolderPreflight } from '../utils/folderMovePreflight'
 import { ensureFolderSubtreesUnlockedBeforeOperation } from '../utils/folderSubtreeProtectionPreflight'
 import { shouldConfirmFromInputKey } from '../utils/modalKeyboard'
+import { FolderPasswordFormFields } from './FolderPasswordFormFields'
+import { FolderPasswordRecoveryDialog } from './FolderPasswordRecoveryDialog'
+import { getFolderPasswordModalCopy } from './folderPasswordModalCopy'
 
 type FolderPasswordFormState = {
   password: string
@@ -56,6 +58,7 @@ export function FolderPasswordModal() {
   const { removeFolderPassword, isMutating: isRemovingPassword } = useRemoveFolderPasswordMutation()
   const passwordInputRef = useRef<HTMLInputElement | null>(null)
   const [formState, setFormState] = useState(createInitialFormState)
+  const [isRecoveryOpen, setIsRecoveryOpen] = useState(false)
 
   const focusInputAfterOpen = () => {
     passwordInputRef.current?.focus()
@@ -82,24 +85,8 @@ export function FolderPasswordModal() {
       : getFolderPasswordLengthError(password)
   const visiblePasswordError = hasEditedPassword ? passwordError : null
   const visibleInputError = visiblePasswordError ?? passwordVerifyError
-  const title =
-    target.mode === 'set'
-      ? '设置访问密码'
-      : target.mode === 'remove'
-        ? '取消访问密码'
-        : '验证访问密码'
-  const confirmText =
-    target.mode === 'set'
-      ? '设置密码'
-      : target.mode === 'remove' && hasVerifiedRemovePassword
-        ? '取消密码'
-        : '验证'
-  const confirmPendingText =
-    target.mode === 'set'
-      ? '设置中...'
-      : target.mode === 'remove' && hasVerifiedRemovePassword
-        ? '取消中...'
-        : '验证中...'
+  const { title, confirmText, confirmPendingText, description, confirmButtonClassName } =
+    getFolderPasswordModalCopy(target, hasVerifiedRemovePassword)
   const confirmDisabled =
     isBusy ||
     (target.mode === 'remove' && hasVerifiedRemovePassword ? false : Boolean(passwordError))
@@ -112,6 +99,10 @@ export function FolderPasswordModal() {
     await mutate(key => isFileListKey(key) || key === FILE_FOLDER_TREE_ENDPOINT)
   }
 
+  const handleStartPasswordRecovery = () => {
+    setIsRecoveryOpen(true)
+  }
+
   const handleClose = () => {
     if (isBusy) {
       return
@@ -121,10 +112,25 @@ export function FolderPasswordModal() {
       target.mode === 'unlock' && !target.afterUnlock && target.returnPath !== undefined
     const returnPath = target.returnPath ?? ''
     resetState()
+    setIsRecoveryOpen(false)
     closeFolderPasswordModal(shouldReturnToParent ? target : null)
     if (shouldReturnToParent) {
       setPath(returnPath)
     }
+  }
+
+  if (isRecoveryOpen) {
+    return (
+      <FolderPasswordRecoveryDialog
+        target={target}
+        onClose={() => setIsRecoveryOpen(false)}
+        onRecovered={() => {
+          resetState()
+          setIsRecoveryOpen(false)
+          closeFolderPasswordModal()
+        }}
+      />
+    )
   }
 
   const handleVerified = async (protectedPath: string, unlockToken: string) => {
@@ -241,71 +247,40 @@ export function FolderPasswordModal() {
       isDismissDisabled={isBusy}
       boxClassName="max-w-md border border-base-300/70 bg-base-100"
       closeButtonAriaLabel="关闭文件夹密码弹窗"
-      confirmButtonClassName={
-        target.mode === 'remove' && hasVerifiedRemovePassword
-          ? 'btn btn-sm btn-error text-error-content'
-          : 'btn btn-sm btn-primary'
-      }
+      confirmButtonClassName={confirmButtonClassName}
     >
       {({ isInteractionDisabled }) => (
         <div className="space-y-4">
-          <p className="break-all text-sm leading-6 text-base-content/70">
-            {target.mode === 'set'
-              ? `为 “${target.name}” 设置访问密码`
-              : target.mode === 'remove'
-                ? hasVerifiedRemovePassword
-                  ? `密码已验证，确认取消 “${target.name}” 的访问密码。`
-                  : `先验证 “${target.name}” 的当前访问密码。`
-                : `输入 “${target.name}” 的访问密码后继续访问。`}
-          </p>
+          <p className="break-all text-sm leading-6 text-base-content/70">{description}</p>
 
-          {!hasVerifiedRemovePassword ? (
-            <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-semibold text-base-content/50">访问密码</span>
-              <input
-                ref={passwordInputRef}
-                type="password"
-                className={cn('input w-full', visibleInputError && 'input-error')}
-                value={password}
-                autoComplete={target.mode === 'set' ? 'new-password' : 'current-password'}
-                onChange={event => {
-                  setFormState(state => ({
-                    ...state,
-                    hasEditedPassword: true,
-                    password: event.target.value,
-                    passwordVerifyError: null,
-                  }))
-                }}
-                onKeyDown={handlePasswordKeyDown}
-                disabled={isInteractionDisabled}
-              />
-              {visibleInputError ? (
-                <span className="text-xs text-error">{visibleInputError}</span>
-              ) : null}
-            </label>
-          ) : null}
-
-          {target.mode === 'set' ? (
-            <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-semibold text-base-content/50">确认密码</span>
-              <input
-                type="password"
-                className={cn('input w-full', visiblePasswordError && 'input-error')}
-                value={confirmPassword}
-                autoComplete="new-password"
-                onChange={event => {
-                  setFormState(state => ({
-                    ...state,
-                    confirmPassword: event.target.value,
-                    hasEditedPassword: true,
-                    passwordVerifyError: null,
-                  }))
-                }}
-                onKeyDown={handlePasswordKeyDown}
-                disabled={isInteractionDisabled}
-              />
-            </label>
-          ) : null}
+          <FolderPasswordFormFields
+            mode={target.mode}
+            password={password}
+            confirmPassword={confirmPassword}
+            visibleInputError={visibleInputError}
+            visiblePasswordError={visiblePasswordError}
+            hasVerifiedRemovePassword={hasVerifiedRemovePassword}
+            isInteractionDisabled={isInteractionDisabled}
+            passwordInputRef={passwordInputRef}
+            onPasswordChange={nextPassword => {
+              setFormState(state => ({
+                ...state,
+                hasEditedPassword: true,
+                password: nextPassword,
+                passwordVerifyError: null,
+              }))
+            }}
+            onConfirmPasswordChange={nextConfirmPassword => {
+              setFormState(state => ({
+                ...state,
+                confirmPassword: nextConfirmPassword,
+                hasEditedPassword: true,
+                passwordVerifyError: null,
+              }))
+            }}
+            onPasswordKeyDown={handlePasswordKeyDown}
+            onStartRecovery={handleStartPasswordRecovery}
+          />
         </div>
       )}
     </Dialog>

@@ -10,9 +10,11 @@ import type {
   MultipartUploadPart,
   RemoveFolderPasswordRequest,
   RenameRequest,
+  SendFolderPasswordRecoveryCodeRequest,
   SetFolderPasswordRequest,
   SortKey,
   SortOrder,
+  VerifyFolderPasswordRecoveryCodeRequest,
   VerifyFolderPasswordRequest,
   VerifySharePasswordRequest,
 } from "../types";
@@ -196,6 +198,31 @@ function parseRemoveFolderPasswordRequest(value: unknown): RemoveFolderPasswordR
 
   return {
     path: value.path,
+  };
+}
+
+function parseSendFolderPasswordRecoveryCodeRequest(
+  value: unknown,
+): SendFolderPasswordRecoveryCodeRequest | null {
+  if (!isRecord(value) || typeof value.path !== "string") {
+    return null;
+  }
+
+  return {
+    path: value.path,
+  };
+}
+
+function parseVerifyFolderPasswordRecoveryCodeRequest(
+  value: unknown,
+): VerifyFolderPasswordRecoveryCodeRequest | null {
+  if (!isRecord(value) || typeof value.path !== "string" || typeof value.otp !== "string") {
+    return null;
+  }
+
+  return {
+    path: value.path,
+    otp: value.otp,
   };
 }
 
@@ -436,6 +463,9 @@ export const createFolderJsonValidator = jsonBody(parseCreateFolderRequest);
 export const setFolderPasswordJsonValidator = jsonBody(parseSetFolderPasswordRequest);
 export const verifyFolderPasswordJsonValidator = jsonBody(parseVerifyFolderPasswordRequest);
 export const removeFolderPasswordJsonValidator = jsonBody(parseRemoveFolderPasswordRequest);
+export const sendFolderPasswordRecoveryCodeJsonValidator = jsonBody(
+  parseSendFolderPasswordRecoveryCodeRequest,
+);
 export const renameJsonValidator = jsonBody(parseRenameRequest);
 export const moveJsonValidator = jsonBody(parseMoveRequest);
 export const batchDeleteJsonValidator = jsonBody(parseBatchDeleteRequest);
@@ -445,6 +475,9 @@ export const createShareLinkJsonValidator = jsonBody(parseCreateShareLinkRequest
 export const verifySharePasswordJsonValidator = jsonBody(parseVerifySharePasswordRequest);
 export const multipartCreateJsonValidator = jsonBody(parseMultipartUploadCreateRequest);
 export const multipartCompleteJsonValidator = jsonBody(parseMultipartUploadCompleteRequest);
+export const verifyFolderPasswordRecoveryCodeJsonValidator = jsonBody(
+  parseVerifyFolderPasswordRecoveryCodeRequest,
+);
 
 export const fileListQueryValidator = queryParams(parseFileListQuery);
 export const optionalPathQueryValidator = queryParams(parseOptionalPathQuery);

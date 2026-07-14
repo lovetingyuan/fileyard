@@ -273,6 +273,15 @@ export interface RemoveFolderPasswordRequest {
   path: string;
 }
 
+export interface SendFolderPasswordRecoveryCodeRequest {
+  path: string;
+}
+
+export interface VerifyFolderPasswordRecoveryCodeRequest {
+  path: string;
+  otp: string;
+}
+
 export interface FolderLockedErrorResponse {
   success: false;
   error: string;

@@ -1,21 +1,27 @@
 import type { Context } from "hono";
+import { isAPIError } from "better-auth/api";
 import type {
   CreateFolderRequest,
   FileMutationResponse,
   FolderPasswordSetCheckResponse,
   RemoveFolderPasswordRequest,
   RenameRequest,
+  SendFolderPasswordRecoveryCodeRequest,
   SetFolderPasswordRequest,
+  VerifyFolderPasswordRecoveryCodeRequest,
   VerifyFolderPasswordRequest,
 } from "../../types";
 import type { AppContext } from "../context";
+import { getAuth } from "../auth";
 import { folderExists, getFileContext } from "../utils/appHelpers";
 import {
   assertFolderPasswordSetAllowed,
   assertFolderSubtreeAccess,
   assertPathAccess,
+  getFolderPasswordEtag,
   handleFolderPasswordError,
   removeFolderPassword,
+  removeFolderPasswordAfterEmailVerification,
   setFolderPassword,
   verifyFolderPasswordForPath,
 } from "../utils/folderPasswords";
@@ -42,6 +48,60 @@ import {
   listAllObjects,
 } from "./filesShared";
 import { getValidatedJson, getValidatedQuery, type PathQuery } from "../validation";
+
+function handleFolderPasswordRecoveryAuthError(
+  c: Context<AppContext>,
+  error: unknown,
+  message: string,
+): Response | undefined {
+  if (isAPIError(error)) {
+    return jsonError(c, message, 400);
+  }
+
+  return undefined;
+}
+
+const FOLDER_PASSWORD_RECOVERY_TTL_SECONDS = 5 * 60;
+
+type FolderPasswordRecoveryState = {
+  rootDirId: string;
+  path: string;
+  folderEtag: string;
+};
+
+function getFolderPasswordRecoveryKey(userId: string): string {
+  return `folder-password-recovery:${userId}`;
+}
+
+function isFolderPasswordRecoveryState(value: unknown): value is FolderPasswordRecoveryState {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "rootDirId" in value &&
+    "path" in value &&
+    "folderEtag" in value &&
+    typeof value.rootDirId === "string" &&
+    typeof value.path === "string" &&
+    typeof value.folderEtag === "string"
+  );
+}
+
+async function getFolderPasswordRecoveryState(
+  c: Context<AppContext>,
+  userId: string,
+): Promise<FolderPasswordRecoveryState | null> {
+  const stored = await c.env.FILE_YARD_KV.get(getFolderPasswordRecoveryKey(userId));
+  if (!stored) {
+    return null;
+  }
+
+  try {
+    const value: unknown = JSON.parse(stored);
+    return isFolderPasswordRecoveryState(value) ? value : null;
+  } catch {
+    return null;
+  }
+}
 
 export async function createFolder(c: Context<AppContext>) {
   try {
@@ -357,5 +417,124 @@ export async function removeFolderAccessPassword(c: Context<AppContext>) {
     }
     console.error("Failed to remove folder password", error);
     return jsonError(c, "Failed to remove folder password", 500);
+  }
+}
+
+export async function sendFolderPasswordRecoveryCode(c: Context<AppContext>) {
+  try {
+    const body = getValidatedJson<SendFolderPasswordRecoveryCodeRequest>(c);
+    const path = normalizeRelativePath(body.path, { allowEmpty: false, label: "Path" });
+    assertPathNotReserved(path);
+    const { rootDirId, user } = await getFileContext(c);
+
+    if (!(await folderExists(c.env, rootDirId, path))) {
+      return jsonError(c, "Folder not found", 404);
+    }
+
+    const folderEtag = await getFolderPasswordEtag(c.env, rootDirId, path);
+    await getAuth(c).api.sendVerificationOTP({
+      body: {
+        email: user.email,
+        type: "email-verification",
+      },
+      headers: c.req.raw.headers,
+    });
+    await c.env.FILE_YARD_KV.put(
+      getFolderPasswordRecoveryKey(user.id),
+      JSON.stringify({ rootDirId, path, folderEtag } satisfies FolderPasswordRecoveryState),
+      { expirationTtl: FOLDER_PASSWORD_RECOVERY_TTL_SECONDS },
+    );
+
+    const response: FileMutationResponse = {
+      success: true,
+      message: "Verification code sent",
+    };
+    return c.json(response);
+  } catch (error) {
+    const folderPasswordError = handleFolderPasswordError(error);
+    if (folderPasswordError) {
+      return folderPasswordError;
+    }
+    const validationError = handlePathValidationError(c, error);
+    if (validationError) {
+      return validationError;
+    }
+    const authError = handleFolderPasswordRecoveryAuthError(
+      c,
+      error,
+      "Unable to send verification code. Please try again later.",
+    );
+    if (authError) {
+      return authError;
+    }
+    console.error("Failed to send folder password recovery code", error);
+    return jsonError(c, "Failed to send verification code", 500);
+  }
+}
+
+export async function verifyFolderPasswordRecoveryCode(c: Context<AppContext>) {
+  try {
+    const body = getValidatedJson<VerifyFolderPasswordRecoveryCodeRequest>(c);
+    const path = normalizeRelativePath(body.path, { allowEmpty: false, label: "Path" });
+    assertPathNotReserved(path);
+    const { rootDirId, user } = await getFileContext(c);
+
+    if (!(await folderExists(c.env, rootDirId, path))) {
+      return jsonError(c, "Folder not found", 404);
+    }
+
+    const recoveryState = await getFolderPasswordRecoveryState(c, user.id);
+    if (
+      !recoveryState ||
+      recoveryState.rootDirId !== rootDirId ||
+      recoveryState.path !== path ||
+      (await getFolderPasswordEtag(c.env, rootDirId, path)) !== recoveryState.folderEtag
+    ) {
+      await c.env.FILE_YARD_KV.delete(getFolderPasswordRecoveryKey(user.id));
+      return jsonError(c, "Folder changed. Request a new verification code.", 409);
+    }
+
+    await getAuth(c).api.verifyEmailOTP({
+      body: {
+        email: user.email,
+        otp: body.otp,
+      },
+      headers: c.req.raw.headers,
+    });
+    try {
+      await removeFolderPasswordAfterEmailVerification(
+        c.env,
+        rootDirId,
+        path,
+        recoveryState.folderEtag,
+      );
+    } finally {
+      await c.env.FILE_YARD_KV.delete(getFolderPasswordRecoveryKey(user.id));
+    }
+
+    const response: FileMutationResponse = {
+      success: true,
+      message: "Folder password removed successfully",
+    };
+    return c.json(response);
+  } catch (error) {
+    const folderPasswordError = handleFolderPasswordError(error);
+    if (folderPasswordError) {
+      return folderPasswordError;
+    }
+    const validationError = handlePathValidationError(c, error);
+    if (validationError) {
+      return validationError;
+    }
+    const authError = handleFolderPasswordRecoveryAuthError(
+      c,
+      error,
+      "Verification code is invalid, expired, or has reached the attempt limit.",
+    );
+    if (authError) {
+      return authError;
+    }
+    console.error("Failed to verify folder password recovery code", error);
+    return jsonError(c, "Failed to verify verification code", 500);
   }
 }

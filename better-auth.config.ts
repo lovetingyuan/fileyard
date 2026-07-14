@@ -25,6 +25,7 @@ export const auth = betterAuth({
     trustedOrigins: [new URL(cliBaseUrl).origin],
     sendVerificationEmail: async () => {},
     sendResetPassword: async () => {},
+    sendVerificationOTP: async () => {},
   }),
   database: drizzleAdapter(cliDb, {
     provider: "sqlite",

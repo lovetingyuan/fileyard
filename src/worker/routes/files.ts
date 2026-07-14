@@ -18,7 +18,9 @@ import {
   deleteFolder,
   removeFolderAccessPassword,
   renameFolder,
+  sendFolderPasswordRecoveryCode,
   setFolderAccessPassword,
+  verifyFolderPasswordRecoveryCode,
   verifyFolderAccessPassword,
 } from "./folderHandlers";
 import {
@@ -32,8 +34,10 @@ import {
   pathQueryValidator,
   removeFolderPasswordJsonValidator,
   renameJsonValidator,
+  sendFolderPasswordRecoveryCodeJsonValidator,
   setFolderPasswordJsonValidator,
   uploadObjectQueryValidator,
+  verifyFolderPasswordRecoveryCodeJsonValidator,
   verifyFolderPasswordJsonValidator,
 } from "../validation";
 
@@ -64,6 +68,16 @@ files.delete(
   "/api/files/folders/password",
   removeFolderPasswordJsonValidator,
   removeFolderAccessPassword,
+);
+files.post(
+  "/api/files/folders/password/forgot",
+  sendFolderPasswordRecoveryCodeJsonValidator,
+  sendFolderPasswordRecoveryCode,
+);
+files.post(
+  "/api/files/folders/password/forgot/verify",
+  verifyFolderPasswordRecoveryCodeJsonValidator,
+  verifyFolderPasswordRecoveryCode,
 );
 files.delete("/api/files/folders", pathQueryValidator, deleteFolder);
 files.patch("/api/files/folders", renameJsonValidator, renameFolder);

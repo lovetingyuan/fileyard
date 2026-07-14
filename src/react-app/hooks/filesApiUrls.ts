@@ -10,6 +10,9 @@ export const FILE_ARCHIVE_DOWNLOADS_ENDPOINT = "/api/files/archive-downloads";
 export const FILE_SHARE_LINKS_ENDPOINT = "/api/files/share-links";
 export const FILE_STATS_ENDPOINT = "/api/files/stats";
 export const FILE_FOLDER_PASSWORD_ENDPOINT = "/api/files/folders/password";
+export const FILE_FOLDER_PASSWORD_FORGOT_ENDPOINT = "/api/files/folders/password/forgot";
+export const FILE_FOLDER_PASSWORD_FORGOT_VERIFY_ENDPOINT =
+  "/api/files/folders/password/forgot/verify";
 export const FILE_FOLDER_PASSWORD_POLICY_ENDPOINT = "/api/files/folders/password-policy";
 export const FILE_FOLDER_UNLOCKS_ENDPOINT = "/api/files/folders/unlocks";
 

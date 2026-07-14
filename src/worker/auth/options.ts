@@ -1,5 +1,6 @@
 import type { BetterAuthOptions } from "better-auth";
 import { APIError, createAuthMiddleware } from "better-auth/api";
+import { emailOTP } from "better-auth/plugins";
 import { deriveAuthNameFromEmail } from "./utils";
 import { validatePassword } from "../utils/password";
 
@@ -12,6 +13,12 @@ type AuthEmailPayload = {
   };
 };
 
+type AuthEmailOtpPayload = {
+  email: string;
+  otp: string;
+  type: "sign-in" | "email-verification" | "forget-password" | "change-email";
+};
+
 type CreateBetterAuthOptionsInput = {
   appName: string;
   baseURL: string;
@@ -21,6 +28,7 @@ type CreateBetterAuthOptionsInput = {
   trustedOrigins: BetterAuthOptions["trustedOrigins"];
   sendVerificationEmail: (payload: AuthEmailPayload, request?: Request) => Promise<void>;
   sendResetPassword: (payload: AuthEmailPayload, request?: Request) => Promise<void>;
+  sendVerificationOTP: (payload: AuthEmailOtpPayload) => Promise<void>;
   onUserCreated?: (user: { id: string; email: string }) => Promise<void>;
   backgroundTaskHandler?: ((promise: Promise<unknown>) => void) | undefined;
 };
@@ -35,7 +43,7 @@ function toBadRequest(message: string): APIError {
   });
 }
 
-export function createBetterAuthOptions(input: CreateBetterAuthOptionsInput): BetterAuthOptions {
+export function createBetterAuthOptions(input: CreateBetterAuthOptionsInput) {
   return {
     appName: input.appName,
     baseURL: input.baseURL,
@@ -57,6 +65,15 @@ export function createBetterAuthOptions(input: CreateBetterAuthOptionsInput): Be
     rateLimit: {
       storage: "database",
     },
+    plugins: [
+      emailOTP({
+        otpLength: 6,
+        expiresIn: 300,
+        allowedAttempts: 3,
+        storeOTP: "encrypted",
+        sendVerificationOTP: input.sendVerificationOTP,
+      }),
+    ],
     hooks: {
       before: createAuthMiddleware(async (ctx) => {
         if (ctx.path === "/sign-up/email") {
@@ -153,5 +170,5 @@ export function createBetterAuthOptions(input: CreateBetterAuthOptionsInput): Be
       sendOnSignUp: true,
       sendVerificationEmail: input.sendVerificationEmail,
     },
-  };
+  } satisfies BetterAuthOptions;
 }

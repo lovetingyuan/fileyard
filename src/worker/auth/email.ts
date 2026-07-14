@@ -15,6 +15,12 @@ type AuthEmailPayload = {
   };
 };
 
+type AuthEmailOtpPayload = {
+  email: string;
+  otp: string;
+  type: "sign-in" | "email-verification" | "forget-password" | "change-email";
+};
+
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
@@ -56,6 +62,28 @@ function buildAuthEmailHtml(options: {
         </p>
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">
         <p style="color: #94a3b8; font-size: 12px;">${escapeHtml(footnote)}</p>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+function buildFolderPasswordRecoveryOtpEmailHtml(otp: string): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>验证目录密码恢复</title>
+    </head>
+    <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; color: #1f2937; max-width: 600px; margin: 0 auto; padding: 24px;">
+      <div style="background: #f8fafc; border-radius: 16px; padding: 32px;">
+        <h1 style="color: #2563eb; margin-bottom: 16px;">验证目录密码恢复</h1>
+        <p style="font-size: 16px; margin-bottom: 20px;">你正在取消一个目录的访问密码。请输入以下验证码继续：</p>
+        <p style="margin: 0 0 20px; color: #1d4ed8; font-size: 30px; font-weight: 700; letter-spacing: 0.2em;">${escapeHtml(otp)}</p>
+        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">
+        <p style="color: #64748b; font-size: 12px;">验证码将在 5 分钟后失效。若非你本人操作，请忽略此邮件。</p>
       </div>
     </body>
     </html>
@@ -120,6 +148,20 @@ export function createResetPasswordEmailSender(env: AppBindings) {
         actionUrl: payload.url,
         footnote: "If you did not request a password reset, you can safely ignore this email.",
       }),
+    });
+  };
+}
+
+export function createFolderPasswordRecoveryOtpEmailSender(env: AppBindings) {
+  return async (payload: AuthEmailOtpPayload): Promise<void> => {
+    if (payload.type !== "email-verification") {
+      throw new Error("Unsupported email OTP type");
+    }
+
+    await sendResendEmail(env, {
+      to: payload.email,
+      subject: "Fileyard 目录密码恢复验证码",
+      html: buildFolderPasswordRecoveryOtpEmailHtml(payload.otp),
     });
   };
 }

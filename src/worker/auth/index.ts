@@ -5,7 +5,11 @@ import type { AppBindings, AppContext } from "../context";
 import { resolveAppOrigin } from "../utils/shareLinks";
 import { createDb } from "../db/client";
 import * as schema from "../db/schema";
-import { createResetPasswordEmailSender, createVerificationEmailSender } from "./email";
+import {
+  createFolderPasswordRecoveryOtpEmailSender,
+  createResetPasswordEmailSender,
+  createVerificationEmailSender,
+} from "./email";
 import { createBetterAuthLogger } from "./logger";
 import { createBetterAuthOptions } from "./options";
 import { getOrCreateAppProfileByDb } from "./profile";
@@ -66,7 +70,39 @@ function resolveTrustedOrigins(env: AppBindings, request?: Request): string[] {
   return [...origins];
 }
 
-const authCache = new Map<string, ReturnType<typeof betterAuth>>();
+function createAuthInstance(
+  c: Context<AppContext>,
+  isDev: boolean,
+  baseURL: string,
+  resolvedSecret: string,
+) {
+  const db = createDb(c.env);
+
+  return betterAuth({
+    ...createBetterAuthOptions({
+      appName: "FileYard",
+      baseURL,
+      secret: resolvedSecret,
+      googleClientId: c.env.GOOGLE_CLIENT_ID ?? "",
+      googleClientSecret: c.env.GOOGLE_CLIENT_SECRET ?? "",
+      trustedOrigins: async (request) => resolveTrustedOrigins(c.env, request),
+      sendVerificationEmail: createVerificationEmailSender(c.env),
+      sendResetPassword: createResetPasswordEmailSender(c.env),
+      sendVerificationOTP: createFolderPasswordRecoveryOtpEmailSender(c.env),
+      backgroundTaskHandler: (promise) => c.executionCtx.waitUntil(promise),
+      onUserCreated: async (user) => {
+        await getOrCreateAppProfileByDb(db, user.id, user.email);
+      },
+    }),
+    database: drizzleAdapter(db, {
+      provider: "sqlite",
+      schema,
+    }),
+    logger: createBetterAuthLogger(isDev),
+  });
+}
+
+const authCache = new Map<string, ReturnType<typeof createAuthInstance>>();
 
 export function getAuth(c: Context<AppContext>) {
   const isDev = isDevEnvironment(c.env, c.req.raw);
@@ -85,29 +121,8 @@ export function getAuth(c: Context<AppContext>) {
     return cached;
   }
 
-  const db = createDb(c.env);
-  const instance = betterAuth({
-    ...createBetterAuthOptions({
-      appName: "FileYard",
-      baseURL,
-      secret: resolvedSecret,
-      googleClientId: c.env.GOOGLE_CLIENT_ID ?? "",
-      googleClientSecret: c.env.GOOGLE_CLIENT_SECRET ?? "",
-      trustedOrigins: async (request) => resolveTrustedOrigins(c.env, request),
-      sendVerificationEmail: createVerificationEmailSender(c.env),
-      sendResetPassword: createResetPasswordEmailSender(c.env),
-      backgroundTaskHandler: (promise) => c.executionCtx.waitUntil(promise),
-      onUserCreated: async (user) => {
-        await getOrCreateAppProfileByDb(db, user.id, user.email);
-      },
-    }),
-    database: drizzleAdapter(db, {
-      provider: "sqlite",
-      schema,
-    }),
-    logger: createBetterAuthLogger(isDev),
-  });
+  const instance = createAuthInstance(c, isDev, baseURL, resolvedSecret);
 
-  authCache.set(cacheKey, instance as ReturnType<typeof betterAuth>);
+  authCache.set(cacheKey, instance);
   return instance;
 }

@@ -329,6 +329,29 @@ async function getFolderPasswordRecord(
   };
 }
 
+export async function assertFolderPasswordExists(
+  env: AppBindings,
+  rootDirId: string,
+  folderPath: string,
+): Promise<void> {
+  if (!(await getFolderPasswordRecord(env, rootDirId, folderPath))) {
+    throw new FilePathValidationError("Folder does not have a password", 404);
+  }
+}
+
+export async function getFolderPasswordEtag(
+  env: AppBindings,
+  rootDirId: string,
+  folderPath: string,
+): Promise<string> {
+  const record = await getFolderPasswordRecord(env, rootDirId, folderPath);
+  if (!record) {
+    throw new FilePathValidationError("Folder does not have a password", 404);
+  }
+
+  return record.object.etag;
+}
+
 export async function findProtectedPath(
   env: AppBindings,
   rootDirId: string,
@@ -802,18 +825,39 @@ export async function removeFolderPassword(
   rootDirId: string,
   folderPath: string,
 ): Promise<void> {
-  const marker = await getFolderMarker(c.env, rootDirId, folderPath);
+  await assertPathAccess(c, rootDirId, folderPath);
+  await removeFolderPasswordMetadata(c.env, rootDirId, folderPath);
+}
+
+export async function removeFolderPasswordAfterEmailVerification(
+  env: AppBindings,
+  rootDirId: string,
+  folderPath: string,
+  expectedEtag: string,
+): Promise<void> {
+  await removeFolderPasswordMetadata(env, rootDirId, folderPath, expectedEtag);
+}
+
+async function removeFolderPasswordMetadata(
+  env: AppBindings,
+  rootDirId: string,
+  folderPath: string,
+  expectedEtag?: string,
+): Promise<void> {
+  const marker = await getFolderMarker(env, rootDirId, folderPath);
   if (!marker || !isFolderPasswordMetadata(marker.object.customMetadata)) {
     throw new FilePathValidationError("Folder does not have a password", 404);
   }
+  if (expectedEtag && marker.object.etag !== expectedEtag) {
+    throw new FilePathValidationError("Folder changed", 409);
+  }
 
-  await assertPathAccess(c, rootDirId, folderPath);
   const nextMetadata = { ...(marker.object.customMetadata ?? {}) };
   delete nextMetadata[FOLDER_PASSWORD_VERSION_KEY];
   delete nextMetadata[FOLDER_PASSWORD_SALT_KEY];
   delete nextMetadata[FOLDER_PASSWORD_VERIFIER_KEY];
 
-  const putResult = await c.env.FILES_BUCKET.put(marker.key, new Uint8Array(), {
+  const putResult = await env.FILES_BUCKET.put(marker.key, new Uint8Array(), {
     customMetadata: nextMetadata,
     onlyIf: { etagMatches: marker.object.etag },
   });
