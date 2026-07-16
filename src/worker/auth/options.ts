@@ -63,7 +63,14 @@ export function createBetterAuthOptions(input: CreateBetterAuthOptionsInput) {
         : {}),
     },
     rateLimit: {
+      enabled: true,
       storage: "database",
+      customRules: {
+        "/email-otp/send-verification-otp": {
+          window: 60,
+          max: 1,
+        },
+      },
     },
     plugins: [
       emailOTP({

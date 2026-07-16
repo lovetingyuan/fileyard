@@ -1,12 +1,14 @@
 export class ApiError extends Error {
   readonly status: number;
   readonly data: unknown;
+  readonly retryAfterSeconds: number | undefined;
 
-  constructor(message: string, status: number, data: unknown) {
+  constructor(message: string, status: number, data: unknown, retryAfterSeconds?: number) {
     super(message);
     this.name = "ApiError";
     this.status = status;
     this.data = data;
+    this.retryAfterSeconds = retryAfterSeconds;
   }
 }
 
@@ -17,6 +19,17 @@ type ErrorPayload = {
 
 function hasErrorPayload(value: unknown): value is ErrorPayload {
   return typeof value === "object" && value !== null;
+}
+
+function parseRetryAfterSeconds(response: Response): number | undefined {
+  const retryAfter = response.headers.get("X-Retry-After");
+
+  if (retryAfter === null || !/^\d+$/u.test(retryAfter)) {
+    return undefined;
+  }
+
+  const retryAfterSeconds = Number(retryAfter);
+  return Number.isSafeInteger(retryAfterSeconds) ? retryAfterSeconds : undefined;
 }
 
 async function parseResponseBody(response: Response): Promise<unknown> {
@@ -59,7 +72,7 @@ export async function apiRequest<T>(input: RequestInfo | URL, init: RequestInit 
           ? data.message
           : response.statusText || "Request failed";
 
-    throw new ApiError(message, response.status, data);
+    throw new ApiError(message, response.status, data, parseRetryAfterSeconds(response));
   }
 
   return data as T;

@@ -432,13 +432,22 @@ export async function sendFolderPasswordRecoveryCode(c: Context<AppContext>) {
     }
 
     const folderEtag = await getFolderPasswordEtag(c.env, rootDirId, path);
-    await getAuth(c).api.sendVerificationOTP({
-      body: {
-        email: user.email,
-        type: "email-verification",
-      },
-      headers: c.req.raw.headers,
-    });
+    const authRequestHeaders = new Headers(c.req.raw.headers);
+    authRequestHeaders.set("content-type", "application/json");
+    authRequestHeaders.delete("content-length");
+    const authResponse = await getAuth(c).handler(
+      new Request(new URL("/api/auth/email-otp/send-verification-otp", c.req.raw.url), {
+        method: "POST",
+        headers: authRequestHeaders,
+        body: JSON.stringify({
+          email: user.email,
+          type: "email-verification",
+        }),
+      }),
+    );
+    if (!authResponse.ok) {
+      return authResponse;
+    }
     await c.env.FILE_YARD_KV.put(
       getFolderPasswordRecoveryKey(user.id),
       JSON.stringify({ rootDirId, path, folderEtag } satisfies FolderPasswordRecoveryState),

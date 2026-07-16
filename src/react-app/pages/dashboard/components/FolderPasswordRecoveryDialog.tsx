@@ -1,4 +1,4 @@
-import { useRef, useState, type KeyboardEvent } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import toast from 'react-hot-toast'
 import { useSWRConfig } from 'swr'
 import type { FolderPasswordModalTarget } from '../../../../types'
@@ -9,6 +9,7 @@ import {
   useSendFolderPasswordRecoveryCodeMutation,
   useVerifyFolderPasswordRecoveryCodeMutation,
 } from '../../../hooks/useFilesApi'
+import { ApiError } from '../../../utils/apiRequest'
 import { cn } from '../../../utils/cn'
 import { shouldConfirmFromInputKey } from '../utils/modalKeyboard'
 
@@ -35,8 +36,22 @@ export function FolderPasswordRecoveryDialog({
   const inputRef = useRef<HTMLInputElement | null>(null)
   const [otp, setOtp] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [cooldownSeconds, setCooldownSeconds] = useState(0)
   const isOtpValid = /^\d{6}$/u.test(otp)
   const isBusy = isSendingCode || isVerifyingCode
+  const isCooldownActive = cooldownSeconds > 0
+
+  useEffect(() => {
+    if (!isCooldownActive) {
+      return
+    }
+
+    const interval = window.setInterval(() => {
+      setCooldownSeconds(seconds => Math.max(seconds - 1, 0))
+    }, 1_000)
+
+    return () => window.clearInterval(interval)
+  }, [isCooldownActive])
 
   const refreshFileData = async () => {
     await mutate(key => isFileListKey(key) || key === FILE_FOLDER_TREE_ENDPOINT)
@@ -59,15 +74,22 @@ export function FolderPasswordRecoveryDialog({
   }
 
   const handleSendCode = async () => {
-    if (isBusy) {
+    if (isBusy || isCooldownActive) {
       return
     }
 
     setError(null)
     try {
       await sendFolderPasswordRecoveryCode(target.path)
+      setCooldownSeconds(60)
       toast.success('验证码已发送，有效期为 5 分钟')
     } catch (sendError) {
+      if (sendError instanceof ApiError && sendError.status === 429 && sendError.retryAfterSeconds !== undefined) {
+        setCooldownSeconds(sendError.retryAfterSeconds)
+        setError(`发送过于频繁，请 ${sendError.retryAfterSeconds} 秒后再试`)
+        return
+      }
+
       setError(getErrorMessage(sendError, '验证码发送失败'))
     }
   }
@@ -104,7 +126,7 @@ export function FolderPasswordRecoveryDialog({
     >
       {({ isInteractionDisabled }) => (
         <div className="space-y-4">
-          <div role="alert" className="alert alert-info alert-soft text-sm leading-6">
+          <div role="alert" className="alert alert-info alert-soft text-sm leading-5">
             点击发送验证码，去登录邮箱查找验证码并输入，验证通过后会取消当前目录密码。
           </div>
 
@@ -133,9 +155,13 @@ export function FolderPasswordRecoveryDialog({
                 type="button"
                 className="btn btn-primary btn-md shrink-0 px-4"
                 onClick={() => void handleSendCode()}
-                disabled={isInteractionDisabled}
+                disabled={isInteractionDisabled || isCooldownActive}
               >
-                {isSendingCode ? '发送中...' : '发送验证码'}
+                {isSendingCode
+                  ? '发送中...'
+                  : isCooldownActive
+                    ? `重新发送 (${cooldownSeconds}s)`
+                    : '发送验证码'}
               </button>
             </div>
             {error ? <span className="text-xs text-error">{error}</span> : null}
