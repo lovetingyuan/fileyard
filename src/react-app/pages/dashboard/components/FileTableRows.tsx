@@ -4,10 +4,15 @@ import MdiLockOpenVariant from "~icons/mdi/lock-open-variant";
 import { useRef } from "react";
 import type { BatchOperationTarget, FileEntry, FolderEntry } from "../../../../types";
 import { getFileIcon } from "../../../constants/fileIcons";
+import { buildRenderedPreviewUrl } from "../../../hooks/filesApiUrls";
 import { useAppStore } from "../../../store";
 import { cn } from "../../../utils/cn";
 import { formatBytes, formatDate, formatDetailedDate } from "../../../utils/fileFormatters";
-import { getFolderUnlockTokenFromTokens } from "../../../utils/folderUnlockTokens";
+import {
+  getFolderUnlockTokenForPath,
+  getFolderUnlockTokenFromTokens,
+} from "../../../utils/folderUnlockTokens";
+import { getRenderedPreviewKind } from "../../../utils/previewInfo";
 import { openFilePreview, openFolderPasswordModal } from "../actions";
 import { useDashboardEntrySelection } from "../hooks/useDashboardEntrySelection";
 import { useDashboardLocatedFileHighlight } from "../hooks/useDashboardLocatedFileHighlight";
@@ -211,6 +216,7 @@ export function FileRow({
   const fileIcon = getFileIcon(file.name);
   const rowKey = `file:${file.path}`;
   const createdAtTooltip = `创建时间：${formatDetailedDate(file.createdAt)}`;
+  const canOpenInBrowser = getRenderedPreviewKind(file) === "html";
   const locatedFileRef = useRef<HTMLTableRowElement>(null);
   const isLocatedFileHighlighted = useDashboardLocatedFileHighlight(file.path, locatedFileRef);
   const selection = useDashboardEntrySelection(
@@ -285,6 +291,16 @@ export function FileRow({
           >
             <FileEntryName name={file.name} ranges={file.searchMatchRanges} entryKey={rowKey} />
           </button>
+          {canOpenInBrowser && !selection.isSelectionActive ? (
+            <a
+              className="link link-primary shrink-0 whitespace-nowrap text-xs"
+              href={buildRenderedPreviewUrl(file.path, getFolderUnlockTokenForPath(file.path))}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              浏览器打开
+            </a>
+          ) : null}
         </span>
       </td>
       <td className="hidden text-base-content/50 @min-[40rem]:table-cell text-xs select-none">

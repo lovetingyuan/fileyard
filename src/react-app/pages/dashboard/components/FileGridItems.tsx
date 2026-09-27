@@ -4,9 +4,14 @@ import MdiLockOpenVariant from "~icons/mdi/lock-open-variant";
 import { useRef } from "react";
 import type { BatchOperationTarget, FileEntry, FolderEntry } from "../../../../types";
 import { getFileIcon } from "../../../constants/fileIcons";
+import { buildRenderedPreviewUrl } from "../../../hooks/filesApiUrls";
 import { cn } from "../../../utils/cn";
 import { useAppStore } from "../../../store";
-import { getFolderUnlockTokenFromTokens } from "../../../utils/folderUnlockTokens";
+import {
+  getFolderUnlockTokenForPath,
+  getFolderUnlockTokenFromTokens,
+} from "../../../utils/folderUnlockTokens";
+import { getRenderedPreviewKind } from "../../../utils/previewInfo";
 import { openFilePreview, openFolderPasswordModal } from "../actions";
 import { useDashboardEntrySelection } from "../hooks/useDashboardEntrySelection";
 import { useDashboardLocatedFileHighlight } from "../hooks/useDashboardLocatedFileHighlight";
@@ -164,6 +169,7 @@ export function FileGridItem({
 }) {
   const fileIcon = getFileIcon(file.name);
   const entryKey = `file:${file.path}`;
+  const canOpenInBrowser = getRenderedPreviewKind(file) === "html";
   const locatedFileRef = useRef<HTMLDivElement>(null);
   const isLocatedFileHighlighted = useDashboardLocatedFileHighlight(file.path, locatedFileRef);
   const selection = useDashboardEntrySelection(
@@ -226,6 +232,16 @@ export function FileGridItem({
           <FileEntryName name={file.name} ranges={file.searchMatchRanges} entryKey={entryKey} />
         </span>
       </button>
+      {canOpenInBrowser && !selection.isSelectionActive ? (
+        <a
+          className="link link-primary mx-auto shrink-0 whitespace-nowrap text-xs"
+          href={buildRenderedPreviewUrl(file.path, getFolderUnlockTokenForPath(file.path))}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          浏览器打开
+        </a>
+      ) : null}
     </div>
   );
 }
