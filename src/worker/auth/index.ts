@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { waitUntil } from "cloudflare:workers";
 import type { Context } from "hono";
 import type { AppBindings, AppContext } from "../context";
 import { resolveAppOrigin } from "../utils/shareLinks";
@@ -71,25 +72,25 @@ function resolveTrustedOrigins(env: AppBindings, request?: Request): string[] {
 }
 
 function createAuthInstance(
-  c: Context<AppContext>,
+  env: AppBindings,
   isDev: boolean,
   baseURL: string,
   resolvedSecret: string,
 ) {
-  const db = createDb(c.env);
+  const db = createDb(env);
 
   return betterAuth({
     ...createBetterAuthOptions({
       appName: "FileYard",
       baseURL,
       secret: resolvedSecret,
-      googleClientId: c.env.GOOGLE_CLIENT_ID ?? "",
-      googleClientSecret: c.env.GOOGLE_CLIENT_SECRET ?? "",
-      trustedOrigins: async (request) => resolveTrustedOrigins(c.env, request),
-      sendVerificationEmail: createVerificationEmailSender(c.env),
-      sendResetPassword: createResetPasswordEmailSender(c.env),
-      sendVerificationOTP: createFolderPasswordRecoveryOtpEmailSender(c.env),
-      backgroundTaskHandler: (promise) => c.executionCtx.waitUntil(promise),
+      googleClientId: env.GOOGLE_CLIENT_ID ?? "",
+      googleClientSecret: env.GOOGLE_CLIENT_SECRET ?? "",
+      trustedOrigins: async (request) => resolveTrustedOrigins(env, request),
+      sendVerificationEmail: createVerificationEmailSender(env),
+      sendResetPassword: createResetPasswordEmailSender(env),
+      sendVerificationOTP: createFolderPasswordRecoveryOtpEmailSender(env),
+      backgroundTaskHandler: waitUntil,
       onUserCreated: async (user) => {
         await getOrCreateAppProfileByDb(db, user.id, user.email);
       },
@@ -121,7 +122,7 @@ export function getAuth(c: Context<AppContext>) {
     return cached;
   }
 
-  const instance = createAuthInstance(c, isDev, baseURL, resolvedSecret);
+  const instance = createAuthInstance(c.env, isDev, baseURL, resolvedSecret);
 
   authCache.set(cacheKey, instance);
   return instance;

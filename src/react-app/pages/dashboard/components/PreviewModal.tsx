@@ -11,7 +11,7 @@ import {
   useUpdateFileMutation,
 } from '../../../hooks/useFilesApi'
 import { useAppStore } from '../../../store'
-import { getPreviewInfo, getRenderedPreviewKind } from '../../../utils/previewInfo'
+import { getPreviewInfo, getRenderedPreviewKind, type PreviewKind } from '../../../utils/previewInfo'
 import { getFolderUnlockTokenForPath } from '../../../utils/folderUnlockTokens'
 import { closeFilePreview, openFileDetails, openFilePreview } from '../actions'
 import { downloadDashboardFile, runWithLargeFileUploadToast } from '../fileOperations'
@@ -31,10 +31,10 @@ import { PREVIEW_SIZE_LIMITS } from './preview/previewLimits'
 
 const COPY_FEEDBACK_RESET_DELAY_MS = 1800
 
-function getPreviewSizeError(
-  kind: 'audio' | 'image' | 'text' | 'unsupported' | 'video' | 'pdf',
-  fileSize: number,
-): string | null {
+function getPreviewSizeError(kind: PreviewKind, fileSize: number): string | null {
+  if (kind === 'text' && fileSize > PREVIEW_SIZE_LIMITS.TEXT) {
+    return `文本文件过大，无法预览（超过 ${PREVIEW_SIZE_LIMITS.TEXT / 1024 / 1024}MB），请下载后查看`
+  }
   if (kind === 'image' && fileSize > PREVIEW_SIZE_LIMITS.IMAGE) {
     return `图片文件过大，无法预览（超过 ${PREVIEW_SIZE_LIMITS.IMAGE / 1024 / 1024}MB）`
   }
@@ -178,14 +178,13 @@ export function PreviewModal() {
   }
 
   const sizeError = getPreviewSizeError(effectiveInfo.kind, file.size)
-  const canCopyText = effectiveInfo.kind === 'text' && !sizeError
 
   return (
     <Dialog
       isOpen
       title={<h3 className="truncate pr-4 font-bold text-base">{file.name}</h3>}
       onClose={handleClose}
-      supportFullscreen={!isEditing && effectiveInfo.kind !== 'unsupported'}
+      supportFullscreen={!sizeError && effectiveInfo.kind !== 'unsupported'}
       widthMode="content"
       boxClassName={getPreviewModalBoxClassName()}
       bodyClassName="flex-1 min-h-0 overflow-auto p-1"
@@ -226,7 +225,7 @@ export function PreviewModal() {
         </>
       )}
       footer={
-        (canCopyText || canEditTextFile) && !sizeError
+        canEditTextFile && !sizeError
           ? ({ confirm, isConfirming }) =>
               isEditing ? (
                 <>
@@ -322,7 +321,6 @@ export function PreviewModal() {
                 )}
                 {effectiveInfo.kind === 'text' && (
                   <TextPreview
-                    file={file}
                     previewUrl={previewUrl}
                     isFullscreen={isFullscreen}
                     isEditing={isEditing && effectiveInfo.kind === 'text'}

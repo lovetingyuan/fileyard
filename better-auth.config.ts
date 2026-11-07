@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { drizzle } from "drizzle-orm/d1";
 import { createBetterAuthOptions } from "./src/worker/auth/options";
+import * as schema from "./src/worker/db/auth-schema";
 
 const cliBaseUrl = process.env.APP_URL || process.env.BETTER_AUTH_URL || "http://localhost:5173";
 const cliSecret = process.env.BETTER_AUTH_SECRET || "better-auth-development-secret-for-cli-only";
@@ -29,5 +30,6 @@ export const auth = betterAuth({
   }),
   database: drizzleAdapter(cliDb, {
     provider: "sqlite",
+    schema,
   }),
 });

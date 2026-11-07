@@ -2,7 +2,8 @@ import type { PreviewKind } from "../utils/previewInfo";
 import { cn } from "../utils/cn";
 
 export type DialogWidthMode = "default" | "content";
-const DOCUMENT_VIEWPORT_CLASS = "mx-auto w-[min(48rem,calc(95vw-4rem))] max-w-full";
+const DOCUMENT_VIEWPORT_CLASS =
+  "mx-auto w-[min(48rem,calc(95vw-4rem))] max-w-full";
 const DIALOG_FULLSCREEN_BOX_CLASS =
   "flex h-[100dvh] w-screen !max-h-none !max-w-none flex-col rounded-none";
 

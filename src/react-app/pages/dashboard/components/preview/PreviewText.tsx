@@ -1,12 +1,9 @@
 import useSWR from "swr";
-import type { FileEntry } from "../../../../../types";
 import { STANDARD_TEXT_CLASS_NAME } from "../../../../components/previewModalLayout";
 import { cn } from "../../../../utils/cn";
 import { PreviewUnsupportedMessage } from "./PreviewUnsupportedMessage";
-import { PREVIEW_SIZE_LIMITS } from "./previewLimits";
 
 export function TextPreview({
-  file,
   previewUrl,
   isFullscreen,
   isEditing,
@@ -17,7 +14,6 @@ export function TextPreview({
   onDataLoaded,
 }: {
   editContent: string;
-  file: FileEntry;
   isBusy: boolean;
   isEditing: boolean;
   isFullscreen: boolean;
@@ -26,9 +22,8 @@ export function TextPreview({
   onEditContentChange: (content: string) => void;
   previewUrl: string;
 }) {
-  const tooLarge = file.size > PREVIEW_SIZE_LIMITS.TEXT;
   const { data, isLoading, error } = useSWR(
-    tooLarge ? null : previewUrl,
+    previewUrl,
     (url: string) =>
       fetch(url, { credentials: "include" }).then((r) => {
         if (!r.ok) {
@@ -39,13 +34,6 @@ export function TextPreview({
     { onSuccess: (d) => onDataLoaded?.(d) },
   );
 
-  if (tooLarge) {
-    return (
-      <PreviewUnsupportedMessage
-        reason={`文件过大，无法预览（超过 ${PREVIEW_SIZE_LIMITS.TEXT / 1024 / 1024}MB）`}
-      />
-    );
-  }
   if (isLoading) {
     return (
       <div className="flex justify-center py-12">

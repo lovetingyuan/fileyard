@@ -17,7 +17,7 @@ const config: KnipConfig = {
     "tailwindcss",
     "daisyui",
     // Invoked indirectly or used for postinstall patching.
-    "@better-auth/cli",
+    "auth",
     "oxc-parser",
   ],
 };

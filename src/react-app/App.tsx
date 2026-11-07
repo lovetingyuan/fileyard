@@ -9,7 +9,9 @@ export { renderProtectedRoute } from "./routes";
 function AppContent() {
   const { authLoading, user } = useAuth();
   const location = useLocation();
-  const allowAuthenticatedEmailAction = allowsAuthenticatedEmailActionPath(location.pathname);
+  const allowAuthenticatedEmailAction = allowsAuthenticatedEmailActionPath(
+    location.pathname,
+  );
 
   return (
     <Routes>

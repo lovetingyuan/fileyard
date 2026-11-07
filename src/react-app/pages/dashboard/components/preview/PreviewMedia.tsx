@@ -117,20 +117,18 @@ export function ImagePreview({
           {formatImageOriginalDimensions(originalDimensions)}
         </p>
       ) : null}
+      {loadStatus === "loading" ? (
+        <div role="status" className="absolute inset-0 flex items-center justify-center">
+          <span className="loading loading-spinner loading-lg text-primary" aria-hidden="true" />
+          <span className="sr-only">图片加载中</span>
+        </div>
+      ) : null}
       <div
         className={cn(
           "relative flex min-h-0 max-w-full items-center justify-center",
           isFullscreen && "h-full w-full flex-1",
         )}
       >
-        {loadStatus === "loading" ? (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span
-              className="loading loading-spinner loading-lg text-primary"
-              aria-label="图片加载中"
-            />
-          </div>
-        ) : null}
         <img
           src={previewUrl}
           alt={file.name}
